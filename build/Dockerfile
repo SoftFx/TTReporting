@@ -1,0 +1,35 @@
+# Base R image for Ubuntu; build CRAN packages from source
+FROM rocker/r-ver:4.4.1
+
+ENV DEBIAN_FRONTEND=noninteractive
+WORKDIR /app
+
+# Toolchain and headers to compile from source
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      build-essential gfortran pkg-config \
+      libcurl4-openssl-dev libssl-dev libxml2-dev \
+      ca-certificates curl git; \
+    rm -rf /var/lib/apt/lists/*
+
+# Install required CRAN packages FROM SOURCE (yaml + jsonlite)
+RUN set -eux; \
+    R -q -e "options(Ncpus=max(1L, parallel::detectCores()-1L)); \
+             install.packages(c('yaml','jsonlite'), repos='https://cloud.r-project.org', type='source')"
+
+# Copy entrypoint script
+COPY source/main.R /app/main.R
+RUN chmod +x /app/main.R
+
+# Strip dev toolchain (runtime doesn't need dev headers)
+RUN set -eux; \
+    apt-get purge -y --auto-remove \
+      build-essential gfortran pkg-config \
+      libcurl4-openssl-dev libssl-dev libxml2-dev; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/* /tmp/*; \
+    find /usr/local/lib/R/site-library -depth -type d \( -name help -o -name html -o -name doc -o -name examples -o -name tests \) -exec rm -rf {} +; \
+    find /usr/local/lib/R/site-library -type f -name 'NEWS*' -delete
+
+ENTRYPOINT ["Rscript","/app/main.R"]

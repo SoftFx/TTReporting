@@ -1,0 +1,7 @@
+version: 1
+job: demo
+threshold: 0.9
+items:
+  - A
+  - B
+  - C
