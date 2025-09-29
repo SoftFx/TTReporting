@@ -1,6 +1,6 @@
 services:
-  app:
-    image: r-hello
+  big-trades:
+    image: big-trades
     volumes:
       - ./config.yaml:/config/config.yaml:ro
       - ./state.json:/data/state.json:rw

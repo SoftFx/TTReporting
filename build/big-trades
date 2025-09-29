@@ -19,8 +19,8 @@ RUN set -eux; \
              install.packages(c('yaml','jsonlite'), repos='https://cloud.r-project.org', type='source')"
 
 # Copy entrypoint script
-COPY source/main.R /app/main.R
-RUN chmod +x /app/main.R
+COPY source/big-trades /app
+#RUN chmod +x /app/main.R
 
 # Strip dev toolchain (runtime doesn't need dev headers)
 RUN set -eux; \
