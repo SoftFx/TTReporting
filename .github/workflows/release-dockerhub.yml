@@ -93,6 +93,6 @@ jobs:
           cache-from: type=gha
           cache-to:   type=gha,mode=max
 
-      - name: Show published image
-        run: echo "Pushed: test"
-        run: echo "Pushed: ${{ env.IMAGE }}:${{ steps.tag.outputs.value }}-${{ matrix.suffix }}"
+ #     - name: Show published image
+#        run: echo "Pushed: test"
+     #   run: echo "Pushed: ${{ env.IMAGE }}:${{ steps.tag.outputs.value }}-${{ matrix.suffix }}"
