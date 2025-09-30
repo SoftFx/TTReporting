@@ -35,11 +35,7 @@ jobs:
     #     - release event (build ALL variants)
     #     - manual run with variant=='all'
     #     - manual run with variant matching the matrix.name
-    if: >
-      github.event_name == 'release' ||
-      (github.event_name == 'workflow_dispatch' &&
-       (inputs.variant == 'all' || matrix.name == inputs.variant))
-
+    if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && (inputs.variant == 'all' || matrix.name == inputs.variant)) }}
     strategy:
       fail-fast: false
       matrix:
