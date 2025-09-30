@@ -46,6 +46,11 @@ jobs:
             context: .
             suffix: r-ver
             platforms: linux/amd64
+          - name: big-trades2
+            dockerfile: build/big-trades
+            context: .
+            suffix: r-ver2
+            platforms: linux/amd64
           # ...add ~7 more variants the same way...
 
     steps:
