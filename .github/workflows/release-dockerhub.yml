@@ -32,9 +32,9 @@ jobs:
       matrix:
         include:
           - name: big-trades
-            dockerfile: build/Dockerfile.big-trades   # <-- must be an actual FILE
+            dockerfile: build/big-trades   # <-- must be an actual FILE
             context: .
-            suffix: big-trades
+            suffix: suf
             platforms: linux/amd64
 
     steps:
