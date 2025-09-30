@@ -1,6 +1,6 @@
 services:
   big-trades:
-    image: big-trades
+    image: softfx/tt-reporting:sha-7bff7a0-suf
     volumes:
       - ./config.yaml:/config/config.yaml:ro
       - ./state.json:/data/state.json:rw

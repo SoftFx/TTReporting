@@ -1,0 +1,41 @@
+# --- VCS & tooling ---
+.git/
+.gitignore
+.gitattributes
+.github/
+.vscode/
+.idea/
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+
+# --- Editors / RStudio ---
+*.Rproj
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# --- Build outputs / caches ---
+target/
+bin/
+obj/
+dist/
+out/
+__pycache__/
+*.log
+
+# --- Dependencies you don't need at build time ---
+node_modules/
+venv/
+env/
+
+# --- Big data / secrets (если не используешь их в стадии build) ---
+data/
+secrets/
+*.pem
+*.key
+*.p12
+*.crt
+
