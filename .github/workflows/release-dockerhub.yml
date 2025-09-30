@@ -94,5 +94,5 @@ jobs:
           cache-to:   type=gha,mode=max
 
       - name: Show published image
-        run: echo "Pushed: ${{ env.IMAGE || 'default-image' }}"
+        run: echo "Pushed: test"
         run: echo "Pushed: ${{ env.IMAGE }}:${{ steps.tag.outputs.value }}-${{ matrix.suffix }}"
