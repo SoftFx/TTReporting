@@ -1,7 +1,6 @@
 name: release-dockerhub
 
 on:
-  # Manual button in the Actions tab
   workflow_dispatch:
     inputs:
       variant:
@@ -11,12 +10,9 @@ on:
         options:
           - all
           - big-trades
-          # add more names here; keep in sync with matrix.include below
       tag:
         description: "Image tag (e.g. v1.2.3). If empty, short SHA is used."
         required: false
-
-  # Auto-run when a Release is published (not draft)
   release:
     types: [published]
 
@@ -24,34 +20,23 @@ permissions:
   contents: read
 
 env:
-  # Final image name on Docker Hub; override with repo Variable IMAGE_NAME if needed
+  # Final image name on Docker Hub; override via repo Variable IMAGE_NAME if needed
   IMAGE: ${{ vars.IMAGE_NAME || format('{0}/tt-reporting', secrets.DOCKERHUB_USERNAME) }}
 
 jobs:
   build-push:
     runs-on: ubuntu-latest
 
-    # --- Run this job only for:
-    #     - release event (build ALL variants)
-    #     - manual run with variant=='all'
-    #     - manual run with variant matching the matrix.name
-    if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && (inputs.variant == 'all' || matrix.name == inputs.variant)) }}
     strategy:
       fail-fast: false
       matrix:
         include:
           # Each entry is one Dockerfile/variant
           - name: big-trades
-            dockerfile: build/big-trades
+            dockerfile: build/Dockerfile.big-trades   # <-- must be an actual file
             context: .
-            suffix: r-ver
+            suffix: big-trades
             platforms: linux/amd64
-          - name: big-trades2
-            dockerfile: build/big-trades
-            context: .
-            suffix: r-ver2
-            platforms: linux/amd64
-          # ...add ~7 more variants the same way...
 
     steps:
       - name: Checkout
@@ -63,7 +48,6 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          # Store these as repo Secrets
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
@@ -71,7 +55,7 @@ jobs:
         id: tag
         shell: bash
         run: |
-          # Decide the base tag purely in Bash:
+          # Decide the base tag in pure Bash:
           # - release event → use the release tag (e.g. v1.2.3)
           # - manual run with input → use inputs.tag
           # - otherwise → short SHA tag
@@ -83,17 +67,23 @@ jobs:
             echo "value=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
           fi
 
+      # Optional: explicit skip log for non-selected variants on manual runs
+      - name: Maybe skip this variant
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.variant != 'all' && matrix.name != inputs.variant }}
+        run: echo "Skipping variant: ${{ matrix.name }} (selected: ${{ inputs.variant }})"
+
       - name: Build & Push
+        if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && (inputs.variant == 'all' || matrix.name == inputs.variant)) }}
         uses: docker/build-push-action@v6
         with:
           context:   ${{ matrix.context }}
-          file:      ${{ matrix.dockerfile }}                 # pick specific Dockerfile
-          platforms: ${{ matrix.platforms }}                  # e.g., linux/amd64 or add linux/arm64
+          file:      ${{ matrix.dockerfile }}
+          platforms: ${{ matrix.platforms }}
           push: true
           tags: ${{ env.IMAGE }}:${{ steps.tag.outputs.value }}-${{ matrix.suffix }}
           cache-from: type=gha
           cache-to:   type=gha,mode=max
 
- #     - name: Show published image
-#        run: echo "Pushed: test"
-     #   run: echo "Pushed: ${{ env.IMAGE }}:${{ steps.tag.outputs.value }}-${{ matrix.suffix }}"
+      - name: Echo published image
+        if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && (inputs.variant == 'all' || matrix.name == inputs.variant)) }}
+        run: echo "Pushed: ${{ env.IMAGE }}:${{ steps.tag.outputs.value }}-${{ matrix.suffix }}"
