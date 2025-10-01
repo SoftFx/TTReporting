@@ -10,9 +10,6 @@ on:
         options:
           - all
           - big-trades
-      tag:
-        description: "Image tag (e.g. v1.2.3). If empty, short SHA is used."
-        required: false
   release:
     types: [published]
 
@@ -34,8 +31,7 @@ jobs:
           - name: big-trades
             dockerfile: build/big-trades   # <-- must be an actual FILE
             context: .
-            suffix: suf
-            platforms: linux/amd64
+            suffix: big-trades
 
     steps:
       - uses: actions/checkout@v4
@@ -46,36 +42,61 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Compute base tag
-        id: tag
+ - name: Compute CalVer
+        id: ver
         shell: bash
         run: |
-          # Decide the base tag:
-          # - release → use the release tag (e.g. v1.2.3)
-          # - manual with input → use inputs.tag
-          # - else → short SHA
-          if [[ "${{ github.event_name }}" == "release" ]]; then
-            echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-          elif [[ -n "${{ inputs.tag }}" ]]; then
-            echo "value=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "value=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-          fi
+          date_tag=$(date -u +'%Y.%m.%d')
+          echo "calver=${date_tag}.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute short SHA
+        id: shortsha
+        shell: bash
+        run: |
+          echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"         
 
       - name: Build & Push
+        id: build
         if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && (inputs.variant == 'all' || matrix.name == inputs.variant)) }}
         uses: docker/build-push-action@v6
         with:
           context:   ${{ matrix.context }}
           file:      ${{ matrix.dockerfile }}
-          platforms: ${{ matrix.platforms }}
+          platforms: linux/amd64
           push: true
-          tags: ${{ env.IMAGE }}:${{ steps.tag.outputs.value }}-${{ matrix.suffix }}
-          cache-from: type=gha
-          cache-to:   type=gha,mode=max
+        tags: |
+          ${{ env.IMAGE }}:${{ steps.ver.outputs.calver }}-${{ matrix.suffix }}   # ← базовый CalVer
+          ${{ env.IMAGE }}:latest-${{ matrix.suffix }}
+          ${{ env.IMAGE }}:sha-${{ steps.shortsha.outputs.short }}-${{ matrix.suffix }}
+        labels: |
+          org.opencontainers.image.revision=${{ github.sha }}
+          org.opencontainers.image.source=https://github.com/${{ github.repository }}
+        cache-from: type=gha
+        cache-to:   type=gha,mode=max
+
+      - name: Tag manifest by sha256 digest
+        if: ${{ steps.build.outputs.digest != '' }}
+        shell: bash
+        run: |
+          IMAGE="${{ env.IMAGE }}"
+          DIGEST='${{ steps.build.outputs.digest }}'     # например: sha256:abcde123...
+          D="${DIGEST#sha256:}"                          # убрать префикс
+          SHORT="${D:0:12}"                              # укоротим для читабельности
+          # Привяжем ещё один тег к уже опубликованному манифесту
+          docker buildx imagetools create \
+            -t "${IMAGE}:sha256-${SHORT}-${{ matrix.suffix }}" \
+            "${IMAGE}@${DIGEST}"
+
+      - name: Echo digest tag
+        if: ${{ steps.build.outputs.digest != '' }}
+        run: echo "Pushed: ${{ env.IMAGE }}:sha256-${{ steps.build.outputs.digest[8:20] }}-${{ matrix.suffix }}"
 
       - name: Echo published image
         if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && (inputs.variant == 'all' || matrix.name == inputs.variant)) }}
         shell: bash
         run: |
-          echo "Pushed: ${{ env.IMAGE }}:${{ steps.tag.outputs.value }}-${{ matrix.suffix }}"
+          echo "Pushed:"
+          echo "  ${{ env.IMAGE }}:${{ steps.ver.outputs.calver }}-${{ matrix.suffix }}"
+          echo "  ${{ env.IMAGE }}:latest-${{ matrix.suffix }}"
+          echo "  ${{ env.IMAGE }}:sha-${{ steps.shortsha.outputs.short }}-${{ matrix.suffix }}"
+          echo "  ${{ env.IMAGE }}:sha256-${{ steps.build.outputs.digest[8:20] }}-${{ matrix.suffix }}"
