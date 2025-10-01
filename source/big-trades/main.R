@@ -6,9 +6,13 @@ suppressPackageStartupMessages({
   library(yaml)
   library(jsonlite)
 })
-
-cfg_path   <- "/config/config.yaml"  # read-only bind mount
-state_path <- "/data/state.json"     # read-write bind mount
+source('task_Big_Deals.R')
+#cfg_path   <- "/config/config.yaml"  # read-only bind mount
+#state_path <- "/data/state.json"     # read-write bind mount
+res <- NULL
+cfg_path   <- "./conf.yaml"  # read-only bind mount
+state_path <- "../../run/state.json"     # read-write bind mount
+`%||%` <- function(a,b) if (is.null(a)) b else a
 
 to_iso_utc <- function(x) strftime(x, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
 from_iso_utc <- function(s) {
@@ -21,9 +25,12 @@ t_start <- Sys.time()
 
 # 1) Read config and print (pretty JSON for readability)
 if (!file.exists(cfg_path)) stop("Config not found at: ", cfg_path)
-cfg <- yaml::read_yaml(cfg_path)
+#cfg <- yaml::read_yaml(cfg_path)
+cfg <- yaml.load_file(cfg_path)
 cat("=== CONFIG ===\n", toJSON(cfg, auto_unbox = TRUE, pretty = TRUE), "\n", sep = "")
 
+res <- execute_task_big_deals(config = cfg)
+res
 # 2) Load previous state (if any) and compute time since last run
 prev <- list()
 if (file.exists(state_path)) {
@@ -55,4 +62,3 @@ state <- list(
 write_json(state, state_path, auto_unbox = TRUE, pretty = TRUE)
 cat("State written: ", state_path, " (run_count=", state$run_count, ")\n", sep = "")
 
-`%||%` <- function(a,b) if (is.null(a)) b else a

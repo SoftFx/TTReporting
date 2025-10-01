@@ -1,0 +1,159 @@
+library(RMySQL)
+library(RPostgres)
+library(data.table)
+library(lubridate)
+#library(yaml)
+source('../common/PostgresHost.R') #help functions
+source('Functions.R') #get data from MySQL and Postgres
+source('../common/RMonitoringClient.R') #send data to HSM
+options(warn = -1)
+options(digits = 4)
+options(scipen=999)
+Sys.setenv("TZ" = "UTC")
+
+execute_task_big_deals <- function(config){
+#config <- yaml.load_file("./conf.yaml")
+last_run <- as.POSIXct(readLines("last_run.txt"), format = "%Y-%m-%dT%H:%M:%S%z", tz = "UTC")
+symbolsetups <- fread("symbol_setups.csv")
+statusError <- NULL
+To <- now()
+
+#last run time validation: if no data - set current time 
+if (!is.na(last_run)&&length(last_run)==1) {
+  From <- last_run} else {From <- To}
+
+#get meta time offset
+if (length(config$database_connections[["mt5"]])>0){
+  tryCatch({ 
+    TimeOffset <- META5Timeoffset(config$database_connections$mt5[[1]])}
+    , error = function(e){
+      print(e)
+      statusError <<- append(statusError, paste("Errors:", substr(e$message, 1, 50), "..."))
+    })
+} else {TimeOffset <- 0L}
+
+#get symbols from TT 
+if (length(config$database_connections[["tt"]])>0){
+  tryCatch({ 
+    SymbolsDT <- getAllSymbolsTT(config$database_connections$tt[[1]])}
+    , error = function(e){
+      print(e)
+      statusError <<- append(statusError, paste("Errors:", substr(e$message, 1, 50), "..."))
+    })
+} else {SymbolsDT <- data.table()}
+
+
+### MT4 
+resultsmt4 <- data.table()
+resmt4 <- data.table()
+if (length(config$database_connections[["mt4"]])>0){
+  for(db in names(config$database_connections[["mt4"]])) {
+tryCatch({
+Credsmt4 <- config$database_connections$mt4[[db]] 
+resmt4 <- getMT4tradesPeriod(Credsmt4, From, To, TimeOffset)
+print(db)
+print(nrow(resmt4))
+resultsmt4 <- rbind(resultsmt4, resmt4)
+         }, error = function(e){
+    print(e)
+    statusError <<- append(statusError, paste(db, substr(e$message, 1, 70), "..."))
+                               } #e
+        ) #tryCatch
+ } #for
+} #if
+
+### MT5
+resultsmt5 <- data.table()
+resmt5 <- data.table()
+if (length(config$database_connections[["mt5"]])>0){
+  for(db in names(config$database_connections[["mt5"]])) {
+tryCatch({
+Credsmt5 <- config$database_connections$mt5[[db]] 
+resmt5 <- getMT5dealsPeriod(Credsmt5, From, To, TimeOffset)
+print(db)
+print(nrow(resmt5))
+resultsmt5 <- rbind(resultsmt5, resmt5)
+         }, error = function(e){
+     print(e)
+     statusError <<- append(statusError, paste(db, substr(e$message, 1, 70), "..."))
+                               } #e
+        ) #tryCatch
+ } #for
+} #if
+
+
+###TTlive
+resultstt <- data.table()
+restt <- data.table()
+if (length(config$database_connections[["tt"]])>0){
+  for(db in names(config$database_connections[["tt"]])) {
+    tryCatch({
+      Credstt <- config$database_connections$tt[[db]]
+      restt <- getttdealsPeriod(Credstt, From, To)
+      print(db)
+      print(nrow(restt))
+      resultstt <- rbind(resultstt, restt)
+    }, error = function(e){
+      print(e)
+      statusError <<- append(statusError, paste(db, substr(e$message, 1, 70), "..."))
+    } #e
+    ) #tryCatch
+  } #for
+} #if
+
+
+Totalresults <- rbind(resultstt, resultsmt4, resultsmt5)
+# Apply filters from setups
+Totalresults <- Totalresults[!LOGIN %in% config$business_parameters$excluded_users]
+Totalresults <- Totalresults[!SYMBOL %in% config$business_parameters$excluded_symbols]
+
+Totalresults[, Side := ifelse(CMD==0, "Buy", "Sell")]
+Totalresults[symbolsetups, c("Volthreshold") := .(i.minVolFilter), on = .(SYMBOL = symbol_name)]
+
+#no setups symbols vector
+MissedSymbols <- sort(unique(Totalresults[is.na(Volthreshold), SYMBOL]))
+if (length(MissedSymbols)>0){
+  statusError <<- append(statusError, paste("MissedSymbols: ", paste(MissedSymbols, collapse = ", ")))
+}
+
+BigDealsDT <- Totalresults[VOLUMElot>=Volthreshold, .(DB, LOGIN, SYMBOL, VOLUMElot, ID, TICKET, Side)][order(DB, LOGIN, SYMBOL, TICKET)]
+BigDealsDT[, DataText:= paste(LOGIN, DB, SYMBOL, VOLUMElot, "lots", Side, "ID=", ID, paste0("(",TICKET,")"))]
+
+
+#### SEND TO HSM 
+#[3], 3 -test  [1] real
+tryCatch({
+  if(length(statusError) > 0){ 
+    UpdateBoolSensorValue(productKey = config$monitoring$connection$productKey,  address = config$monitoring$connection$address, port = config$monitoring$connection$port, 
+                          path = config$monitoring$connection$path[2],
+                          TRUE,
+                          status = 1, comment = paste("!!!!NEW__BIG_DEALS:\n", paste(statusError, collapse = "; "))) 
+  } #send hsm notify only if was some errors (OK green)
+  
+  if(nrow(BigDealsDT) > 0){
+    
+    UpdateIntSensorValue(productKey = config$monitoring$connection$productKey,  address = config$monitoring$connection$address, port = config$monitoring$connection$port, 
+                         path = config$monitoring$connection$path[3], #3 -test
+                         value = nrow(BigDealsDT),
+                         status = 1, comment = paste("\n", paste(BigDealsDT[, DataText], collapse= ";\n"), sep = "")
+    )   
+  } else {  #if nrow(resulttable)==0
+    
+    UpdateIntSensorValue(productKey = config$monitoring$connection$productKey,  address = config$monitoring$connection$address, port = config$monitoring$connection$port, 
+                         path = config$monitoring$connection$path[3], #3 -test
+                         value = 0, status = 1, comment = "") #No big lots
+  }
+}, error = function(e){
+  print(e)
+}) #tryCatch
+
+writeLines(format(To, "%Y-%m-%dT%H:%M:%S%z"), "last_run.txt")
+
+######
+all_cons <- dbListConnections(MySQL())
+for (con in all_cons) {dbDisconnect(con)}
+
+print(From)
+print(To)
+return(TRUE)
+}
