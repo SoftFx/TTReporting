@@ -7,11 +7,10 @@ suppressPackageStartupMessages({
   library(jsonlite)
 })
 source('task_Big_Deals.R')
-#cfg_path   <- "/config/config.yaml"  # read-only bind mount
-#state_path <- "/data/state.json"     # read-write bind mount
+cfg_path   <- "./config/config.yaml"  # read-only bind mount
+state_path <- "./data/state.json"     # read-write bind mount
 res <- NULL
-cfg_path   <- "./conf.yaml"  # read-only bind mount
-state_path <- "../../run/state.json"     # read-write bind mount
+
 `%||%` <- function(a,b) if (is.null(a)) b else a
 
 to_iso_utc <- function(x) strftime(x, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
