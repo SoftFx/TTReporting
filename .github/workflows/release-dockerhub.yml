@@ -89,7 +89,8 @@ jobs:
 
       - name: Echo digest tag
         if: ${{ steps.build.outputs.digest != '' }}
-        run: echo "Pushed: ${{ env.IMAGE }}:sha256-${{ steps.build.outputs.digest[8:20] }}-${{ matrix.suffix }}"
+        run: |
+          echo "Pushed: ${{ env.IMAGE }}:sha256-${{ steps.build.outputs.digest[8:20] }}-${{ matrix.suffix }}"
 
       - name: Echo published image
         if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && (inputs.variant == 'all' || matrix.name == inputs.variant)) }}
