@@ -65,7 +65,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ env.IMAGE }}:${{ steps.ver.outputs.calver }}-${{ matrix.suffix }}   # ← базовый CalVer
+            ${{ env.IMAGE }}:${{ steps.ver.outputs.calver }}-${{ matrix.suffix }}
             ${{ env.IMAGE }}:latest-${{ matrix.suffix }}
             ${{ env.IMAGE }}:sha-${{ steps.shortsha.outputs.short }}-${{ matrix.suffix }}
           labels: |
@@ -79,10 +79,10 @@ jobs:
         shell: bash
         run: |
           IMAGE="${{ env.IMAGE }}"
-          DIGEST='${{ steps.build.outputs.digest }}'     # например: sha256:abcde123...
-          D="${DIGEST#sha256:}"                          # убрать префикс
-          SHORT="${D:0:12}"                              # укоротим для читабельности
-          # Привяжем ещё один тег к уже опубликованному манифесту
+          DIGEST='${{ steps.build.outputs.digest }}'     # example: sha256:abcde123...
+          D="${DIGEST#sha256:}"                          # remove prefix
+          SHORT="${D:0:12}"                              # just shorter
+          # link this tag too
           docker buildx imagetools create \
             -t "${IMAGE}:sha256-${SHORT}-${{ matrix.suffix }}" \
             "${IMAGE}@${DIGEST}"
@@ -92,9 +92,9 @@ jobs:
         id: dig
         shell: bash
         run: |
-           d="${{ steps.build.outputs.digest }}"      # обычно вида sha256:XXXXXXXXXXXXXXXX...
-           d="${d#sha256:}"                           # обрезаем префикс 'sha256:'
-           echo "short=${d:0:12}" >> "$GITHUB_OUTPUT" # первые 12 символов
+           d="${{ steps.build.outputs.digest }}"      # as sha256:XXXXXXXXXXXXXXXX...
+           d="${d#sha256:}"                           # remove prefix 'sha256:'
+           echo "short=${d:0:12}" >> "$GITHUB_OUTPUT" # first 12 symbols
 
       - name: Echo published image
         if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && (inputs.variant == 'all' || matrix.name == inputs.variant)) }}
