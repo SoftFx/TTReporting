@@ -42,12 +42,36 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Compute CalVer
+      - name: Compute CalVer (daily seq; omit .N when N=1)
         id: ver
+        env:
+            GH_TOKEN: ${{ github.token }}           # built-in GitHub token
+            WORKFLOW_FILE: release-dockerhub.yml    # workflow filename
         shell: bash
         run: |
+          set -euo pipefail
           date_tag=$(date -u +'%Y.%m.%d')
-          echo "calver=${date_tag}.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          today=$(date -u +'%Y-%m-%d')
+          repo="${GITHUB_REPOSITORY}"
+
+        # Fetch the last 100 runs of this workflow
+          resp="$(curl -sSL \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${repo}/actions/workflows/${WORKFLOW_FILE}/runs?per_page=100")"
+
+          # Count how many runs were created today (UTC)
+          count_today=$(jq -r --arg d "$today" '[.workflow_runs[] | select(.created_at | startswith($d))] | length' <<<"$resp")
+
+          # The current run will be the next one
+          seq=$((count_today + 1))
+
+          # If this is the first build of the day, omit the .N suffix
+          if [[ "$seq" -le 1 ]]; then
+            echo "calver=${date_tag}" >> "$GITHUB_OUTPUT"
+          else
+            echo "calver=${date_tag}.${seq}" >> "$GITHUB_OUTPUT"
+         fi
 
       - name: Compute short SHA
         id: shortsha
