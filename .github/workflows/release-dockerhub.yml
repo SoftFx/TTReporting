@@ -54,7 +54,7 @@ jobs:
           today=$(date -u +'%Y-%m-%d')
           repo="${GITHUB_REPOSITORY}"
 
-        # Fetch the last 100 runs of this workflow
+          # Fetch the last 100 runs of this workflow
           resp="$(curl -sSL \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
@@ -71,7 +71,7 @@ jobs:
             echo "calver=${date_tag}" >> "$GITHUB_OUTPUT"
           else
             echo "calver=${date_tag}.${seq}" >> "$GITHUB_OUTPUT"
-         fi
+          fi
 
       - name: Compute short SHA
         id: shortsha
