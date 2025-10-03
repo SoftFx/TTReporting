@@ -7,8 +7,12 @@ suppressPackageStartupMessages({
   library(jsonlite)
 })
 source('task_Big_Deals.R')
-cfg_path   <- "./config/config.yaml"  # read-only bind mount
-state_path <- "./data/state.json"     # read-write bind mount
+cfg_path   <- "./configDocker/config.yaml"  # read-only bind mount
+state_path <- "./dataDocker/state.json"     # read-write bind mount
+symbols_setup_path <- "./configDocker/symbols_setup.cav"     # read-write bind mount
+last_run <- "./dataDocker/last_run.txt"     # read-write bind mount
+
+########################################################################
 res <- NULL
 
 `%||%` <- function(a,b) if (is.null(a)) b else a

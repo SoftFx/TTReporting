@@ -38,4 +38,6 @@ secrets/
 *.key
 *.p12
 *.crt
+configDocker/
+dataDocker/
 

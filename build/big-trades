@@ -1,35 +1,53 @@
-# Base R image for Ubuntu; build CRAN packages from source
+# Base R image (Ubuntu-based)
 FROM rocker/r-ver:4.4.1
 
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /app
 
-# Toolchain and headers to compile from source
+# 1) Build toolchain + dev headers (to compile CRAN packages from source)
 RUN set -eux; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-      build-essential gfortran pkg-config \
-      libcurl4-openssl-dev libssl-dev libxml2-dev \
-      ca-certificates curl git; \
-    rm -rf /var/lib/apt/lists/*
+  apt-get update; \
+  apt-get install -y --no-install-recommends \
+    build-essential gfortran pkg-config \
+    libcurl4-openssl-dev libssl-dev libxml2-dev \
+    libpq-dev default-libmysqlclient-dev \
+    ca-certificates curl git; \
+  rm -rf /var/lib/apt/lists/*
 
-# Install required CRAN packages FROM SOURCE (yaml + jsonlite)
+# 2) Install CRAN packages from source and fail the build if anything is missing
 RUN set -eux; \
-    R -q -e "options(Ncpus=max(1L, parallel::detectCores()-1L)); \
-             install.packages(c('yaml','jsonlite'), repos='https://cloud.r-project.org', type='source')"
+  R -q -e "options(Ncpus=max(1L, parallel::detectCores()-1L)); \
+    pkgs <- c('yaml','jsonlite','RMySQL','RPostgres','data.table','lubridate','httr'); \
+    install.packages(pkgs, repos='https://cloud.r-project.org', type='source'); \
+    miss <- setdiff(pkgs, rownames(installed.packages())); \
+    if (length(miss)) stop('Missing after install: ', paste(miss, collapse=', '))"
 
-# Copy entrypoint script
+# 3) Application code
 COPY source/big-trades /app
-#RUN chmod +x /app/main.R
+# 3a) Common R code (shared helpers)
+RUN mkdir -p /common
+COPY source/common/ /common/
 
-# Strip dev toolchain (runtime doesn't need dev headers)
+# (optional) ensure readable in non-root runtime users
+RUN chmod -R a+rX /common
+
+
+# 4) Runtime libraries (MySQL client runtime for RMySQL + Postgres)
 RUN set -eux; \
-    apt-get purge -y --auto-remove \
-      build-essential gfortran pkg-config \
-      libcurl4-openssl-dev libssl-dev libxml2-dev; \
-    apt-get clean; \
-    rm -rf /var/lib/apt/lists/* /tmp/*; \
-    find /usr/local/lib/R/site-library -depth -type d \( -name help -o -name html -o -name doc -o -name examples -o -name tests \) -exec rm -rf {} +; \
-    find /usr/local/lib/R/site-library -type f -name 'NEWS*' -delete
+  apt-get update; \
+  apt-get install -y --no-install-recommends \
+    libmysqlclient21 libpq5 libcurl4 libssl3 libxml2; \
+  rm -rf /var/lib/apt/lists/*
+
+# 5) Strip build deps and clean cache
+RUN set -eux; \
+  apt-get purge -y --auto-remove \
+    build-essential gfortran pkg-config \
+    libcurl4-openssl-dev libssl-dev libxml2-dev \
+    libpq-dev default-libmysqlclient-dev; \
+  apt-get clean; \
+  rm -rf /var/lib/apt/lists/* /tmp/*; \
+  find /usr/local/lib/R/site-library -depth -type d \( -name help -o -name html -o -name doc -o -name examples -o -name tests \) -exec rm -rf {} +; \
+  find /usr/local/lib/R/site-library -type f -name 'NEWS*' -delete
 
 ENTRYPOINT ["Rscript","/app/main.R"]
