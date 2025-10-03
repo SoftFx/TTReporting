@@ -11,10 +11,10 @@ options(digits = 4)
 options(scipen=999)
 Sys.setenv("TZ" = "UTC")
 
-execute_task_big_deals <- function(config){
+execute_task_big_deals <- function(config, last_run_path, symbols_setup_path){
 #config <- yaml.load_file("./conf.yaml")
-last_run <- as.POSIXct(readLines("last_run.txt"), format = "%Y-%m-%dT%H:%M:%S%z", tz = "UTC")
-symbolsetups <- fread("symbol_setups.csv")
+last_run <- as.POSIXct(readLines(last_run_path), format = "%Y-%m-%dT%H:%M:%S%z", tz = "UTC")
+symbolsetups <- fread(symbols_setup_path)
 statusError <- NULL
 To <- now()
 
@@ -115,10 +115,12 @@ MissedSymbols <- sort(unique(Totalresults[is.na(Volthreshold), SYMBOL]))
 if (length(MissedSymbols)>0){
   statusError <<- append(statusError, paste("MissedSymbols: ", paste(MissedSymbols, collapse = ", ")))
 }
+print(MissedSymbols)
 
 BigDealsDT <- Totalresults[VOLUMElot>=Volthreshold, .(DB, LOGIN, SYMBOL, VOLUMElot, ID, TICKET, Side)][order(DB, LOGIN, SYMBOL, TICKET)]
 BigDealsDT[, DataText:= paste(LOGIN, DB, SYMBOL, VOLUMElot, "lots", Side, "ID=", ID, paste0("(",TICKET,")"))]
 
+print(BigDealsDT)
 
 #### SEND TO HSM 
 #[3], 3 -test  [1] real
@@ -147,7 +149,7 @@ tryCatch({
   print(e)
 }) #tryCatch
 
-writeLines(format(To, "%Y-%m-%dT%H:%M:%S%z"), "last_run.txt")
+writeLines(format(To, "%Y-%m-%dT%H:%M:%S%z"), last_run_path)
 
 ######
 all_cons <- dbListConnections(MySQL())

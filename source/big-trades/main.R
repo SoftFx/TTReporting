@@ -9,8 +9,8 @@ suppressPackageStartupMessages({
 source('task_Big_Deals.R')
 cfg_path   <- "./configDocker/config.yaml"  # read-only bind mount
 state_path <- "./dataDocker/state.json"     # read-write bind mount
-symbols_setup_path <- "./configDocker/symbols_setup.cav"     # read-write bind mount
-last_run <- "./dataDocker/last_run.txt"     # read-write bind mount
+symbols_setup_path <- "./configDocker/symbol_setups.csv"     # read-write bind mount
+last_run_path <- "./dataDocker/last_run.txt"     # read-write bind mount
 
 ########################################################################
 res <- NULL
@@ -32,7 +32,7 @@ if (!file.exists(cfg_path)) stop("Config not found at: ", cfg_path)
 cfg <- yaml.load_file(cfg_path)
 cat("=== CONFIG ===\n", toJSON(cfg, auto_unbox = TRUE, pretty = TRUE), "\n", sep = "")
 
-res <- execute_task_big_deals(config = cfg)
+res <- execute_task_big_deals(config = cfg, last_run_path, symbols_setup_path)
 res
 # 2) Load previous state (if any) and compute time since last run
 prev <- list()
