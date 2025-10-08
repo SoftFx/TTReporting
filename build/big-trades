@@ -17,7 +17,7 @@ RUN set -eux; \
 # 2) Install CRAN packages from source and fail the build if anything is missing
 RUN set -eux; \
   R -q -e "options(Ncpus=max(1L, parallel::detectCores()-1L)); \
-    pkgs <- c('yaml','jsonlite','RMySQL','RPostgres','data.table','lubridate','httr'); \
+    pkgs <- c('yaml','jsonlite','RMariaDB','RPostgres','data.table','lubridate','httr'); \
     install.packages(pkgs, repos='https://cloud.r-project.org', type='source'); \
     miss <- setdiff(pkgs, rownames(installed.packages())); \
     if (length(miss)) stop('Missing after install: ', paste(miss, collapse=', '))"

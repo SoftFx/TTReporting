@@ -1,6 +1,6 @@
 services:
   big-trades-example:
-    image: softfx/tt-reporting-big-trades:latest22
+    image: softfx/tt-reporting-big-trades:latest
     volumes:
       - ./app/configDocker:/app/configDocker:ro
       - ./app/dataDocker:/app/dataDocker:rw
