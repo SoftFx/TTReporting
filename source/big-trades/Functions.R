@@ -1,6 +1,6 @@
 #get meta time offset (from mt5)
 META5Timeoffset <- function(dbCreds){
-  db<-dbConnect(MySQL(), dbname=dbCreds$dbname, user=dbCreds$user, password=dbCreds$password, host=dbCreds$host, port=dbCreds$port)
+  db<-dbConnect(RMariaDB::MariaDB(), dbname=dbCreds$dbname, user=dbCreds$user, password=dbCreds$password, host=dbCreds$host, port=dbCreds$port)
   query <- sprintf("select * from mt5_time")
   rs = dbSendQuery(db, query)
   mt5_time = dbFetch(rs, -1)
@@ -140,7 +140,7 @@ order by "TrTime" DESC')
 
 ### MT4 
 getMT4tradesPeriod <- function(dbCreds, From, To, TimeOffset){
-  dbcon<-dbConnect(MySQL(), dbname=dbCreds$dbname, user=dbCreds$user, password=dbCreds$password, host=dbCreds$host, port=dbCreds$port)
+  dbcon<-dbConnect(RMariaDB::MariaDB(), dbname=dbCreds$dbname, user=dbCreds$user, password=dbCreds$password, host=dbCreds$host, port=dbCreds$port)
   From <- as.character(From + minutes(TimeOffset))  
   To <- as.character(To + minutes(TimeOffset))
   query1 <- sprintf("SELECT mt4_trades.TICKET, mt4_trades.OPEN_TIME, mt4_trades.LOGIN, mt4_trades.SYMBOL, mt4_trades.CMD, mt4_trades.VOLUME,
@@ -162,7 +162,7 @@ getMT4tradesPeriod <- function(dbCreds, From, To, TimeOffset){
 
 ### MT5
 getMT5dealsPeriod <- function(dbCreds, From, To, TimeOffset){
-  dbcon<-dbConnect(MySQL(), dbname=dbCreds$dbname, user=dbCreds$user, password=dbCreds$password, host=dbCreds$host, port=dbCreds$port)
+  dbcon<-dbConnect(RMariaDB::MariaDB(), dbname=dbCreds$dbname, user=dbCreds$user, password=dbCreds$password, host=dbCreds$host, port=dbCreds$port)
   From <- as.character(From + minutes(TimeOffset))  
   To <- as.character(To + minutes(TimeOffset))
   query <- sprintf(paste("select mt5_deals.Deal, mt5_deals.Time, mt5_deals.Login, mt5_deals.Symbol, mt5_deals.Action, mt5_deals.Volume, 

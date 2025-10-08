@@ -1,4 +1,5 @@
-library(RMySQL)
+#library(RMySQL)
+library(RMariaDB)
 library(RPostgres)
 library(data.table)
 library(lubridate)
@@ -152,8 +153,6 @@ tryCatch({
 writeLines(format(To, "%Y-%m-%dT%H:%M:%S%z"), last_run_path)
 
 ######
-all_cons <- dbListConnections(MySQL())
-for (con in all_cons) {dbDisconnect(con)}
 
 print(From)
 print(To)
