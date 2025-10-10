@@ -12,9 +12,13 @@ options(digits = 4)
 options(scipen=999)
 Sys.setenv("TZ" = "UTC")
 
-execute_task_big_deals <- function(config, last_run_path, symbols_setup_path){
+execute_task_big_deals <- function(config, last_run_path, symbols_setup_path, task_exec_log_path){
 #config <- yaml.load_file("./conf.yaml")
-last_run <- as.POSIXct(readLines(last_run_path), format = "%Y-%m-%dT%H:%M:%S%z", tz = "UTC")
+  if (file.exists(last_run_path)){
+    last_run <- as.POSIXct(readLines(last_run_path), format = "%Y-%m-%dT%H:%M:%S%z", tz = "UTC")} else{
+      file.create(last_run_path)
+      last_run <- NA
+    }
 symbolsetups <- fread(symbols_setup_path)
 statusError <- NULL
 To <- now()
@@ -122,7 +126,20 @@ BigDealsDT <- Totalresults[VOLUMElot>=Volthreshold, .(DB, LOGIN, SYMBOL, VOLUMEl
 BigDealsDT[, DataText:= paste(LOGIN, DB, SYMBOL, VOLUMElot, "lots", Side, "ID=", ID, paste0("(",TICKET,")"))]
 
 print(BigDealsDT)
-
+ if (nrow(BigDealsDT)== 0) {
+   task_res <- data.table(
+     DB        = NA_character_,
+     LOGIN     = NA_integer_, 
+     SYMBOL    = NA_character_,
+     VOLUMElot = NA_real_,
+     ID        = NA_real_,
+     TICKET   = NA_integer_, 
+     Side     = NA_character_, 
+     DataText = NA_character_, 
+     from = From, to = To, err = paste(statusError, collapse = "; "))
+    } else { 
+   task_res <- BigDealsDT[, `:=`(from = From, to = To, err = paste(statusError, collapse = "; "))]
+   }
 #### SEND TO HSM 
 #[3], 3 -test  [1] real
 tryCatch({
@@ -152,9 +169,13 @@ tryCatch({
 
 writeLines(format(To, "%Y-%m-%dT%H:%M:%S%z"), last_run_path)
 
+if (file.exists(task_exec_log_path)){
+  fwrite(task_res, task_exec_log_path, append = TRUE)} else {
+    fwrite(task_res, task_exec_log_path)
+  }
 ######
 
 print(From)
 print(To)
-return(TRUE)
+return(list(TRUE, From, To))
 }

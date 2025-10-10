@@ -11,7 +11,7 @@ cfg_path   <- "./configDocker/config.yaml"  # read-only bind mount
 state_path <- "./dataDocker/state.json"     # read-write bind mount
 symbols_setup_path <- "./configDocker/symbol_setups.csv"     # read-write bind mount
 last_run_path <- "./dataDocker/last_run.txt"     # read-write bind mount
-
+task_exec_log_path <- "./dataDocker/task_exec_log.csv"
 ########################################################################
 res <- NULL
 
@@ -32,8 +32,9 @@ if (!file.exists(cfg_path)) stop("Config not found at: ", cfg_path)
 cfg <- yaml.load_file(cfg_path)
 cat("=== CONFIG ===\n", toJSON(cfg, auto_unbox = TRUE, pretty = TRUE), "\n", sep = "")
 
-res <- execute_task_big_deals(config = cfg, last_run_path, symbols_setup_path)
+res <- execute_task_big_deals(config = cfg, last_run_path, symbols_setup_path, task_exec_log_path)
 res
+task_period <- paste("From:", res[[2]], "To:", res[[3]])
 # 2) Load previous state (if any) and compute time since last run
 prev <- list()
 if (file.exists(state_path)) {
@@ -60,6 +61,7 @@ state <- list(
   executed_at        = to_iso_utc(t_end),
   duration_sec       = duration_sec,
   since_last_run_sec = since_last_run_sec,
+  task_period        = task_period,
   run_count          = as.integer((prev$run_count %||% 0) + 1L)
 )
 write_json(state, state_path, auto_unbox = TRUE, pretty = TRUE)
