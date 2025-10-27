@@ -80,7 +80,7 @@ join "Symbols" as s on p."Symbol" = s."Name"
 join "Accounts" as a on p."AccountFk" = a."Id"')
   openedpos <- GetDataFromDB(DBCON, querry1)
   openedpos <- as.data.table(openedpos)
-  NEWorders <- openedpos[AccType=="Gross" & Created >= From,
+  NEWorders <- openedpos[AccType=="Gross" & Created >= From & Created < To,
                       .("TICKET"= Id, "OPEN_TIME" = Created, "LOGIN"=Login, "SYMBOL"=Symbol, "CMD" = Side, "VOLUME" = Amount, 
                         "NAME" = Name, "GROUP" = Group, "CURRENCY" = Currency, "LEVERAGE" = Leverage, "ID" = InternalComment, "VOLUMElot" = Amount/ContractSize )]
   
@@ -118,7 +118,7 @@ join "Accounts" as a on p."AccountFk" = a."Id"')
 from "TradeReports" as tr	   
 join "Accounts" as a on tr."AccountFk" = a."Id"
 join "Symbols" as s on tr."Symbol" = s."Name"
-where "TrTime" >= ', quoteString(From),' and tr."TrType" in(3,4)
+where "TrTime" >= ', quoteString(From),' and "TrTime" < ', quoteString(To),' and tr."TrType" in(3,4)
 order by "TrTime" DESC')
   trades <- GetDataFromDB(DBCON, querry2)
   trades <- as.data.table(trades)  
