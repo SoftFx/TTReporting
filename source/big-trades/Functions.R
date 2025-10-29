@@ -81,7 +81,7 @@ join "Accounts" as a on p."AccountFk" = a."Id"')
   openedpos <- GetDataFromDB(DBCON, querry1)
   openedpos <- as.data.table(openedpos)
   NEWorders <- openedpos[AccType=="Gross" & Created >= From & Created < To,
-                      .("TICKET"= Id, "OPEN_TIME" = Created, "LOGIN"=Login, "SYMBOL"=Symbol, "CMD" = Side, "VOLUME" = Amount, 
+                      .("TICKET"= Id, "OPEN_TIME" = Created, "OPEN_PRICE" = Price, "LOGIN"=Login, "SYMBOL"=Symbol, "CMD" = Side, "VOLUME" = Amount, 
                         "NAME" = Name, "GROUP" = Group, "CURRENCY" = Currency, "LEVERAGE" = Leverage, "ID" = InternalComment, "VOLUMElot" = Amount/ContractSize )]
   
   #get trades in period
@@ -125,7 +125,7 @@ order by "TrTime" DESC')
   trades[AccType=="Gross", OPEN_TIME := PosOpened]
   trades[AccType=="Net", OPEN_TIME := TrTime] #&is.na(PosClosed) - we exclude deals when position closed
   trades[, VOLUME := ifelse(AccType=="Gross", PosLastAmount, OrderLastFillAmount)]
-  NEWtrades <- trades[OPEN_TIME >= From, .("TICKET"= OrderId, OPEN_TIME, "LOGIN"=Login, "SYMBOL"=Symbol, "CMD" = Side, VOLUME, 
+  NEWtrades <- trades[OPEN_TIME >= From, .("TICKET"= OrderId, OPEN_TIME, "OPEN_PRICE" = PosOpenPrice, "LOGIN"=Login, "SYMBOL"=Symbol, "CMD" = Side, VOLUME, 
                                            "NAME" = Name, "GROUP" = Group, "CURRENCY" = BalanceCurrency, "LEVERAGE" = Leverage, "ID" = InternalComment, "VOLUMElot" = VOLUME/ContractSize)]
   setDefaultSchema()
   DissconnectFromDB()
@@ -143,7 +143,7 @@ getMT4tradesPeriod <- function(dbCreds, From, To, TimeOffset){
   dbcon<-dbConnect(RMariaDB::MariaDB(), dbname=dbCreds$dbname, user=dbCreds$user, password=dbCreds$password, host=dbCreds$host, port=dbCreds$port)
   From <- as.character(From + minutes(TimeOffset))  
   To <- as.character(To + minutes(TimeOffset))
-  query1 <- sprintf("SELECT mt4_trades.TICKET, mt4_trades.OPEN_TIME, mt4_trades.LOGIN, mt4_trades.SYMBOL, mt4_trades.CMD, mt4_trades.VOLUME,
+  query1 <- sprintf("SELECT mt4_trades.TICKET, mt4_trades.OPEN_TIME, mt4_trades.OPEN_PRICE, mt4_trades.LOGIN, mt4_trades.SYMBOL, mt4_trades.CMD, mt4_trades.VOLUME,
                             mt4_users.`NAME`, mt4_users.`GROUP`, mt4_users.CURRENCY, mt4_users.LEVERAGE, mt4_users.ID
                    FROM mt4_trades
                    LEFT JOIN mt4_users
@@ -165,7 +165,7 @@ getMT5dealsPeriod <- function(dbCreds, From, To, TimeOffset){
   dbcon<-dbConnect(RMariaDB::MariaDB(), dbname=dbCreds$dbname, user=dbCreds$user, password=dbCreds$password, host=dbCreds$host, port=dbCreds$port)
   From <- as.character(From + minutes(TimeOffset))  
   To <- as.character(To + minutes(TimeOffset))
-  query <- sprintf(paste("select mt5_deals.Deal, mt5_deals.Time, mt5_deals.Login, mt5_deals.Symbol, mt5_deals.Action, mt5_deals.Volume, 
+  query <- sprintf(paste("select mt5_deals.Deal, mt5_deals.Time, mt5_deals.Price, mt5_deals.Login, mt5_deals.Symbol, mt5_deals.Action, mt5_deals.Volume, 
                          mt5_users.`Name`, mt5_users.`Group`, mt5_groups.Currency, mt5_users.Leverage, mt5_users.ID
                          from mt5_deals
                          left join mt5_users
@@ -179,8 +179,8 @@ getMT5dealsPeriod <- function(dbCreds, From, To, TimeOffset){
   dbClearResult(rs)
   dbDisconnect(dbcon)
   deals <- as.data.table(deals)
-  setnames(deals, old = c("Deal", "Time", "Login", "Symbol", "Action", "Volume", "Name", "Group", "Currency", "Leverage"), 
-           new = c("TICKET", "OPEN_TIME", "LOGIN", "SYMBOL", "CMD", "VOLUME", "NAME", "GROUP", "CURRENCY", "LEVERAGE"))
+  setnames(deals, old = c("Deal", "Time", "Price", "Login", "Symbol", "Action", "Volume", "Name", "Group", "Currency", "Leverage"), 
+           new = c("TICKET", "OPEN_TIME", "OPEN_PRICE", "LOGIN", "SYMBOL", "CMD", "VOLUME", "NAME", "GROUP", "CURRENCY", "LEVERAGE"))
   deals[, VOLUMElot := VOLUME/10000]
   deals[, ID := as.numeric(ID)]
   deals[, DB := dbCreds$dbname]

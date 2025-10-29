@@ -122,8 +122,9 @@ if (length(MissedSymbols)>0){
 }
 print(MissedSymbols)
 
-BigDealsDT <- Totalresults[VOLUMElot>=Volthreshold, .(DB, LOGIN, SYMBOL, VOLUMElot, ID, TICKET, Side)][order(DB, LOGIN, SYMBOL, TICKET)]
-BigDealsDT[, DataText:= paste(LOGIN, DB, SYMBOL, VOLUMElot, "lots", Side, "ID=", ID, paste0("(",TICKET,")"))]
+BigDealsDT <- Totalresults[VOLUMElot>=Volthreshold, .(DB, LOGIN, OPEN_PRICE, SYMBOL, VOLUMElot, ID, TICKET, Side)][order(DB, LOGIN, SYMBOL, TICKET)]
+BigDealsDT[, DataText:= paste(LOGIN, DB, SYMBOL, VOLUMElot, "lots", Side, "ID=", ID, paste0("[price=",OPEN_PRICE,"]"), paste0("(",TICKET,")"))]
+BigDealsDT[, OPEN_PRICE:=NULL]
 
 print(BigDealsDT)
  if (nrow(BigDealsDT)== 0) {
