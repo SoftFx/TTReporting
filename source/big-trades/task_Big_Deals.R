@@ -161,10 +161,11 @@ tryCatch({
   } else {  #if nrow(resulttable)==0
     
     UpdateIntSensorValue(productKey = config$monitoring$connection$productKey,  address = config$monitoring$connection$address, port = config$monitoring$connection$port, 
-                         path = config$monitoring$connection$path[3], #3 -test
+                         path = config$monitoring$connection$path[1], #3 -test
                          value = 0, status = 1, comment = "") #No big lots
   }
 }, error = function(e){
+  print("HSMconnErr:")
   print(e)
 }) #tryCatch
 
