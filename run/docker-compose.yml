@@ -1,6 +1,7 @@
 services:
   big-trades:
     image: softfx/tt-reporting:latest-big-trades
+    pull_policy: always
     volumes:
       - ./configDockerExample:/app/configDocker:ro
       - ./dataDockerExample:/app/dataDocker:rw
