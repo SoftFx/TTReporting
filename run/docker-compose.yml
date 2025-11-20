@@ -1,9 +1,9 @@
 services:
-  big-trades-example:
-    image: softfx/tt-reporting-big-trades:latest
+  big-trades:
+    image: softfx/tt-reporting:latest-big-trades
     volumes:
-      - ./app/configDockerExample:/app/configDocker:ro
-      - ./app/dataDockerExample:/app/dataDocker:rw
+      - ./configDockerExample:/app/configDocker:ro
+      - ./dataDockerExample:/app/dataDocker:rw
     restart: "no"
   big-trades-local:
     image: big-trades

@@ -154,7 +154,7 @@ tryCatch({
   if(nrow(BigDealsDT) > 0){
     addcomment <- paste("Big Deals for the previous", as.character(seconds_to_period(round(as.numeric(difftime(To, From), units = "secs"), 0))), ":")
     UpdateIntSensorValue(productKey = config$monitoring$connection$productKey,  address = config$monitoring$connection$address, port = config$monitoring$connection$port, 
-                         path = config$monitoring$connection$path[3], #3 -test
+                         path = config$monitoring$connection$path[1], #3 -test
                          value = nrow(BigDealsDT),
                          status = 1, comment = paste(addcomment, "\n", paste(BigDealsDT[, DataText], collapse= ";\n"), sep = "")
     )   

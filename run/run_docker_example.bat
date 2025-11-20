@@ -1,2 +1,2 @@
-docker compose run --rm big-trades-example
+docker compose run --rm big-trades
 pause
