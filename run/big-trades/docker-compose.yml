@@ -9,7 +9,7 @@ services:
   big-trades-local:
     image: big-trades
     volumes:
-      - ../source/big-trades/configDocker:/app/configDocker:ro
-      - ../source/big-trades/dataDocker:/app/dataDocker:rw
+      - ../../source/big-trades/configDocker:/app/configDocker:ro
+      - ../../source/big-trades/dataDocker:/app/dataDocker:rw
     restart: "no"
 

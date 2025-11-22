@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  cronicle:
+    image: bluet/cronicle-docker:latest
+    container_name: cronicle
+    hostname: cronicle
+
+    # Use host networking so Cronicle listens directly on the host ports
+    network_mode: host
+
+    volumes:
+      # Allow Cronicle to manage other Docker containers
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+
+      # Cronicle persistent data (jobs, state, settings)
+      - /opt/automation/cronicle/data:/opt/cronicle/data:rw
+
+      # Cronicle log files
+      - /opt/automation/cronicle/logs:/opt/cronicle/logs:rw
+
+      # Optional: custom plugins
+      - /opt/automation/cronicle/plugins:/opt/cronicle/plugins:rw
+
+      # Cronicle job scripts (wrappers, shell scripts)
+      - /opt/automation/cronicle/app:/app:rw
+
+      # All your one-shot job folders with docker-compose files
+      - /opt/automation/jobs:/opt/automation/jobs:rw
+
+
+    environment:
+      TZ: UTC
+      CRONICLE_foreground: "1"
+
+    # Ensure Cronicle restarts automatically when Docker or the machine restarts
+    restart: unless-stopped
+

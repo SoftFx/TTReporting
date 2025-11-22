@@ -1,0 +1,45 @@
+monitoring:
+  connection:
+    productKey: 111111111-aaaa-4673-8922-2222222
+    address: hsm.soft-fx.lv
+    port: 44330
+    paths:
+      - Big_Deals
+      - TasksErrors
+database_connections:
+  mt4:
+    mt4_ecn:
+      dbname: mt4_ecn
+      user: user1
+      password: password1
+      host: host1
+      port: 3306
+    mt4_bots_ecn:
+      dbname: mt4_bots_ecn
+      user: user2
+      password: password2
+      host: host2
+      port: 3306
+  mt5:
+    mt5_live:
+      dbname: mt5
+      user: user3
+      password: password3
+      host: host3
+      port: 3306
+  tt:
+    ttlive:
+      postgre_DB: ReportingServer
+      postgre_USER: pUser
+      postgre_PASSWORD: pPasword
+      postgre_HOST: pHost
+      postgre_SCHEMA: tts_ttlive
+business_parameters:
+  excluded_symbols:
+    - LTCBTC
+  excluded_users:
+    - 995
+    - 999
+    - 1995
+    - 1948
+    - 1999

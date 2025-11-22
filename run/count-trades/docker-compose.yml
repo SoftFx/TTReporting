@@ -1,0 +1,15 @@
+services:
+  count-trades:
+    image: softfx/tt-reporting:latest-count-trades
+    pull_policy: always
+    volumes:
+      - ./configDockerExample:/app/configDocker:ro
+      - ./dataDockerExample:/app/dataDocker:rw
+    restart: "no"
+  count-trades-local:
+    image: count-trades
+    volumes:
+      - ../../source/count-trades/configDocker:/app/configDocker:ro
+      - ../../source/count-trades/dataDocker:/app/dataDocker:rw
+    restart: "no"
+

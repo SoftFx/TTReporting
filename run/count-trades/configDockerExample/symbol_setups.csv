@@ -1,0 +1,805 @@
+symbol_name,Precision,Description,ContractSize,MarginMode,security,MarginCurrency,ProfitCurrency,minVolFilter
+XNGUSD,3,US Natural Gas (Spot) (XNGUSD),10000,1,CFD Gas Spot,XNG,USD,5
+EURUSD,5,Euro vs US Dollar,100000,0,ECN FX Group1,EUR,USD,5
+EURAUD,5,Euro vs Australian Dollar,100000,0,ECN FX Group2,EUR,AUD,5
+USDCAD,5,USD Dollar vs Canadian Dollar,100000,0,ECN FX Group1,USD,CAD,5
+USDCHF,5,US Dollar vs Swiss Franc,100000,0,ECN FX Group1,USD,CHF,5
+EURCAD,5,Euro vs Canadian Dollar,100000,0,ECN FX Group2,EUR,CAD,5
+CADJPY,3,Canadian Dollar vs Japanese Yen,100000,0,ECN FX Group2,CAD,JPY,5
+EURJPY,3,Euro vs Japanese Yen,100000,0,ECN FX Group2,EUR,JPY,5
+K,2,Kellogg Co. (K),1,1,US Stocks & ETFs,K,USD,100
+XYL,2,Xylem Inc. (XYL),1,1,US Stocks & ETFs,XYL,USD,100
+GBPJPY,3,Great Britain Pound vs Japanese Yen,100000,0,ECN FX Group2,GBP,JPY,5
+USDSEK,5,US Dollar vs Swedish Krona,100000,0,ECN FX Group2,USD,SEK,5
+USDNOK,5,US Dollar vs Norwegian Krone,100000,0,ECN FX Group2,USD,NOK,5
+AUDUSD,5,Australian Dollar vs US Dollar,100000,0,ECN FX Group1,AUD,USD,5
+CHFJPY,3,Swiss Franc vs Japanese Yen,100000,0,ECN FX Group2,CHF,JPY,5
+GBPCHF,5,Great Britain Pound vs Swiss Franc,100000,0,ECN FX Group2,GBP,CHF,5
+NZDUSD,5,New Zealand Dollar vs US Dollar,100000,0,ECN FX Group1,NZD,USD,5
+AUDNZD,5,Australian Dollar vs New Zealand Dollar,100000,0,ECN FX Group2,AUD,NZD,5
+EURCHF,5,Euro vs Swiss Franc,100000,0,ECN FX Group2,EUR,CHF,5
+GBPUSD,5,Great Britain Pound vs US Dollar,100000,0,ECN FX Group1,GBP,USD,5
+USDJPY,3,US Dollar vs Japanese Yen,100000,0,ECN FX Group1,USD,JPY,5
+AUDJPY,3,Australian Dollar vs Japanese Yen,100000,0,ECN FX Group2,AUD,JPY,5
+EURGBP,5,Euro vs Great Britain Pound,100000,0,ECN FX Group2,EUR,GBP,5
+EURNOK,5,Euro vs Norwegian Krone,100000,0,ECN FX Group2,EUR,NOK,5
+EURSEK,5,Euro vs Swedish Krona,100000,0,ECN FX Group2,EUR,SEK,5
+AUDCHF,5,Australian Dollar vs Swiss Franc,100000,0,ECN FX Group2,AUD,CHF,5
+CADCHF,5,Canadian Dollar vs Swiss Franc,100000,0,ECN FX Group2,CAD,CHF,5
+GBPAUD,5,Great Britain Pound vs Australian Dollar,100000,0,ECN FX Group2,GBP,AUD,5
+GBPCAD,5,Great Britain Pound vs Canadian Dollar,100000,0,ECN FX Group2,GBP,CAD,5
+GBPNZD,5,Great Britain Pound vs New Zealand Dollar,100000,0,ECN FX Group2,GBP,NZD,5
+NZDCAD,5,New Zealand Dollar vs Canadian Dollar,100000,0,ECN FX Group2,NZD,CAD,5
+NZDCHF,5,New Zealand Dollar vs Swiss Franc,100000,0,ECN FX Group2,NZD,CHF,5
+NZDJPY,3,New Zealand Dollar vs Japanese Yen,100000,0,ECN FX Group2,NZD,JPY,5
+EURNZD,5,Euro vs New Zealand Dollar,100000,0,ECN FX Group2,EUR,NZD,5
+AUDCAD,5,Australian Dollar vs Canadian Dollar,100000,0,ECN FX Group2,AUD,CAD,5
+GBPSGD,5,Great Britain Pound vs Singapore Dollar,100000,0,ECN FX Group2,GBP,SGD,5
+NZDSGD,5,New Zealand Dollar vs Singapore Dollar,100000,0,ECN FX Group2,NZD,SGD,5
+SGDJPY,3,Singapore Dollar vs Japanese Yen,100000,0,ECN FX Group2,SGD,JPY,5
+USDRUB,4,US Dollar vs Russian Ruble,100000,0,ECN FX Group2,USD,RUB,5
+EURDKK,5,Euro vs Danish Krone,100000,0,ECN FX Group2,EUR,DKK,5
+EURHKD,5,Euro vs Hong Kong Dollar,100000,0,ECN FX Group2,EUR,HKD,5
+EURPLN,5,Euro vs Polish Zloty,100000,0,ECN FX Group2,EUR,PLN,5
+EURTRY,5,Euro vs Turkish Lira,100000,0,ECN FX Group2,EUR,TRY,5
+HKDJPY,3,Hong Kong Dollar vs Japanese Yen,100000,0,ECN FX Group2,HKD,JPY,5
+NOKJPY,3,Norwegian Krone vs Japanese Yen,100000,0,ECN FX Group2,NOK,JPY,5
+NOKSEK,5,Norwegian Krone vs Swedish Krone,100000,0,ECN FX Group2,NOK,SEK,5
+USDDKK,5,US Dollar vs Danish Krone,100000,0,ECN FX Group2,USD,DKK,5
+USDHKD,5,US Dollar vs Hong Kong Dollar,100000,0,ECN FX Group2,USD,HKD,5
+USDMXN,5,US Dollar vs Mexican Peso,100000,0,ECN FX Group2,USD,MXN,5
+USDPLN,5,US Dollar vs Polish Zloty,100000,0,ECN FX Group2,USD,PLN,5
+USDSGD,5,US Dollar vs Singapore Dollar,100000,0,ECN FX Group2,USD,SGD,5
+USDTRY,5,US Dollar vs Turkish Lira,100000,0,ECN FX Group2,USD,TRY,5
+USDCNH,4,US Dollar vs Chinese Offshore Yuan,100000,0,ECN FX Group2,USD,CNH,5
+#UK100,1,FTSE 100 Index (UKX),10,1,CFD Index 1,UKX,GBP,5
+#GDAXIm,1,DAX 40 Index (GDAXI),10,1,CFD Index 1,DA1,EUR,5
+#FCHI,1,CAC 40 Index (FCHI),10,1,CFD Index 1,CAC,EUR,5
+#J225,0,Nikkei 225 Index (N225),1000,1,CFD Index 1,NKY,JPY,5
+XAUUSD,2,Gold Spot (XAUUSD),100,4,ECN Metals,XAU,USD,2
+XAGUSD,3,Silver Spot (XAGUSD),5000,4,ECN Metals,XAG,USD,5
+#ESX50,1,Eurostoxx 50 Index (SX5E),10,1,CFD Index 1,ESX,EUR,5
+XBRUSD,2,UK Brent (Spot) (XBRUSD),1000,1,CFD Oil Spot,XBR,USD,5
+XTIUSD,2,US WTI Crude (Spot) (XTIUSD),1000,1,CFD Oil Spot,XTI,USD,5
+ADAUSD,4,Cardano (ADA) vs US Dollar,1,1,CFD Crypto,ADA,USD,10000
+ATOMUSD,4,Cosmos (ATOM) vs US Dollar,1,1,CFD Crypto,ATOM,USD,1000
+MBTUSD,3,milliBitCoin vs US Dollar (MBTUSD),1,0,Crypto Indicative,MBT,USD,5
+GLDUSD,5,GLD vs US Dollar,100,0,Forex Indicative,GLD,USD,5
+AVAXUSD,2,Avalanche (AVA) vs US Dollar,1,1,CFD Crypto,AVAX,USD,500
+BCHUSD,3,Bitcoin Cash vs US Dollar (BCHUSD),1,1,CFD Crypto,BCH,USD,20
+BTCUSD,3,BitCoin vs US Dollar (BTCUSD),1,1,CFD Crypto Bitcoin,BTC,USD,1
+DOGEUSD,5,Dogecoin (DOGE) vs US Dollar,1,1,CFD Crypto,DOGE,USD,10000
+USDBRL,3,US Dollar to Brazilian Real,100000,0,Rates,USD,BRL,5
+USDIDR,3,US Dollar to Indonesian Rupiah,100000,0,Rates,USD,IDR,5
+USDINR,3,US Dollar to Indian Rupee,100000,0,Rates,USD,INR,5
+USDKRW,3,US Dollar to South Korean Won,100000,0,Rates,USD,KRW,5
+USDPHP,3,US Dollar to Philippine Peso,100000,0,Rates,USD,PHP,5
+USDTWD,3,US Dollar to Taiwan New Dollar,100000,0,Rates,USD,TWD,5
+DOTUSD,4,Polkadot (DOT) vs US Dollar,1,1,CFD Crypto,DOT,USD,1000
+USDTHB,3,US Dollar to Thailand Baht,100000,0,Rates,USD,THB,5
+DSHUSD,3,DASH vs US Dollar (DSHUSD),1,1,CFD Crypto,DSH,USD,500
+TSLA,2,Tesla Inc. (TSLA),1,1,US Stocks & ETFs,TSLA,USD,100
+AAPL,2,Apple Inc. (AAPL),1,1,US Stocks & ETFs,AAPL,USD,100
+BABA,2,Alibaba Group Holding Limited (BABA),1,1,US Stocks & ETFs,BABA,USD,100
+META,2,Meta Platforms Inc. Class A (META),1,1,US Stocks & ETFs,FB,USD,100
+GOOGL,2,Alphabet Inc. Class A (GOOGL),1,1,US Stocks & ETFs,GOOGL,USD,100
+IBKR,2,Interactive Brokers Group Inc. (IBKR),1,1,US Stocks & ETFs,IBKR,USD,100
+MSFT,2,Microsoft Corporation (MSFT),1,1,US Stocks & ETFs,MSFT,USD,100
+AMZN,2,Amazon.com Inc. (AMZN),1,1,US Stocks & ETFs,AMZN,USD,100
+NFLX,2,Netflix Inc. (NFLX),1,1,US Stocks & ETFs,NFLX,USD,100
+AMD,2,Advanced Micro Devices Inc. (AMD),1,1,US Stocks & ETFs,AMD,USD,100
+BIDU,2,Baidu Inc (BIDU),1,1,US Stocks & ETFs,BIDU,USD,100
+BAC,2,Bank of America Corp (BAC),1,1,US Stocks & ETFs,BAC,USD,100
+CSCO,2,Cisco Systems Inc. (CSCO),1,1,US Stocks & ETFs,CSCO,USD,100
+FTNT,2,Fortinet Inc (FTNT),1,1,US Stocks & ETFs,FTNT,USD,100
+C,2,Citigroup Inc. (C),1,1,US Stocks & ETFs,C,USD,100
+XOM,2,Exxon Mobil Corporation (XOM),1,1,US Stocks & ETFs,XOM,USD,100
+EBAY,2,eBay Inc. (EBAY),1,1,US Stocks & ETFs,EBAY,USD,100
+INTC,2,Intel Corporation (INTC),1,1,US Stocks & ETFs,INTC,USD,100
+JPM,2,JPMorgan Chase & Co. (JPM),1,1,US Stocks & ETFs,JPM,USD,100
+NIO,2,NIO Inc. (NIO),1,1,US Stocks & ETFs,NIO,USD,100
+NVDA,2,NVIDIA Corporation (NVDA),1,1,US Stocks & ETFs,NVDA,USD,100
+QCOM,2,QUALCOMM Inc. (QCOM),1,1,US Stocks & ETFs,QCOM,USD,100
+SQM,2,Sociedad Quimica y Minera S.A. (SQM),1,1,US Stocks & ETFs,SQM,USD,100
+WFC,2,Wells Fargo & Co (WFC),1,1,US Stocks & ETFs,WFC,USD,100
+UBER,2,Uber Technologies Inc. (UBER),1,1,US Stocks & ETFs,UBER,USD,100
+725,2,BOE Technology Group Co Ltd (000725),1,1,CN Stocks,725,CNH,5
+BA,2,Boeing Co (BA),1,1,US Stocks & ETFs,BA,USD,100
+SSYS,2,Stratasys Ltd (SSYS),1,1,US Stocks & ETFs,SSYS,USD,100
+MTLS,2,Materialise NV (MTLS),1,1,US Stocks & ETFs,MTLS,USD,100
+FSLR,2,First Solar Inc (FSLR),1,1,US Stocks & ETFs,FSLR,USD,100
+ILMN,2,Illumina Inc (ILMN),1,1,US Stocks & ETFs,ILMN,USD,100
+NTLA,2,Intellia Therapeutics Inc (NTLA),1,1,US Stocks & ETFs,NTLA,USD,100
+CGC,2,Canopy Growth Corp (CGC),1,1,US Stocks & ETFs,CGC,USD,100
+ACB,2,Aurora Cannabis Inc (ACB),1,1,US Stocks & ETFs,ACB,USD,100
+CRON,2,Cronos Group Inc (CRON),1,1,US Stocks & ETFs,CRON,USD,100
+TDOC,2,Teladoc Health Inc (TDOC),1,1,US Stocks & ETFs,TDOC,USD,100
+BWA,2,BorgWarner Inc (BWA),1,1,US Stocks & ETFs,BWA,USD,100
+CVNA,2,Carvana Co (CVNA),1,1,US Stocks & ETFs,CVNA,USD,100
+JMIA,2,Jumia Technologies AG (JMIA),1,1,US Stocks & ETFs,JMIA,USD,100
+BYND,2,Beyond Meat Inc (BYND),1,1,US Stocks & ETFs,BYND,USD,100
+PANW,2,Palo Alto Networks Inc (PANW),1,1,US Stocks & ETFs,PANW,USD,100
+RMD,2,ResMed Inc (RMD),1,1,US Stocks & ETFs,RMD,USD,100
+IONS,2,Ionis Pharmaceuticals Inc (IONS),1,1,US Stocks & ETFs,IONS,USD,100
+A,2,Agilent Technologies Inc. (A),1,1,US Stocks & ETFs,A,USD,100
+AAL,2,American Airlines Group Inc. (AAL),1,1,US Stocks & ETFs,AAL,USD,100
+AAP,2,Advance Auto Parts Inc. (AAP),1,1,US Stocks & ETFs,AAP,USD,100
+ABBV,2,AbbVie Inc. (ABBV),1,1,US Stocks & ETFs,ABBV,USD,100
+COR,2,Cencora Inc. (COR),1,1,US Stocks & ETFs,ABC,USD,100
+ABT,2,Abbott Laboratories (ABT),1,1,US Stocks & ETFs,ABT,USD,100
+ACN,2,Accenture Plc Class A (ACN),1,1,US Stocks & ETFs,ACN,USD,100
+ADBE,2,Adobe Inc. (ADBE),1,1,US Stocks & ETFs,ADBE,USD,100
+ADI,2,Analog Devices Inc. (ADI),1,1,US Stocks & ETFs,ADI,USD,100
+ADM,2,Archer-Daniels-Midland Co. (ADM),1,1,US Stocks & ETFs,ADM,USD,100
+ADP,2,Automatic Data Processing Inc. (ADP),1,1,US Stocks & ETFs,ADP,USD,100
+ADS,2,Bread Financial Holdings Inc. (BFH),1,1,US Stocks & ETFs,ADS,USD,100
+ADSK,2,Autodesk Inc. (ADSK),1,1,US Stocks & ETFs,ADSK,USD,100
+AEE,2,Ameren Corp. (AEE),1,1,US Stocks & ETFs,AEE,USD,100
+AEP,2,American Electric Power Co. Inc. (AEP),1,1,US Stocks & ETFs,AEP,USD,100
+AES,2,AES Corp. (AES),1,1,US Stocks & ETFs,AES,USD,100
+AFL,2,Aflac Inc. (AFL),1,1,US Stocks & ETFs,AFL,USD,100
+AIG,2,American International Group Inc. (AIG),1,1,US Stocks & ETFs,AIG,USD,100
+AIV,2,Apartment Investment and Management Co. Class A (AIV),1,1,US Stocks & ETFs,AIV,USD,100
+AIZ,2,Assurant Inc. (AIZ),1,1,US Stocks & ETFs,AIZ,USD,100
+AJG,2,Arthur J. Gallagher & Co. (AJG),1,1,US Stocks & ETFs,AJG,USD,100
+AKAM,2,Akamai Technologies Inc. (AKAM),1,1,US Stocks & ETFs,AKAM,USD,100
+ALB,2,Albemarle Corp. (ALB),1,1,US Stocks & ETFs,ALB,USD,100
+ALGN,2,Align Technology Inc. (ALGN),1,1,US Stocks & ETFs,ALGN,USD,100
+ALK,2,Alaska Air Group Inc. (ALK),1,1,US Stocks & ETFs,ALK,USD,100
+ALL,2,Allstate Corp. (ALL),1,1,US Stocks & ETFs,ALL,USD,100
+ALLE,2,Allegion PLC (ALLE),1,1,US Stocks & ETFs,ALLE,USD,100
+AMAT,2,Applied Materials Inc. (AMAT),1,1,US Stocks & ETFs,AMAT,USD,100
+AMCR,2,Amcor PLC (AMCR),1,1,US Stocks & ETFs,AMCR,USD,100
+AME,2,AMETEK Inc. (AME),1,1,US Stocks & ETFs,AME,USD,100
+AMG,2,Affiliated Managers Group Inc. (AMG),1,1,US Stocks & ETFs,AMG,USD,100
+AMGN,2,Amgen Inc. (AMGN),1,1,US Stocks & ETFs,AMGN,USD,100
+AMP,2,Ameriprise Financial Inc. (AMP),1,1,US Stocks & ETFs,AMP,USD,100
+AMT,2,American Tower Corp. (AMT),1,1,US Stocks & ETFs,AMT,USD,100
+ANET,2,Arista Networks Inc. (ANET),1,1,US Stocks & ETFs,ANET,USD,100
+AON,2,Aon plc (AON),1,1,US Stocks & ETFs,AON,USD,100
+AOS,2,A. O. Smith Corp. (AOS),1,1,US Stocks & ETFs,AOS,USD,100
+APA,2,Apache Corp. (APA),1,1,US Stocks & ETFs,APA,USD,100
+APD,2,Air Products and Chemicals Inc. (APD),1,1,US Stocks & ETFs,APD,USD,100
+APH,2,Amphenol Corp. Class A (APH),1,1,US Stocks & ETFs,APH,USD,100
+APTV,2,Aptiv PLC (APTV),1,1,US Stocks & ETFs,APTV,USD,100
+ARE,2,Alexandria Real Estate Equities Inc. (ARE),1,1,US Stocks & ETFs,ARE,USD,100
+ATO,2,Atmos Energy Corp. (ATO),1,1,US Stocks & ETFs,ATO,USD,100
+AVB,2,AvalonBay Communities Inc. (AVB),1,1,US Stocks & ETFs,AVB,USD,100
+AVGO,2,Broadcom Inc. (AVGO),1,1,US Stocks & ETFs,AVGO,USD,100
+AVY,2,Avery Dennison Corp. (AVY),1,1,US Stocks & ETFs,AVY,USD,100
+AWK,2,American Water Works Co. Inc. (AWK),1,1,US Stocks & ETFs,AWK,USD,100
+AXP,2,American Express Co. (AMEX ) (AXP),1,1,US Stocks & ETFs,AXP,USD,100
+AZO,2,AutoZone Inc. (AZO),1,1,US Stocks & ETFs,AZO,USD,100
+BAX,2,Baxter International Inc. (BAX),1,1,US Stocks & ETFs,BAX,USD,100
+BBY,2,Best Buy Co. Inc. (BBY),1,1,US Stocks & ETFs,BBY,USD,100
+BDX,2,Becton Dickinson and Co. (BDX),1,1,US Stocks & ETFs,BDX,USD,100
+BEN,2,Franklin Resources Inc. (BEN),1,1,US Stocks & ETFs,BEN,USD,100
+BF.B,2,Brown-Forman Corp. Class B (BF.B),1,1,US Stocks & ETFs,BF.B,USD,100
+BIIB,2,Biogen Inc. (BIIB),1,1,US Stocks & ETFs,BIIB,USD,100
+BK,2,Bank of New York Mellon Corp. (BK),1,1,US Stocks & ETFs,BK,USD,100
+BKNG,2,Booking Holdings Inc. (BKNG),1,1,US Stocks & ETFs,BKNG,USD,100
+BLK,2,BlackRock Inc. (BLK),1,1,US Stocks & ETFs,BLK,USD,100
+BALL,2,Ball Corp. (BALL),1,1,US Stocks & ETFs,BLL,USD,100
+BMY,2,Bristol-Myers Squibb Co. (BMY),1,1,US Stocks & ETFs,BMY,USD,100
+BR,2,Broadridge Financial Solutions Inc. (BR),1,1,US Stocks & ETFs,BR,USD,100
+BRK.B,2,Berkshire Hathaway Inc. Class B (BRK.B),1,1,US Stocks & ETFs,BRK.B,USD,100
+BSX,2,Boston Scientific Corp. (BSX),1,1,US Stocks & ETFs,BSX,USD,100
+BXP,2,Boston Properties Inc. (BXP),1,1,US Stocks & ETFs,BXP,USD,100
+CAG,2,Conagra Brands Inc. (CAG),1,1,US Stocks & ETFs,CAG,USD,100
+CAH,2,Cardinal Health Inc. (CAH),1,1,US Stocks & ETFs,CAH,USD,100
+CAT,2,Caterpillar Inc. (CAT),1,1,US Stocks & ETFs,CAT,USD,100
+CB,2,Chubb Limited (CB),1,1,US Stocks & ETFs,CB,USD,100
+CBOE,2,Cboe Global Markets Inc (CBOE),1,1,US Stocks & ETFs,CBOE,USD,100
+CBRE,2,CBRE Group Inc. Class A (CBRE),1,1,US Stocks & ETFs,CBRE,USD,100
+CCI,2,Crown Castle International Corp (CCI),1,1,US Stocks & ETFs,CCI,USD,100
+CCL,2,Carnival Corp. (CCL),1,1,US Stocks & ETFs,CCL,USD,100
+CDNS,2,Cadence Design Systems Inc. (CDNS),1,1,US Stocks & ETFs,CDNS,USD,100
+CDW,2,CDW Corp. (CDW),1,1,US Stocks & ETFs,CDW,USD,100
+CE,2,Celanese Corp. (CE),1,1,US Stocks & ETFs,CE,USD,100
+CF,2,CF Industries Holdings Inc. (CF),1,1,US Stocks & ETFs,CF,USD,100
+CFG,2,Citizens Financial Group Inc. (CFG),1,1,US Stocks & ETFs,CFG,USD,100
+CHD,2,Church & Dwight Co. Inc. (CHD),1,1,US Stocks & ETFs,CHD,USD,100
+CHRW,2,C.H. Robinson Worldwide Inc. (CHRW),1,1,US Stocks & ETFs,CHRW,USD,100
+CHTR,2,Charter Communications Inc. Class A (CHTR),1,1,US Stocks & ETFs,CHTR,USD,100
+CI,2,Cigna Corp. (CI),1,1,US Stocks & ETFs,CI,USD,100
+CINF,2,Cincinnati Financial Corp. (CINF),1,1,US Stocks & ETFs,CINF,USD,100
+CL,2,Colgate-Palmolive Co. (CL),1,1,US Stocks & ETFs,CL,USD,100
+CLX,2,Clorox Co. (CLX),1,1,US Stocks & ETFs,CLX,USD,100
+CMA,2,Comerica Inc. (CMA),1,1,US Stocks & ETFs,CMA,USD,100
+CMCSA,2,Comcast Corp. Class A (CMCSA),1,1,US Stocks & ETFs,CMCSA,USD,100
+CME,2,CME Group Inc. Class A (CME),1,1,US Stocks & ETFs,CME,USD,100
+CMG,2,Chipotle Mexican Grill Inc. (CMG),1,1,US Stocks & ETFs,CMG,USD,100
+CMI,2,Cummins Inc. (CMI),1,1,US Stocks & ETFs,CMI,USD,100
+CMS,2,CMS Energy Corp. (CMS),1,1,US Stocks & ETFs,CMS,USD,100
+CNC,2,Centene Corp. (CNC),1,1,US Stocks & ETFs,CNC,USD,100
+CNP,2,CenterPoint Energy Inc. (CNP),1,1,US Stocks & ETFs,CNP,USD,100
+COF,2,Capital One Financial Corp. (COF),1,1,US Stocks & ETFs,COF,USD,100
+COO,2,Cooper Companies Inc. (COO),1,1,US Stocks & ETFs,COO,USD,100
+COP,2,ConocoPhillips (COP),1,1,US Stocks & ETFs,COP,USD,100
+COST,2,Costco Wholesale Corp. (COST),1,1,US Stocks & ETFs,COST,USD,100
+COTY,2,Coty Inc. Class A (COTY),1,1,US Stocks & ETFs,COTY,USD,100
+CPB,2,Campbell Soup Co. (CPB),1,1,US Stocks & ETFs,CPB,USD,100
+CPRI,2,Capri Holdings Limited (CPRI),1,1,US Stocks & ETFs,CPRI,USD,100
+CPRT,2,Copart Inc. (CPRT),1,1,US Stocks & ETFs,CPRT,USD,100
+CRM,2,salesforce.com inc. (CRM),1,1,US Stocks & ETFs,CRM,USD,100
+CSX,2,CSX Corp. (CSX),1,1,US Stocks & ETFs,CSX,USD,100
+CTAS,2,Cintas Corp. (CTAS),1,1,US Stocks & ETFs,CTAS,USD,100
+CTSH,2,Cognizant Technology Solutions Corp. Class A (CTSH),1,1,US Stocks & ETFs,CTSH,USD,100
+CTVA,2,Corteva Inc (CTVA),1,1,US Stocks & ETFs,CTVA,USD,100
+CVS,2,CVS Health Corp. (CVS),1,1,US Stocks & ETFs,CVS,USD,100
+CVX,2,Chevron Corp. (CVX),1,1,US Stocks & ETFs,CVX,USD,100
+D,2,Dominion Energy Inc (D),1,1,US Stocks & ETFs,D,USD,100
+DAL,2,Delta Air Lines Inc. (DAL),1,1,US Stocks & ETFs,DAL,USD,100
+DD,2,DuPont de Nemours Inc. (DD),1,1,US Stocks & ETFs,DD,USD,100
+DE,2,Deere & Co. (DE),1,1,US Stocks & ETFs,DE,USD,100
+DG,2,Dollar General Corp. (DG),1,1,US Stocks & ETFs,DG,USD,100
+DGX,2,Quest Diagnostics Inc. (DGX),1,1,US Stocks & ETFs,DGX,USD,100
+DHI,2,D.R. Horton Inc. (DHI),1,1,US Stocks & ETFs,DHI,USD,100
+DHR,2,Danaher Corp. (DHR),1,1,US Stocks & ETFs,DHR,USD,100
+DIS,2,Walt Disney Co. (DIS),1,1,US Stocks & ETFs,DIS,USD,100
+DLR,2,Digital Realty Trust Inc. (DLR),1,1,US Stocks & ETFs,DLR,USD,100
+DLTR,2,Dollar Tree Inc. (DLTR),1,1,US Stocks & ETFs,DLTR,USD,100
+DOV,2,Dover Corp. (DOV),1,1,US Stocks & ETFs,DOV,USD,100
+DOW,2,Dow Inc. (DOW),1,1,US Stocks & ETFs,DOW,USD,100
+DRI,2,Darden Restaurants Inc. (DRI),1,1,US Stocks & ETFs,DRI,USD,100
+DTE,2,DTE Energy Co. (DTE),1,1,US Stocks & ETFs,DTE,USD,100
+DUK,2,Duke Energy Corp. (DUK),1,1,US Stocks & ETFs,DUK,USD,100
+DVA,2,DaVita Inc. (DVA),1,1,US Stocks & ETFs,DVA,USD,100
+DVN,2,Devon Energy Corp. (DVN),1,1,US Stocks & ETFs,DVN,USD,100
+DXC,2,DXC Technology Co. (DXC),1,1,US Stocks & ETFs,DXC,USD,100
+EA,2,Electronic Arts Inc. (EA),1,1,US Stocks & ETFs,EA,USD,100
+ECL,2,Ecolab Inc. (ECL),1,1,US Stocks & ETFs,ECL,USD,100
+ED,2,Consolidated Edison Inc. (ED),1,1,US Stocks & ETFs,ED,USD,100
+EFX,2,Equifax Inc. (EFX),1,1,US Stocks & ETFs,EFX,USD,100
+EIX,2,Edison International (EIX),1,1,US Stocks & ETFs,EIX,USD,100
+EL,2,Estee Lauder Companies Inc. Class A (EL),1,1,US Stocks & ETFs,EL,USD,100
+EMN,2,Eastman Chemical Co. (EMN),1,1,US Stocks & ETFs,EMN,USD,100
+EMR,2,Emerson Electric Co. (EMR),1,1,US Stocks & ETFs,EMR,USD,100
+EOG,2,EOG Resources Inc. (EOG),1,1,US Stocks & ETFs,EOG,USD,100
+EQIX,2,Equinix Inc. (EQIX),1,1,US Stocks & ETFs,EQIX,USD,100
+EQR,2,Equity Residential (EQR),1,1,US Stocks & ETFs,EQR,USD,100
+ES,2,Eversource Energy (ES),1,1,US Stocks & ETFs,ES,USD,100
+ESS,2,Essex Property Trust Inc. (ESS),1,1,US Stocks & ETFs,ESS,USD,100
+ETN,2,Eaton Corp. Plc (ETN),1,1,US Stocks & ETFs,ETN,USD,100
+ETR,2,Entergy Corp. (ETR),1,1,US Stocks & ETFs,ETR,USD,100
+EVRG,2,Evergy Inc. (EVRG),1,1,US Stocks & ETFs,EVRG,USD,100
+EW,2,Edwards Lifesciences Corp. (EW),1,1,US Stocks & ETFs,EW,USD,100
+EXC,2,Exelon Corp. (EXC),1,1,US Stocks & ETFs,EXC,USD,100
+EXPD,2,Expeditors International of Washington Inc. (EXPD),1,1,US Stocks & ETFs,EXPD,USD,100
+EXPE,2,Expedia Group Inc. (EXPE),1,1,US Stocks & ETFs,EXPE,USD,100
+EXR,2,Extra Space Storage Inc. (EXR),1,1,US Stocks & ETFs,EXR,USD,100
+F,2,Ford Motor Co. (F),1,1,US Stocks & ETFs,F,USD,100
+FANG,2,Diamondback Energy Inc. (FANG),1,1,US Stocks & ETFs,FANG,USD,100
+FAST,2,Fastenal Co. (FAST),1,1,US Stocks & ETFs,FAST,USD,100
+FCX,2,Freeport-McMoRan Inc. (FCX),1,1,US Stocks & ETFs,FCX,USD,100
+FDX,2,FedEx Corp. (FDX),1,1,US Stocks & ETFs,FDX,USD,100
+FE,2,FirstEnergy Corp. (FE),1,1,US Stocks & ETFs,FE,USD,100
+FFIV,2,F5 Networks Inc. (FFIV),1,1,US Stocks & ETFs,FFIV,USD,100
+FIS,2,Fidelity National Information Services Inc. (FIS),1,1,US Stocks & ETFs,FIS,USD,100
+FITB,2,Fifth Third Bancorp (FITB),1,1,US Stocks & ETFs,FITB,USD,100
+FLS,2,Flowserve Corp. (FLS),1,1,US Stocks & ETFs,FLS,USD,100
+FMC,2,FMC Corp. (FMC),1,1,US Stocks & ETFs,FMC,USD,100
+FOXA,2,Fox Corp. Class A (FOXA),1,1,US Stocks & ETFs,FOXA,USD,100
+FRC,2,First Republic Bank (FRCB) OTC Market,1,1,US Stocks & ETFs,FRC,USD,100
+FRT,2,Federal Realty Investment Trust (FRT),1,1,US Stocks & ETFs,FRT,USD,100
+FTI,2,TechnipFMC Plc (FTI),1,1,US Stocks & ETFs,FTI,USD,100
+FTV,2,Fortive Corp. (FTV),1,1,US Stocks & ETFs,FTV,USD,100
+GD,2,General Dynamics Corp. (GD),1,1,US Stocks & ETFs,GD,USD,100
+GE,2,General Electric Co. (GE),1,1,US Stocks & ETFs,GE,USD,100
+GILD,2,Gilead Sciences Inc. (GILD),1,1,US Stocks & ETFs,GILD,USD,100
+GIS,2,General Mills Inc. (GIS),1,1,US Stocks & ETFs,GIS,USD,100
+GL,2,Globe Life Inc. (GL),1,1,US Stocks & ETFs,GL,USD,100
+GLW,2,Corning Inc (GLW),1,1,US Stocks & ETFs,GLW,USD,100
+GM,2,General Motors Co. (GM),1,1,US Stocks & ETFs,GM,USD,100
+GPC,2,Genuine Parts Co. (GPC),1,1,US Stocks & ETFs,GPC,USD,100
+GPN,2,Global Payments Inc. (GPN),1,1,US Stocks & ETFs,GPN,USD,100
+GAP,2,Gap Inc. (GAP),1,1,US Stocks & ETFs,GPS,USD,100
+GRMN,2,Garmin Ltd. (GRMN),1,1,US Stocks & ETFs,GRMN,USD,100
+GS,2,Goldman Sachs Group Inc. (GS),1,1,US Stocks & ETFs,GS,USD,100
+GWW,2,W.W. Grainger Inc. (GWW),1,1,US Stocks & ETFs,GWW,USD,100
+HAL,2,Halliburton Co. (HAL),1,1,US Stocks & ETFs,HAL,USD,100
+HAS,2,Hasbro Inc. (HAS),1,1,US Stocks & ETFs,HAS,USD,100
+HBAN,2,Huntington Bancshares Inc. (HBAN),1,1,US Stocks & ETFs,HBAN,USD,100
+HBI,2,Hanesbrands Inc. (HBI),1,1,US Stocks & ETFs,HBI,USD,100
+HCA,2,HCA Healthcare Inc (HCA),1,1,US Stocks & ETFs,HCA,USD,100
+HD,2,Home Depot Inc. (HD),1,1,US Stocks & ETFs,HD,USD,100
+DINO,2,HF Sinclair Corp. (DINO),1,1,US Stocks & ETFs,HFC,USD,100
+HIG,2,Hartford Financial Services Group Inc. (HIG),1,1,US Stocks & ETFs,HIG,USD,100
+HII,2,Huntington Ingalls Industries Inc. (HII),1,1,US Stocks & ETFs,HII,USD,100
+HLT,2,Hilton Worldwide Holdings Inc (HLT),1,1,US Stocks & ETFs,HLT,USD,100
+HOG,2,Harley-Davidson Inc. (HOG),1,1,US Stocks & ETFs,HOG,USD,100
+HOLX,2,Hologic Inc. (HOLX),1,1,US Stocks & ETFs,HOLX,USD,100
+HON,2,Honeywell International Inc. (HON),1,1,US Stocks & ETFs,HON,USD,100
+HP,2,Helmerich & Payne Inc. (HP),1,1,US Stocks & ETFs,HP,USD,100
+HPE,2,Hewlett Packard Enterprise Co. (HPE),1,1,US Stocks & ETFs,HPE,USD,100
+HPQ,2,HP Inc. (HPQ),1,1,US Stocks & ETFs,HPQ,USD,100
+HRB,2,H&R Block Inc. (HRB),1,1,US Stocks & ETFs,HRB,USD,100
+HRL,2,Hormel Foods Corp. (HRL),1,1,US Stocks & ETFs,HRL,USD,100
+HSIC,2,Henry Schein Inc. (HSIC),1,1,US Stocks & ETFs,HSIC,USD,100
+HST,2,Host Hotels & Resorts Inc. (HST),1,1,US Stocks & ETFs,HST,USD,100
+HSY,2,Hershey Co. (HSY),1,1,US Stocks & ETFs,HSY,USD,100
+HUM,2,Humana Inc. (HUM),1,1,US Stocks & ETFs,HUM,USD,100
+IBM,2,International Business Machines Corp. (IBM),1,1,US Stocks & ETFs,IBM,USD,100
+ICE,2,Intercontinental Exchange Inc. (ICE),1,1,US Stocks & ETFs,ICE,USD,100
+IDXX,2,IDEXX Laboratories Inc. (IDXX),1,1,US Stocks & ETFs,IDXX,USD,100
+IEX,2,IDEX Corp. (IEX),1,1,US Stocks & ETFs,IEX,USD,100
+IFF,2,International Flavors & Fragrances Inc. (IFF),1,1,US Stocks & ETFs,IFF,USD,100
+INCY,2,Incyte Corp. (INCY),1,1,US Stocks & ETFs,INCY,USD,100
+INTU,2,Intuit Inc. (INTU),1,1,US Stocks & ETFs,INTU,USD,100
+IP,2,International Paper Co. (IP),1,1,US Stocks & ETFs,IP,USD,100
+IPG,2,Interpublic Group of Companies Inc. (IPG),1,1,US Stocks & ETFs,IPG,USD,100
+IPGP,2,IPG Photonics Corp. (IPGP),1,1,US Stocks & ETFs,IPGP,USD,100
+IQV,2,IQVIA Holdings Inc (IQV),1,1,US Stocks & ETFs,IQV,USD,100
+IR,2,Ingersoll-Rand Plc (IR),1,1,US Stocks & ETFs,IR,USD,100
+IRM,2,Iron Mountain Inc. (IRM),1,1,US Stocks & ETFs,IRM,USD,100
+ISRG,2,Intuitive Surgical Inc. (ISRG),1,1,US Stocks & ETFs,ISRG,USD,100
+IT,2,Gartner Inc. (IT),1,1,US Stocks & ETFs,IT,USD,100
+ITW,2,Illinois Tool Works Inc. (ITW),1,1,US Stocks & ETFs,ITW,USD,100
+IVZ,2,Invesco Ltd. (IVZ),1,1,US Stocks & ETFs,IVZ,USD,100
+JBHT,2,J.B. Hunt Transport Services Inc. (JBHT),1,1,US Stocks & ETFs,JBHT,USD,100
+JCI,2,Johnson Controls International plc (JCI),1,1,US Stocks & ETFs,JCI,USD,100
+#AUS200,1,S&P ASX 200 Index (AS51),10,1,CFD Index 1,ASX,AUD,5
+#NDXm,1,NASDAQ 100 Index (NDX),10,1,CFD Index 1,ND1,USD,5
+#SPXm,1,S&P 500 Index - Standard & Poors 500 (SPX),100,1,CFD Index 1,SP1,USD,5
+#WS30m,1,Dow Jones 30 Index (DJI),1,1,CFD Index 1,DJ1,USD,5
+JEF,2,Jefferies Financial Group Inc. (JEF),1,1,US Stocks & ETFs,JEF,USD,100
+JKHY,2,Jack Henry & Associates Inc. (JKHY),1,1,US Stocks & ETFs,JKHY,USD,100
+JNJ,2,Johnson & Johnson (JNJ),1,1,US Stocks & ETFs,JNJ,USD,100
+KEY,2,KeyCorp (KEY),1,1,US Stocks & ETFs,KEY,USD,100
+KEYS,2,Keysight Technologies Inc (KEYS),1,1,US Stocks & ETFs,KEYS,USD,100
+KHC,2,Kraft Heinz Co. (KHC),1,1,US Stocks & ETFs,KHC,USD,100
+KIM,2,Kimco Realty Corp. (KIM),1,1,US Stocks & ETFs,KIM,USD,100
+KLAC,2,KLA Corp. (KLAC),1,1,US Stocks & ETFs,KLAC,USD,100
+KMB,2,Kimberly-Clark Corp. (KMB),1,1,US Stocks & ETFs,KMB,USD,100
+KMI,2,Kinder Morgan Inc Class P (KMI),1,1,US Stocks & ETFs,KMI,USD,100
+KMX,2,CarMax Inc. (KMX),1,1,US Stocks & ETFs,KMX,USD,100
+KO,2,Coca-Cola Co. (KO),1,1,US Stocks & ETFs,KO,USD,100
+KR,2,Kroger Co. (KR),1,1,US Stocks & ETFs,KR,USD,100
+KSS,2,Kohl's Corp. (KSS),1,1,US Stocks & ETFs,KSS,USD,100
+L,2,Loews Corp. (L),1,1,US Stocks & ETFs,L,USD,100
+LDOS,2,Leidos Holdings Inc. (LDOS),1,1,US Stocks & ETFs,LDOS,USD,100
+LEG,2,Leggett & Platt Inc. (LEG),1,1,US Stocks & ETFs,LEG,USD,100
+LEN,2,Lennar Corp. Class A (LEN),1,1,US Stocks & ETFs,LEN,USD,100
+LH,2,Laboratory Corp. of America Holdings (LH),1,1,US Stocks & ETFs,LH,USD,100
+LHX,2,L3Harris Technologies Inc (LHX),1,1,US Stocks & ETFs,LHX,USD,100
+LIN,2,Linde plc (LIN),1,1,US Stocks & ETFs,LIN,USD,100
+LKQ,2,LKQ Corp. (LKQ),1,1,US Stocks & ETFs,LKQ,USD,100
+LLY,2,Eli Lilly and Co. (LLY),1,1,US Stocks & ETFs,LLY,USD,100
+LMT,2,Lockheed Martin Corp. (LMT),1,1,US Stocks & ETFs,LMT,USD,100
+LNC,2,Lincoln National Corp. (LNC),1,1,US Stocks & ETFs,LNC,USD,100
+LNT,2,Alliant Energy Corp (LNT),1,1,US Stocks & ETFs,LNT,USD,100
+LOW,2,Lowe's Companies Inc. (LOW),1,1,US Stocks & ETFs,LOW,USD,100
+LRCX,2,Lam Research Corp. (LRCX),1,1,US Stocks & ETFs,LRCX,USD,100
+LUV,2,Southwest Airlines Co. (LUV),1,1,US Stocks & ETFs,LUV,USD,100
+LW,2,Lamb Weston Holdings Inc. (LW),1,1,US Stocks & ETFs,LW,USD,100
+LYB,2,LyondellBasell Industries NV (LYB),1,1,US Stocks & ETFs,LYB,USD,100
+M,2,Macy's Inc (M),1,1,US Stocks & ETFs,M,USD,100
+MA,2,Mastercard Inc. Class A (MA),1,1,US Stocks & ETFs,MA,USD,100
+MAA,2,Mid-America Apartment Communities Inc. (MAA),1,1,US Stocks & ETFs,MAA,USD,100
+MAC,2,Macerich Co. (MAC),1,1,US Stocks & ETFs,MAC,USD,100
+MAR,2,Marriott International Inc. Class A (MAR),1,1,US Stocks & ETFs,MAR,USD,100
+MAS,2,Masco Corp. (MAS),1,1,US Stocks & ETFs,MAS,USD,100
+MCD,2,McDonald's Corp. (MCD),1,1,US Stocks & ETFs,MCD,USD,100
+MCHP,2,Microchip Technology Inc. (MCHP),1,1,US Stocks & ETFs,MCHP,USD,100
+MCK,2,McKesson Corp. (MCK),1,1,US Stocks & ETFs,MCK,USD,100
+MCO,2,Moody's Corp. (MCO),1,1,US Stocks & ETFs,MCO,USD,100
+MDLZ,2,Mondelez International Inc. Class A (MDLZ),1,1,US Stocks & ETFs,MDLZ,USD,100
+MDT,2,Medtronic Plc (MDT),1,1,US Stocks & ETFs,MDT,USD,100
+MET,2,MetLife Inc. (MET),1,1,US Stocks & ETFs,MET,USD,100
+MGM,2,MGM Resorts International (MGM),1,1,US Stocks & ETFs,MGM,USD,100
+MHK,2,Mohawk Industries Inc. (MHK),1,1,US Stocks & ETFs,MHK,USD,100
+MKC,2,McCormick & Co. Inc. (MKC),1,1,US Stocks & ETFs,MKC,USD,100
+MKTX,2,MarketAxess Holdings Inc. (MKTX),1,1,US Stocks & ETFs,MKTX,USD,100
+MLM,2,Martin Marietta Materials Inc. (MLM),1,1,US Stocks & ETFs,MLM,USD,100
+MMC,2,Marsh & McLennan Companies Inc. (MMC),1,1,US Stocks & ETFs,MMC,USD,100
+MMM,2,3M Co. (MMM),1,1,US Stocks & ETFs,MMM,USD,100
+MNST,2,Monster Beverage Corp. (MNST),1,1,US Stocks & ETFs,MNST,USD,100
+MO,2,Altria Group Inc (MO),1,1,US Stocks & ETFs,MO,USD,100
+MOS,2,Mosaic Co. (MOS),1,1,US Stocks & ETFs,MOS,USD,100
+MPC,2,Marathon Petroleum Corp. (MPC),1,1,US Stocks & ETFs,MPC,USD,100
+MRK,2,Merck & Co. Inc. (MRK),1,1,US Stocks & ETFs,MRK,USD,100
+MS,2,Morgan Stanley (MS),1,1,US Stocks & ETFs,MS,USD,100
+MSCI,2,MSCI Inc. Class A (MSCI),1,1,US Stocks & ETFs,MSCI,USD,100
+MSI,2,Motorola Solutions Inc. (MSI),1,1,US Stocks & ETFs,MSI,USD,100
+MTB,2,M&T Bank Corp. (MTB),1,1,US Stocks & ETFs,MTB,USD,100
+MTD,2,Mettler-Toledo International Inc. (MTD),1,1,US Stocks & ETFs,MTD,USD,100
+MU,2,Micron Technology Inc. (MU),1,1,US Stocks & ETFs,MU,USD,100
+NCLH,2,Norwegian Cruise Line Holdings Ltd. (NCLH),1,1,US Stocks & ETFs,NCLH,USD,100
+NDAQ,2,Nasdaq Inc. (NDAQ),1,1,US Stocks & ETFs,NDAQ,USD,100
+NEE,2,NextEra Energy Inc. (NEE),1,1,US Stocks & ETFs,NEE,USD,100
+NEM,2,Newmont Goldcorp Corp. (NEM),1,1,US Stocks & ETFs,NEM,USD,100
+NI,2,NiSource Inc (NI),1,1,US Stocks & ETFs,NI,USD,100
+NKE,2,NIKE Inc. Class B (NKE),1,1,US Stocks & ETFs,NKE,USD,100
+NKTR,2,Nektar Therapeutics (NKTR),1,1,US Stocks & ETFs,NKTR,USD,100
+NOC,2,Northrop Grumman Corp. (NOC),1,1,US Stocks & ETFs,NOC,USD,100
+NOV,2,National Oilwell Varco Inc. (NOV),1,1,US Stocks & ETFs,NOV,USD,100
+NRG,2,NRG Energy Inc. (NRG),1,1,US Stocks & ETFs,NRG,USD,100
+NSC,2,Norfolk Southern Corp. (NSC),1,1,US Stocks & ETFs,NSC,USD,100
+NTAP,2,NetApp Inc. (NTAP),1,1,US Stocks & ETFs,NTAP,USD,100
+NTRS,2,Northern Trust Corp. (NTRS),1,1,US Stocks & ETFs,NTRS,USD,100
+NUE,2,Nucor Corp. (NUE),1,1,US Stocks & ETFs,NUE,USD,100
+NWL,2,Newell Brands Inc (NWL),1,1,US Stocks & ETFs,NWL,USD,100
+NWSA,2,News Corp. Class A (NWSA),1,1,US Stocks & ETFs,NWSA,USD,100
+O,2,Realty Income Corp. (O),1,1,US Stocks & ETFs,O,USD,100
+OKE,2,ONEOK Inc. (OKE),1,1,US Stocks & ETFs,OKE,USD,100
+OMC,2,Omnicom Group Inc (OMC),1,1,US Stocks & ETFs,OMC,USD,100
+ORCL,2,Oracle Corp. (ORCL),1,1,US Stocks & ETFs,ORCL,USD,100
+ORLY,2,O'Reilly Automotive Inc. (ORLY),1,1,US Stocks & ETFs,ORLY,USD,100
+OXY,2,Occidental Petroleum Corp. (OXY),1,1,US Stocks & ETFs,OXY,USD,100
+PAYX,2,Paychex Inc. (PAYX),1,1,US Stocks & ETFs,PAYX,USD,100
+PCAR,2,PACCAR Inc (PCAR),1,1,US Stocks & ETFs,PCAR,USD,100
+PEG,2,Public Service Enterprise Group Inc (PEG),1,1,US Stocks & ETFs,PEG,USD,100
+PEP,2,PepsiCo Inc. (PEP),1,1,US Stocks & ETFs,PEP,USD,100
+PFE,2,Pfizer Inc. (PFE),1,1,US Stocks & ETFs,PFE,USD,100
+PFG,2,Principal Financial Group Inc. (PFG),1,1,US Stocks & ETFs,PFG,USD,100
+PG,2,Procter & Gamble Co. (PG),1,1,US Stocks & ETFs,PG,USD,100
+PGR,2,Progressive Corp. (PGR),1,1,US Stocks & ETFs,PGR,USD,100
+PH,2,Parker-Hannifin Corp. (PH),1,1,US Stocks & ETFs,PH,USD,100
+PHM,2,PulteGroup Inc. (PHM),1,1,US Stocks & ETFs,PHM,USD,100
+PKG,2,Packaging Corp. of America (PKG),1,1,US Stocks & ETFs,PKG,USD,100
+PLD,2,Prologis Inc. (PLD),1,1,US Stocks & ETFs,PLD,USD,100
+PM,2,Philip Morris International Inc. (PM),1,1,US Stocks & ETFs,PM,USD,100
+PNC,2,PNC Financial Services Group Inc. (PNC),1,1,US Stocks & ETFs,PNC,USD,100
+PNR,2,Pentair plc (PNR),1,1,US Stocks & ETFs,PNR,USD,100
+PNW,2,Pinnacle West Capital Corp. (PNW),1,1,US Stocks & ETFs,PNW,USD,100
+PPG,2,PPG Industries Inc. (PPG),1,1,US Stocks & ETFs,PPG,USD,100
+PPL,2,PPL Corp. (PPL),1,1,US Stocks & ETFs,PPL,USD,100
+PRGO,2,Perrigo Co. Plc (PRGO),1,1,US Stocks & ETFs,PRGO,USD,100
+PRU,2,Prudential Financial Inc. (PRU),1,1,US Stocks & ETFs,PRU,USD,100
+PSA,2,Public Storage (PSA),1,1,US Stocks & ETFs,PSA,USD,100
+PSX,2,Phillips 66 (PSX),1,1,US Stocks & ETFs,PSX,USD,100
+PVH,2,PVH Corp. (PVH),1,1,US Stocks & ETFs,PVH,USD,100
+PWR,2,Quanta Services Inc. (PWR),1,1,US Stocks & ETFs,PWR,USD,100
+PYPL,2,PayPal Holdings Inc (PYPL),1,1,US Stocks & ETFs,PYPL,USD,100
+QRVO,2,Qorvo Inc. (QRVO),1,1,US Stocks & ETFs,QRVO,USD,100
+RCL,2,Royal Caribbean Cruises Ltd. (RCL),1,1,US Stocks & ETFs,RCL,USD,100
+REG,2,Regency Centers Corp. (REG),1,1,US Stocks & ETFs,REG,USD,100
+REGN,2,Regeneron Pharmaceuticals Inc. (REGN),1,1,US Stocks & ETFs,REGN,USD,100
+RF,2,Regions Financial Corp. (RF),1,1,US Stocks & ETFs,RF,USD,100
+RHI,2,Robert Half International Inc. (RHI),1,1,US Stocks & ETFs,RHI,USD,100
+RJF,2,Raymond James Financial Inc. (RJF),1,1,US Stocks & ETFs,RJF,USD,100
+RL,2,Ralph Lauren Corp. Class A (RL),1,1,US Stocks & ETFs,RL,USD,100
+ROK,2,Rockwell Automation Inc. (ROK),1,1,US Stocks & ETFs,ROK,USD,100
+ROL,2,Rollins Inc. (ROL),1,1,US Stocks & ETFs,ROL,USD,100
+ROP,2,Roper Technologies Inc. (ROP),1,1,US Stocks & ETFs,ROP,USD,100
+ROST,2,Ross Stores Inc. (ROST),1,1,US Stocks & ETFs,ROST,USD,100
+RSG,2,Republic Services Inc. (RSG),1,1,US Stocks & ETFs,RSG,USD,100
+SBAC,2,SBA Communications Corp. Class A (SBAC),1,1,US Stocks & ETFs,SBAC,USD,100
+SBUX,2,Starbucks Corp. (SBUX),1,1,US Stocks & ETFs,SBUX,USD,100
+SCHW,2,Charles Schwab Corp. (SCHW),1,1,US Stocks & ETFs,SCHW,USD,100
+SEE,2,Sealed Air Corp. (SEE),1,1,US Stocks & ETFs,SEE,USD,100
+SHW,2,Sherwin-Williams Co. (SHW),1,1,US Stocks & ETFs,SHW,USD,100
+SJM,2,J.M. Smucker Co. (SJM),1,1,US Stocks & ETFs,SJM,USD,100
+SLB,2,Schlumberger NV (SLB),1,1,US Stocks & ETFs,SLB,USD,100
+SLG,2,SL Green Realty Corp. (SLG),1,1,US Stocks & ETFs,SLG,USD,100
+SNA,2,Snap-on Inc. (SNA),1,1,US Stocks & ETFs,SNA,USD,100
+SNPS,2,Synopsys Inc. (SNPS),1,1,US Stocks & ETFs,SNPS,USD,100
+SO,2,Southern Co. (SO),1,1,US Stocks & ETFs,SO,USD,100
+SPG,2,Simon Property Group Inc. (SPG),1,1,US Stocks & ETFs,SPG,USD,100
+SPGI,2,S&P Global Inc. (SPGI),1,1,US Stocks & ETFs,SPGI,USD,100
+SRE,2,Sempra Energy (SRE),1,1,US Stocks & ETFs,SRE,USD,100
+STT,2,State Street Corp. (STT),1,1,US Stocks & ETFs,STT,USD,100
+STX,2,Seagate Technology PLC (STX),1,1,US Stocks & ETFs,STX,USD,100
+STZ,2,Constellation Brands Inc. Class A (STZ),1,1,US Stocks & ETFs,STZ,USD,100
+SWK,2,Stanley Black & Decker Inc. (SWK),1,1,US Stocks & ETFs,SWK,USD,100
+SWKS,2,Skyworks Solutions Inc. (SWKS),1,1,US Stocks & ETFs,SWKS,USD,100
+SYF,2,Synchrony Financial (SYF),1,1,US Stocks & ETFs,SYF,USD,100
+SYK,2,Stryker Corp. (SYK),1,1,US Stocks & ETFs,SYK,USD,100
+SYY,2,Sysco Corp. (SYY),1,1,US Stocks & ETFs,SYY,USD,100
+T,2,AT&T Inc. (T),1,1,US Stocks & ETFs,T,USD,100
+TAP,2,Molson Coors Brewing Co. Class B (TAP),1,1,US Stocks & ETFs,TAP,USD,100
+TDG,2,TransDigm Group Inc. (TDG),1,1,US Stocks & ETFs,TDG,USD,100
+TEL,2,TE Connectivity Ltd. (TEL),1,1,US Stocks & ETFs,TEL,USD,100
+TFX,2,Teleflex Inc. (TFX),1,1,US Stocks & ETFs,TFX,USD,100
+TGT,2,Target Corp. (TGT),1,1,US Stocks & ETFs,TGT,USD,100
+TJX,2,TJX Companies Inc (TJX),1,1,US Stocks & ETFs,TJX,USD,100
+TMO,2,Thermo Fisher Scientific Inc. (TMO),1,1,US Stocks & ETFs,TMO,USD,100
+TMUS,2,T-Mobile US Inc. (TMUS),1,1,US Stocks & ETFs,TMUS,USD,100
+TPR,2,Tapestry Inc. (TPR),1,1,US Stocks & ETFs,TPR,USD,100
+TRIP,2,TripAdvisor Inc. (TRIP),1,1,US Stocks & ETFs,TRIP,USD,100
+TROW,2,T. Rowe Price Group (TROW),1,1,US Stocks & ETFs,TROW,USD,100
+TRV,2,Travelers Companies Inc. (TRV),1,1,US Stocks & ETFs,TRV,USD,100
+TSCO,2,Tractor Supply Co. (TSCO),1,1,US Stocks & ETFs,TSCO,USD,100
+TSM,2,Taiwan Semiconductor Manufacturing Co Ltd SP ADR (TSM),1,1,US Stocks & ETFs,TSM,USD,100
+TSN,2,Tyson Foods Inc. Class A (TSN),1,1,US Stocks & ETFs,TSN,USD,100
+TTWO,2,Take-Two Interactive Software Inc. (TTWO),1,1,US Stocks & ETFs,TTWO,USD,100
+TXN,2,Texas Instruments Inc. (TXN),1,1,US Stocks & ETFs,TXN,USD,100
+TXT,2,Textron Inc. (TXT),1,1,US Stocks & ETFs,TXT,USD,100
+UAA,2,Under Armour Inc. Class A (UAA),1,1,US Stocks & ETFs,UAA,USD,100
+UAL,2,United Airlines Holdings Inc. (UAL),1,1,US Stocks & ETFs,UAL,USD,100
+UDR,2,UDR Inc. (UDR),1,1,US Stocks & ETFs,UDR,USD,100
+UHS,2,Universal Health Services Inc. Class B (UHS),1,1,US Stocks & ETFs,UHS,USD,100
+ULTA,2,Ulta Beauty Inc (ULTA),1,1,US Stocks & ETFs,ULTA,USD,100
+UNH,2,UnitedHealth Group Inc. (UNH),1,1,US Stocks & ETFs,UNH,USD,100
+UNM,2,Unum Group (UNM),1,1,US Stocks & ETFs,UNM,USD,100
+UNP,2,Union Pacific Corp. (UNP),1,1,US Stocks & ETFs,UNP,USD,100
+UPS,2,United Parcel Service Inc. Class B (UPS),1,1,US Stocks & ETFs,UPS,USD,100
+URI,2,United Rentals Inc. (URI),1,1,US Stocks & ETFs,URI,USD,100
+USB,2,U.S. Bancorp (USB),1,1,US Stocks & ETFs,USB,USD,100
+V,2,Visa Inc. Class A (V),1,1,US Stocks & ETFs,V,USD,100
+VFC,2,V.F. Corp. (VFC),1,1,US Stocks & ETFs,VFC,USD,100
+VLO,2,Valero Energy Corp. (VLO),1,1,US Stocks & ETFs,VLO,USD,100
+VMC,2,Vulcan Materials Co. (VMC),1,1,US Stocks & ETFs,VMC,USD,100
+VNO,2,Vornado Realty Trust (VNO),1,1,US Stocks & ETFs,VNO,USD,100
+VRSK,2,Verisk Analytics Inc (VRSK),1,1,US Stocks & ETFs,VRSK,USD,100
+VRSN,2,VeriSign Inc. (VRSN),1,1,US Stocks & ETFs,VRSN,USD,100
+VRTX,2,Vertex Pharmaceuticals Inc. (VRTX),1,1,US Stocks & ETFs,VRTX,USD,100
+VTR,2,Ventas Inc. (VTR),1,1,US Stocks & ETFs,VTR,USD,100
+VZ,2,Verizon Communications Inc. (VZ),1,1,US Stocks & ETFs,VZ,USD,100
+WAB,2,Westinghouse Air Brake Technologies Corp. (WAB),1,1,US Stocks & ETFs,WAB,USD,100
+WAT,2,Waters Corp. (WAT),1,1,US Stocks & ETFs,WAT,USD,100
+WDC,2,Western Digital Corp. (WDC),1,1,US Stocks & ETFs,WDC,USD,100
+WEC,2,WEC Energy Group Inc (WEC),1,1,US Stocks & ETFs,WEC,USD,100
+WELL,2,Welltower Inc. (WELL),1,1,US Stocks & ETFs,WELL,USD,100
+WHR,2,Whirlpool Corp. (WHR),1,1,US Stocks & ETFs,WHR,USD,100
+WTW,2,Willis Towers Watson Public Limited Co. (WTW),1,1,US Stocks & ETFs,WLTW,USD,100
+WM,2,Waste Management Inc. (WM),1,1,US Stocks & ETFs,WM,USD,100
+WMB,2,Williams Companies Inc. (WMB),1,1,US Stocks & ETFs,WMB,USD,100
+WMT,2,Walmart Inc. (WMT),1,1,US Stocks & ETFs,WMT,USD,100
+WU,2,Western Union Co. (WU),1,1,US Stocks & ETFs,WU,USD,100
+WY,2,Weyerhaeuser Co. (WY),1,1,US Stocks & ETFs,WY,USD,100
+WYNN,2,Wynn Resorts Limited (WYNN),1,1,US Stocks & ETFs,WYNN,USD,100
+XEL,2,Xcel Energy Inc. (XEL),1,1,US Stocks & ETFs,XEL,USD,100
+XRAY,2,DENTSPLY SIRONA Inc. (XRAY),1,1,US Stocks & ETFs,XRAY,USD,100
+XRX,2,Xerox Holdings Corp. (XRX),1,1,US Stocks & ETFs,XRX,USD,100
+YUM,2,Yum! Brands Inc. (YUM),1,1,US Stocks & ETFs,YUM,USD,100
+ZBH,2,Zimmer Biomet Holdings Inc. (ZBH),1,1,US Stocks & ETFs,ZBH,USD,100
+ZION,2,Zions Bancorporation N.A. (ZION),1,1,US Stocks & ETFs,ZION,USD,100
+ZTS,2,Zoetis Inc. Class A (ZTS),1,1,US Stocks & ETFs,ZTS,USD,100
+BKR,2,Baker Hughes Co (BKR),1,1,US Stocks & ETFs,BKR,USD,100
+GEN,2,Gen Digital Inc. (GEN),1,1,US Stocks & ETFs,NLOK,USD,100
+DOC,2,Healthpeak Properties Inc. (DOC),1,1,US Stocks & ETFs,PEAK,USD,100
+NET,2,Cloudflare Inc (NET),1,1,US Stocks & ETFs,NET,USD,100
+ZM,2,Zoom Video Communications Inc (ZM),1,1,US Stocks & ETFs,ZM,USD,100
+WKHS,2,Workhorse Group Inc (WKHS),1,1,US Stocks & ETFs,WKHS,USD,100
+SPOT,2,Spotify Technology SA (SPOT),1,1,US Stocks & ETFs,SPOT,USD,100
+EURRUB,5,Euro vs Russian Ruble,100000,0,ECN FX Group2,EUR,RUB,5
+EOSUSD,3,EOS vs US Dollar (EOSUSD),1,1,CFD Crypto,EOS,USD,10000
+EPAM,2,EPAM Systems Inc (EPAM),1,1,US Stocks & ETFs,EPAM,USD,100
+ARKK,2,ARK Innovation ETF (ARKK),1,1,US Stocks & ETFs,ARKK,USD,100
+MRNA,2,Moderna Inc (MRNA),1,1,US Stocks & ETFs,MRNA,USD,100
+#HSI,1,Hang Seng Index (HSI),10,1,CFD Index 1,HSI,HKD,5
+EEM,2,iShares MSCI Emerging Markets ETF (EEM),1,1,US Stocks & ETFs,EEM,USD,100
+EWH,2,iShares MSCI Hong Kong ETF (EWH),1,1,US Stocks & ETFs,EWH,USD,100
+EWW,2,iShares MSCI Mexico Capped ETF (EWW),1,1,US Stocks & ETFs,EWW,USD,100
+EWZ,2,iShares MSCI Brazil Capped ETF (EWZ),1,1,US Stocks & ETFs,EWZ,USD,100
+FXI,2,iShares China Large-Cap ETF (FXI),1,1,US Stocks & ETFs,FXI,USD,100
+GDX,2,VanEck Gold Miners ETF (GDX),1,1,US Stocks & ETFs,GDX,USD,100
+IEMG,2,iShares Core MSCI Emerging Markets ETF (IEMG),1,1,US Stocks & ETFs,IEMG,USD,100
+LQD,2,iShares iBoxx $ Inv Grade Corporate Bond ETF (LQD),1,1,US Stocks & ETFs,LQD,USD,100
+MJ,2,ETFMG Alternative Harvest ETF (MJ),1,1,US Stocks & ETFs,MJ,USD,100
+VYM,2,Vanguard High Dividend Yield ETF (VYM),1,1,US Stocks & ETFs,VYM,USD,100
+XLE,2,Energy Select Sector SPDR ETF (XLE),1,1,US Stocks & ETFs,XLE,USD,100
+XLF,2,Financial Select Sector SPDR ETF (XLF),1,1,US Stocks & ETFs,XLF,USD,100
+XLI,2,Industrial Select Sector SPDR ETF (XLI),1,1,US Stocks & ETFs,XLI,USD,100
+XLP,2,Consumer Staples Select Sector SPDR ETF (XLP),1,1,US Stocks & ETFs,XLP,USD,100
+XLU,2,Utilities Select Sector SPDR ETF (XLU),1,1,US Stocks & ETFs,XLU,USD,100
+XOP,2,SPDR S&P Oil & Gas Explor & Prodtn ETF (XOP),1,1,US Stocks & ETFs,XOP,USD,100
+URA,2,Global X Uranium ETF (URA),1,1,US Stocks & ETFs,URA,USD,100
+TLT,2,iShares 20+ Year Treasury Bond ETF (TLT),1,1,US Stocks & ETFs,TLT,USD,100
+QQQ,2,Invesco QQQ Trust (QQQ),1,1,US Stocks & ETFs,QQQ,USD,100
+SPY,2,SPDR S&P 500 ETF Trust (SPY),1,1,US Stocks & ETFs,SPY,USD,100
+LIT,2,Global X Lithium & Battery Tech ETF (LIT),1,1,US Stocks & ETFs,LIT,USD,100
+ICLN,2,iShares Global Clean Energy ETF (ICLN),1,1,US Stocks & ETFs,ICLN,USD,100
+VALE,2,Vale SA ADR (VALE),1,1,US Stocks & ETFs,VALE,USD,100
+BB,2,BlackBerry Ltd (BB),1,1,US Stocks & ETFs,BB,USD,100
+IWO,2,iShares Russell 2000 Growth ETF (IWO),1,1,US Stocks & ETFs,IWO,USD,100
+ARKQ,2,Autonomous Technology & Robotics ETF (ARKQ),1,1,US Stocks & ETFs,ARKQ,USD,100
+ARKW,2,Next Generation Internet ETF (ARKW),1,1,US Stocks & ETFs,ARKW,USD,100
+ARKG,2,Genomic Revolution ETF (ARKG),1,1,US Stocks & ETFs,ARKG,USD,100
+ARKF,2,Fintech Innovation ETF (ARKF),1,1,US Stocks & ETFs,ARKF,USD,100
+PRNT,2,The 3D Printing ETF (PRNT),1,1,US Stocks & ETFs,PRNT,USD,100
+IZRL,2,Israel Innovative Technology ETF (IZRL),1,1,US Stocks & ETFs,IZRL,USD,100
+ARKX,2,Space Exploration & Innovation ETF (ARKX),1,1,US Stocks & ETFs,ARKX,USD,100
+COIN,2,Coinbase Global Inc (COIN),1,1,US Stocks & ETFs,COIN,USD,100
+EWY,2,iShares MSCI South Korea ETF (EWY),1,1,US Stocks & ETFs,EWY,USD,100
+HOOD,2,Robinhood Markets Inc (HOOD),1,1,US Stocks & ETFs,HOOD,USD,100
+ETHBTC,5,Ethereum vs BitCoin (ETHBTC),1,1,CFD Crypto,ETH,BTC,10
+AXON,2,Axon Enterprise Inc (AXON),1,1,US Stocks & ETFs,AXON,USD,100
+LCID,2,Lucid Group Inc (LCID),1,1,US Stocks & ETFs,LCID,USD,100
+RIVN,2,Rivian Automotive Inc (RIVN),1,1,US Stocks & ETFs,RIVN,USD,100
+SBSW,2,Sibanye Stillwater Ltd (SBSW),1,1,US Stocks & ETFs,SBSW,USD,100
+WBD,2,Warner Bros Discovery Inc (WBD),1,1,US Stocks & ETFs,WBD,USD,100
+ASML,2,ASML Holding NV ADS (ASML),1,1,US Stocks & ETFs,ASML,USD,100
+ELV,2,Elevance Health Inc. (ELV),1,1,US Stocks & ETFs,ELV,USD,100
+USTUSD,3,Tether USDt vs US Dollar (USDtUSD),1,0,Crypto Indicative,UST,USD,5
+SHOP,2,Shopify Inc (SHOP),1,1,US Stocks & ETFs,SHOP,USD,100
+#VIX,3,CBOE Volatility Index (VIX),1,1,CFD Index 2,VIX,USD,5
+#DXY,2,US Dollar USDX Index (DXY),100,1,CFD Index 1,DXY,USD,5
+EURZAR,5,Euro to South African Rand,100000,0,ECN FX Group2,EUR,ZAR,5
+EURMXN,5,Euro to Mexican Peso,100000,0,ECN FX Group2,EUR,MXN,5
+USDHUF,3,US Dollar to Hungarian Forint,100000,0,ECN FX Group2,USD,HUF,5
+EURHUF,3,Euro to Hungarian Forint,100000,0,ECN FX Group2,EUR,HUF,5
+USDCZK,4,US Dollar to Czech Koruna,100000,0,ECN FX Group2,USD,CZK,5
+EURCZK,4,Euro to Czech Koruna,100000,0,ECN FX Group2,EUR,CZK,5
+USDILS,4,US Dollars to Israeli Shekel,100000,0,ECN FX Group2,USD,ILS,5
+RVTY,2,Revvity Inc (RVTY) (old PKI),1,1,US Stocks & ETFs,RVTY,USD,100
+SLV,2,iShares Silver Trust ETF (SLV),1,1,US Stocks & ETFs,SLV,USD,100
+FI,2,Fiserv Inc. (FI),1,1,US Stocks & ETFs,FI,USD,100
+TMF,2,Direxion Daily 20+ Year Treasury Bull 3X Shares ETF (TMF),1,1,Leveraged ETFs,TMF,USD,100
+USO,2,United States Oil ETF (USO),1,1,US Stocks & ETFs,USO,USD,100
+GLDE,2,SPDR Gold Shares ETF (GLD),1,1,US Stocks & ETFs,GLDE,USD,100
+ARM,2,ARM Holdings PLC ADR (ARM),1,1,US Stocks & ETFs,ARM,USD,100
+ETHUSD,3,Ethereum vs US Dollar (ETHUSD),1,1,CFD Crypto,ETH,USD,10
+LINKUSD,4,Chainlink (LINK) vs US Dollar,1,1,CFD Crypto,LINK,USD,500
+LTCUSD,3,LiteCoin vs US Dollar (LTCUSD),1,1,CFD Crypto,LTC,USD,100
+POLUSD,4,Polygon Ecosystem Token (POL) vs US Dollar,1,1,CFD Crypto,MATIC,USD,10000
+SOLUSD,2,Solana (SOL) vs US Dollar,1,1,CFD Crypto,SOL,USD,250
+TONUSD,4,TON Coin (TON) vs US Dollar,1,1,CFD Crypto,TON,USD,1000
+TRUMPUSD,2,TRUMP Coin (TRUMP) vs US Dollar,1,1,CFD Crypto,TRUMP,USD,5000
+TRXUSD,5,TRON vs US Dollar (TRXUSD),1,1,CFD Crypto,TRX,USD,10000
+XLMUSD,4,Stellar (XLM) vs US Dollar,1,1,CFD Crypto,XLM,USD,10000
+USDTUSD,3,Tether USDt vs US Dollar (USDtUSD),1,0,Crypto Indicative,USDT,USD,5
+BKCH,2,Global X Blockchain ETF (BKCH),1,1,US Stocks & ETFs,BKCH,USD,100
+HEAL,2,The Global X HealthTech ETF (HEAL),1,1,US Stocks & ETFs,EDOC,USD,100
+CLIP,2,Global X 1-3 Month T-Bill ETF (CLIP),1,1,US Stocks & ETFs,CLIP,USD,100
+INDY,2,iShares India 50 ETF (INDY),1,1,US Stocks & ETFs,INDY,USD,100
+INDA,2,iShares MSCI India ETF (INDA),1,1,US Stocks & ETFs,INDA,USD,100
+VNAM,2,Global X MSCI Vietnam ETF (VNAM),1,1,US Stocks & ETFs,VNAM,USD,100
+ARGT,2,Global X MSCI Argentina ETF (ARGT),1,1,US Stocks & ETFs,ARGT,USD,100
+UNG,2,United States Natural Gas Fund LP ETF (UNG),1,1,US Stocks & ETFs,UNG,USD,100
+AUDHKD,5,Australian Dollar vs Hong Kong Dollar,100000,0,Forex Indicative,AUD,HKD,5
+GBPHKD,5,Great Britain Pound vs Hong Kong Dollar,100000,0,Forex Indicative,GBP,HKD,5
+TQQQ,2,ProShares UltraPro QQQ (TQQQ),1,1,Leveraged ETFs,TQQQ,USD,100
+SOXL,2,Direxion Daily Semiconductor Bull 3X Shares (SOXL),1,1,Leveraged ETFs,SOXL,USD,100
+SSO,2,ProShares Ultra S&P 500 (SSO),1,1,Leveraged ETFs,SSO,USD,100
+ERX,2,Direxion Daily Energy Bull 2x Shares (ERX),1,1,Leveraged ETFs,ERX,USD,100
+NAIL,2,Direxion Daily Homebuilders & Supplies Bull 3X Shares (NAIL),1,1,Leveraged ETFs,NAIL,USD,100
+URTY,2,ProShares UltraPro Russell2000 (URTY),1,1,Leveraged ETFs,URTY,USD,100
+AAPB,2,GraniteShares 2x Long AAPL Daily ETF (AAPB),1,1,Leveraged ETFs,AAPB,USD,100
+AMDL,2,GraniteShares 2x Long AMD Daily ETF (AMDL),1,1,Leveraged ETFs,AMDL,USD,100
+AMZZ,2,GraniteShares 2x Long AMZN Daily ETF (AMZZ),1,1,Leveraged ETFs,AMZZ,USD,100
+BABX,2,GraniteShares 2x Long BABA Daily ETF (BABX),1,1,Leveraged ETFs,BABX,USD,100
+CONL,2,GraniteShares 2x Long COIN Daily ETF (CONL),1,1,Leveraged ETFs,CONL,USD,100
+FBL,2,GraniteShares 2x Long META Daily ETF (FBL),1,1,Leveraged ETFs,FBL,USD,100
+NVDL,2,GraniteShares 2x Long NVDA Daily ETF (NVDL),1,1,Leveraged ETFs,NVDL,USD,100
+TSLR,2,GraniteShares 2x Long TSLA Daily ETF (TSLR),1,1,Leveraged ETFs,TSLR,USD,100
+MSTR,2,MicroStrategy Incorporated (MSTR),1,1,US Stocks & ETFs,MSTR,USD,100
+CRWD,2,CrowdStrike Holdings Inc (CRWD),1,1,US Stocks & ETFs,CRWD,USD,100
+ZS,2,Zscaler Inc (ZS),1,1,US Stocks & ETFs,ZS,USD,100
+ETSY,2,Etsy Inc (ETSY),1,1,US Stocks & ETFs,ETSY,USD,100
+BILL,2,Bill Com Holdings Inc (BILL),1,1,US Stocks & ETFs,BILL,USD,100
+PLUG,2,Plug Power Inc. (PLUG),1,1,US Stocks & ETFs,PLUG,USD,100
+GTM,2,ZoomInfo Technologies Inc. (GTM),1,1,US Stocks & ETFs,ZI,USD,100
+GLOB,2,Globant SA (GLOB),1,1,US Stocks & ETFs,GLOB,USD,100
+TTD,2,The Trade Desk (TTD),1,1,US Stocks & ETFs,TTD,USD,100
+BMBL,2,Bumble Inc. (BMBL),1,1,US Stocks & ETFs,BMBL,USD,100
+FVRR,2,Fiverr International Ltd (FVRR),1,1,US Stocks & ETFs,FVRR,USD,100
+SNAP,2,Snap Inc. (SNAP),1,1,US Stocks & ETFs,SNAP,USD,100
+PLTR,2,Palantir Technologies Inc. (PLTR),1,1,US Stocks & ETFs,PLTR,USD,100
+LYFT,2,LYFT Inc. (LYFT),1,1,US Stocks & ETFs,LYFT,USD,100
+DDOG,2,Datadog Inc. (DDOG),1,1,US Stocks & ETFs,DDOG,USD,100
+JKS,2,JinkoSolar Holding Company Limited (JKS),1,1,US Stocks & ETFs,JKS,USD,100
+AI,2,C3.ai Inc. (AI),1,1,US Stocks & ETFs,AI,USD,100
+IRBT,2,iRobot Corporation (IRBT),1,1,US Stocks & ETFs,IRBT,USD,100
+ROKU,2,Roku Inc. (ROKU),1,1,US Stocks & ETFs,ROKU,USD,100
+DOCU,2,DocuSign Inc. (DOCU),1,1,US Stocks & ETFs,DOCU,USD,100
+XYZ,2,Block Inc. (XYZ),1,1,US Stocks & ETFs,SQ,USD,100
+FSLY,2,Fastly Inc. (FSLY),1,1,US Stocks & ETFs,FSLY,USD,100
+LUMN,2,Lumen Technologies Inc. (LUMN),1,1,US Stocks & ETFs,LUMN,USD,100
+SMCI,2,Super Micro Computer Inc. (SMCI),1,1,US Stocks & ETFs,SMCI,USD,100
+MTCH,2,Match Group Inc. (MTCH),1,1,US Stocks & ETFs,MTCH,USD,100
+MSFL,2,GraniteShares 2x Long MSFT Daily ETF (MSFL),1,1,Leveraged ETFs,MSFL,USD,100
+NVD,2,Graniteshares 2x Short NVDA Daily ETF (NVD),1,1,Leveraged ETFs,NVD,USD,100
+ATUS,2,Altice USA Inc. (ATUS),1,1,US Stocks & ETFs,ATUS,USD,100
+ATOS,2,Atossa Therapeutics Inc. (ATOS),1,1,US Stocks & ETFs,ATOS,USD,100
+USDZAR,5,US Dollar to South African Rand,100000,0,ECN FX Group2,USD,ZAR,5
+ERIE,2,Erie Indemnity Co. Class A (ERIE),1,1,US Stocks & ETFs,ERIE,USD,100
+DELL,2,Dell Technologies Inc. Class C Common Stock (DELL),1,1,US Stocks & ETFs,DELL,USD,100
+AAL.UK,0,Anglo American PLC (AAL),1,1,UK Stocks,AAL.UK,GBX,5
+ADM.UK,0,Admiral Group PLC (ADM),1,1,UK Stocks,ADM.UK,GBX,5
+BA.UK,0,BAE Systems PLC (BA),1,1,UK Stocks,BA.UK,GBX,5
+MRO.UK,1,MELROSE INDUSTRIES PLC (MRO),1,1,UK Stocks,MRO.UK,GBX,5
+PRU.UK,0,Prudential PLC (PRU),1,1,UK Stocks,PRU.UK,GBX,5
+TSCO.UK,1,Tesco PLC (TSCO),1,1,UK Stocks,TSCO.UK,GBX,5
+BARC.UK,1,Barclays PLC (BARC),1,1,UK Stocks,BARC.UK,GBX,5
+HSBA.UK,1,HSBC Holdings plc (HSBA),1,1,UK Stocks,HSBA.UK,GBX,5
+VOD.UK,1,Vodafone Group PLC (VOD),1,1,UK Stocks,VOD.UK,GBX,5
+AAF.UK,1,Airtel Africa PLC (AAF),1,1,UK Stocks,AAF.UK,GBX,5
+ABF.UK,0,Associated British Foods PLC (ABF),1,1,UK Stocks,ABF.UK,GBX,5
+AHT.UK,0,Ashtead Group PLC (AHT),1,1,UK Stocks,AHT.UK,GBX,5
+ANTO.UK,0,Antofagasta PLC (ANTO),1,1,UK Stocks,ANTO.UK,GBX,5
+AUTO.UK,1,Auto Trader Group PLC (AUTO),1,1,UK Stocks,AUTO.UK,GBX,5
+AZN.UK,0,AstraZeneca PLC (AZN),1,1,UK Stocks,AZN.UK,GBX,5
+BATS.UK,0,British American Tobacco PLC (BATS),1,1,UK Stocks,BATS.UK,GBX,5
+BTRW.UK,1,Barratt Redrow PLC (BTRW),1,1,UK Stocks,BDEV.UK,GBX,5
+BEZ.UK,0,Beazley PLC (BEZ),1,1,UK Stocks,BEZ.UK,GBX,5
+BKG.UK,0,BERKELEY GROUP HOLDINGS (THE) PLC (BKG),1,1,UK Stocks,BKG.UK,GBX,5
+BME.UK,1,B&M EUROPEAN VALUE RETAIL S.A. (BME),1,1,UK Stocks,BME.UK,GBX,5
+BNZL.UK,0,Bunzl PLC (BNZL),1,1,UK Stocks,BNZL.UK,GBX,5
+BRBY.UK,0,Burberry Group PLC (BRBY),1,1,UK Stocks,BRBY.UK,GBX,5
+BT.A.UK,1,BT Group PLC (BT.A),1,1,UK Stocks,BT.A.UK,GBX,5
+CCH.UK,0,Coca-Cola HBC AG (CCH),1,1,UK Stocks,CCH.UK,GBX,5
+CNA.UK,1,CENTRICA PLC (CNA),1,1,UK Stocks,CNA.UK,GBX,5
+CPG.UK,0,Compass Group PLC (CPG),1,1,UK Stocks,CPG.UK,GBX,5
+CRDA.UK,0,Croda International PLC (CRDA),1,1,UK Stocks,CRDA.UK,GBX,5
+CTEC.UK,0,Convatec Group PLC (CTEC),1,1,UK Stocks,CTEC.UK,GBX,5
+DCC.UK,0,DCC PLC (DCC),1,1,UK Stocks,DCC.UK,GBX,5
+DGE.UK,0,DIAGEO PLC (DGE),1,1,UK Stocks,DGE.UK,GBX,5
+DPLM.UK,0,Diploma PLC (DPLM),1,1,UK Stocks,DPLM.UK,GBX,5
+EDV.UK,0,ENDEAVOUR MINING PLC (EDV),1,1,UK Stocks,EDV.UK,GBX,5
+ENT.UK,0,Entain PLC (ENT),1,1,UK Stocks,ENT.UK,GBX,5
+EXPN.UK,0,Experian PLC (EXPN),1,1,UK Stocks,EXPN.UK,GBX,5
+EZJ.UK,0,Easyjet PLC (EZJ),1,1,UK Stocks,EZJ.UK,GBX,5
+FCIT.UK,0,F&C Investment Trust PLC (FCIT),1,1,UK Stocks,FCIT.UK,GBX,5
+FRAS.UK,0,Frasers Group PLC (FRAS),1,1,UK Stocks,FRAS.UK,GBX,5
+FRES.UK,0,Fresnillo PLC (FRES),1,1,UK Stocks,FRES.UK,GBX,5
+GLEN.UK,1,Glencore PLC (GLEN),1,1,UK Stocks,GLEN.UK,GBX,5
+GSK.UK,0,GSK PLC (GSK),1,1,UK Stocks,GSK.UK,GBX,5
+HIK.UK,0,Hikma Pharmaceuticals PLC (HIK),1,1,UK Stocks,HIK.UK,GBX,5
+HLMA.UK,0,Halma PLC (HLMA),1,1,UK Stocks,HLMA.UK,GBX,5
+HLN.UK,1,HALEON PLC (HLN),1,1,UK Stocks,HLN.UK,GBX,5
+HWDN.UK,0,Howden Joinery Group PLC (HWDN),1,1,UK Stocks,HWDN.UK,GBX,5
+IAG.UK,0,INTERNATIONAL CONSOLIDATED AIRLINES GROUP S.A. (IAG),1,1,UK Stocks,IAG.UK,GBX,5
+ICG.UK,0,Intermediate Capital Group PLC (ICG),1,1,UK Stocks,ICG.UK,GBX,5
+IHG.UK,0,InterContinental Hotels Group PLC (IHG),1,1,UK Stocks,IHG.UK,GBX,5
+III.UK,0,3i Group PLC (III),1,1,UK Stocks,III.UK,GBX,5
+IMB.UK,0,Imperial Brands PLC (IMB),1,1,UK Stocks,IMB.UK,GBX,5
+IMI.UK,0,IMI PLC (IMI),1,1,UK Stocks,IMI.UK,GBX,5
+INF.UK,0,Informa PLC (INF),1,1,UK Stocks,INF.UK,GBX,5
+ITRK.UK,0,Intertek Group PLC (ITRK),1,1,UK Stocks,ITRK.UK,GBX,5
+KGF.UK,1,Kingfisher PLC (KGF),1,1,UK Stocks,KGF.UK,GBX,5
+LAND.UK,0,LAND SECURITIES GROUP PLC (LAND),1,1,UK Stocks,LAND.UK,GBX,5
+LGEN.UK,1,Legal & General Group PLC (LGEN),1,1,UK Stocks,LGEN.UK,GBX,5
+LLOY.UK,2,Lloyds Banking Group PLC (LLOY),1,1,UK Stocks,LLOY.UK,GBX,5
+LMP.UK,0,LondonMetric Property PLC (LMP),1,1,UK Stocks,LMP.UK,GBX,5
+LSEG.UK,0,London Stock Exchange Group PLC (LSEG),1,1,UK Stocks,LSEG.UK,GBX,5
+MKS.UK,1,Marks & Spencer Group PLC (MKS),1,1,UK Stocks,MKS.UK,GBX,5
+MNDI.UK,0,MONDI PLC (MNDI),1,1,UK Stocks,MNDI.UK,GBX,5
+MNG.UK,1,M&G PLC (MNG),1,1,UK Stocks,MNG.UK,GBX,5
+NWG.UK,1,NatWest Group PLC (NWG),1,1,UK Stocks,NWG.UK,GBX,5
+NXT.UK,0,Next PLC (NXT),1,1,UK Stocks,NXT.UK,GBX,5
+PHNX.UK,0,Phoenix Group Holdings (PHNX),1,1,UK Stocks,PHNX.UK,GBX,5
+PSH.UK,0,Pershing Square Holdings Ltd (PSH),1,1,UK Stocks,PSH.UK,GBX,5
+PSN.UK,0,PERSIMMON PLC (PSN),1,1,UK Stocks,PSN.UK,GBX,5
+PSON.UK,0,Pearson PLC (PSON),1,1,UK Stocks,PSON.UK,GBX,5
+REL.UK,0,RELX PLC (REL),1,1,UK Stocks,REL.UK,GBX,5
+RIO.UK,0,Rio Tinto PLC (RIO),1,1,UK Stocks,RIO.UK,GBX,5
+RKT.UK,0,Reckitt Benckiser Group PLC (RKT),1,1,UK Stocks,RKT.UK,GBX,5
+RMV.UK,0,RIGHTMOVE PLC (RMV),1,1,UK Stocks,RMV.UK,GBX,5
+RTO.UK,0,RENTOKIL INITIAL PLC (RTO),1,1,UK Stocks,RTO.UK,GBX,5
+SBRY.UK,0,J Sainsbury PLC (SBRY),1,1,UK Stocks,SBRY.UK,GBX,5
+SDR.UK,0,SCHRODERS PLC (SDR),1,1,UK Stocks,SDR.UK,GBX,5
+SGE.UK,0,Sage Group PLC (SGE),1,1,UK Stocks,SGE.UK,GBX,5
+SGRO.UK,0,SEGRO PLC (SGRO),1,1,UK Stocks,SGRO.UK,GBX,5
+SHEL.UK,0,Shell PLC (SHEL),1,1,UK Stocks,SHEL.UK,GBX,5
+SMIN.UK,0,Smiths Group PLC (SMIN),1,1,UK Stocks,SMIN.UK,GBX,5
+SMT.UK,0,Scottish Mortgage Investment Trust PLC (SMT),1,1,UK Stocks,SMT.UK,GBX,5
+SSE.UK,0,SSE PLC (SSE),1,1,UK Stocks,SSE.UK,GBX,5
+STAN.UK,0,STANDARD CHARTERED PLC (STAN),1,1,UK Stocks,STAN.UK,GBX,5
+SVT.UK,0,Severn Trent PLC (SVT),1,1,UK Stocks,SVT.UK,GBX,5
+ULVR.UK,0,Unilever PLC (ULVR),1,1,UK Stocks,ULVR.UK,GBX,5
+UTG.UK,0,Unite Group PLC (UTG),1,1,UK Stocks,UTG.UK,GBX,5
+VTY.UK,0,Vistry Group PLC (VTY),1,1,UK Stocks,VTY.UK,GBX,5
+WEIR.UK,0,WEIR Group PLC (WEIR),1,1,UK Stocks,WEIR.UK,GBX,5
+WPP.UK,0,WPP PLC (WPP),1,1,UK Stocks,WPP.UK,GBX,5
+WTB.UK,0,Whitbread PLC (WTB),1,1,UK Stocks,WTB.UK,GBX,5
+BP.UK,1,BP plc (BP.),1,1,UK Stocks,BP.UK,GBX,5
+AV.UK,1,AVIVA PLC (AV.),1,1,UK Stocks,AV.UK,GBX,5
+JD.UK,1,JD Sports Fashion PLC (JD.),1,1,UK Stocks,JD.UK,GBX,5
+NG.UK,0,National Grid PLC (NG.),1,1,UK Stocks,NG.UK,GBX,5
+RR.UK,0,Rolls-Royce Holdings PLC (RR.),1,1,UK Stocks,RR.UK,GBX,5
+SN.UK,0,SMITH & NEPHEW PLC (SN.),1,1,UK Stocks,SN.UK,GBX,5
+SPX.UK,0,Spirax Group PLC (SPX),1,1,UK Stocks,SPX.UK,GBX,5
+TW.UK,1,TAYLOR WIMPEY PLC (TW.),1,1,UK Stocks,TW.UK,GBX,5
+UU.UK,0,United Utilities Group PLC (UU.),1,1,UK Stocks,UU.UK,GBX,5
+941.HK,2,China Mobile Limited HK (941),500,1,HK Stocks,941.HK,HKD,5
+1810.HK,2,Xiaomi Corporation HK (1810),200,1,HK Stocks,1810.HK,HKD,5
+XLC,2,The Communication Services Select Sector SPDR® ETF Fund (XLC),1,1,US Stocks & ETFs,XLC,USD,100
+XLY,2,The Consumer Discretionary Select Sector SPDR® Fund (XLY),1,1,US Stocks & ETFs,XLY,USD,100
+XLV,2,The Health Care Select Sector SPDR® Fund (XLV),1,1,US Stocks & ETFs,XLV,USD,100
+XLB,2,The Materials Select Sector SPDR® Fund (XLB),1,1,US Stocks & ETFs,XLB,USD,100
+XLRE,2,The Real Estate Select Sector SPDR® Fund (XLRE),1,1,US Stocks & ETFs,XLRE,USD,100
+XLK,2,The Technology Select Sector SPDR® Fund (XLK),1,1,US Stocks & ETFs,XLK,USD,100
+GBXUSD,6,Great Britain Pence vs US Dollar,100000,0,Rates,GBX,USD,5
+BLND.UK,0,British Land Co PLC,1,1,UK Stocks,BLND.UK,GBX,5
+BHP.AU,2,BHP Group Ltd (BHP),1,1,AU Stocks,BHP.AU,AUD,5
+TPL,2,Texas Pacific Land Corp. (TPL),1,1,US Stocks & ETFs,TPL,USD,100
+GBXGBP,6,Great Britain Pence vs Great Britain Pound,100000,0,Rates,GBX,GBP,5
+GBXEUR,6,Great Britain Pence vs Euro,100000,0,Rates,GBX,EUR,5
+GBXAUD,6,Great Britain Pence vs Australian Dollar,100000,0,Rates,GBX,AUD,5
+XRPUSD,5,Ripple vs US Dollar (XRPUSD),1,1,CFD Crypto,XRP,USD,1000
+IBIT,2,iShares Bitcoin Trust ETF (IBIT),1,1,US Stocks & ETFs,IBIT,USD,100
+USDCNY,4,US Dollar vs Chinese Yuan,100000,0,Rates,USD,CNY,5
+FIG,2,Figma Inc. (FIG),1,1,US Stocks & ETFs,FIG,USD,100
+BITO,2,ProShares Bitcoin ETF (BITO),1,1,US Stocks & ETFs,BITO,USD,100
