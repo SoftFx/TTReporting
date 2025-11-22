@@ -132,14 +132,14 @@ tryCatch({
   if(nrow(CountOfDealsDT) > 0){
     addcomment <- paste("Deals Count >", config$business_parameters$deals_count_threshold, "for the previous", as.character(seconds_to_period(round(as.numeric(difftime(To, From), units = "secs"), 0))), ":")
     UpdateIntSensorValue(productKey = config$monitoring$connection$productKey,  address = config$monitoring$connection$address, port = config$monitoring$connection$port, 
-                         path = config$monitoring$connection$path[3], #3 -test
+                         path = config$monitoring$connection$path[1], #3 -test
                          value = nrow(CountOfDealsDT),
                          status = 1, comment = paste(addcomment, "\n", paste(CountOfDealsDT[, DataText], collapse= ";\n"), sep = "")
     )   
   } else {  #if nrow(resulttable)==0
     
     UpdateIntSensorValue(productKey = config$monitoring$connection$productKey,  address = config$monitoring$connection$address, port = config$monitoring$connection$port, 
-                         path = config$monitoring$connection$path[3], #3 -test
+                         path = config$monitoring$connection$path[1], #3 -test
                          value = 0, status = 1, comment = "") #No big N
   }
 }, error = function(e){
