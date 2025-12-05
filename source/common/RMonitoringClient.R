@@ -2,6 +2,7 @@ library(httr)
 library(jsonlite)
 library(data.table)
 library(lubridate)
+library(tools)
 options(scipen = 999, digits.secs = 6)
 
 # Вспомогательная функция для всех запросов к HSM
@@ -117,9 +118,11 @@ UpdateFileSensolValue <- function(productKey, address, port, path, filePath, sta
     stop("No files or invalid file format")
   }
   
-  parsedFilePath <- unlist(strsplit(parsedFilePath, "\\."))
-  fileExtension <- parsedFilePath[length(parsedFilePath)]
-  fileName <- basename(parsedFilePath[1])
+  #parsedFilePath <- unlist(strsplit(parsedFilePath, "\\."))
+  #fileExtension <- parsedFilePath[length(parsedFilePath)]
+  #fileName <- basename(parsedFilePath[1])
+  fileExtension <- file_ext(parsedFilePath)
+  fileName <- file_path_sans_ext(basename(parsedFilePath))
   
   if (!(newFileName == "" || is.na(newFileName) || is.null(newFileName))) {
     fileName <- unlist(strsplit(basename(newFileName), "\\."))[1]
