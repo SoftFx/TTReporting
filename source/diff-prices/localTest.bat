@@ -1,0 +1,2 @@
+Rscript main.r
+pause
