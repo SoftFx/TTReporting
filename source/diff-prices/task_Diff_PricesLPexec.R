@@ -68,7 +68,7 @@ if(ncol(resultsaggr) > 0){
   print("missed Symbols:")
   sort(unique(resultsaggr[is.na(SlippageThreshold), symbol]))
   missed_symb <-paste0(sort(unique(resultsaggr[is.na(SlippageThreshold), symbol])), collapse = "," )
-  if(length(missed_symb)>1) {statusError <<- append(statusError, paste0("missed Symbols in config:", missed_symb))}
+  if(nchar(missed_symb)>1) {statusError <<- append(statusError, paste0("missed Symbols in config:", missed_symb))}
   
  # Diff_Prices_perc
   res1 <- resultsaggr[abs(perc_diff) >= config$business_parameters$price_threshold_percent][, sensor:="Diff_Prices_perc"]
