@@ -11,6 +11,7 @@ on:
           - all
           - big-trades
           - count-trades
+          - diff-prices
   release:
     types: [published]
 
