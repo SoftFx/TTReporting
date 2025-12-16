@@ -40,7 +40,9 @@ RUN set -eux; \
   apt-get install -y --no-install-recommends \
     libmariadb3 \
     libpq5 libcurl4 libssl3 libxml2; \
+  apt-mark manual libpq5 libmariadb3 libcurl4 libssl3 libxml2; \
   rm -rf /var/lib/apt/lists/*
+
 
 
 # 5) Strip build deps and clean cache
