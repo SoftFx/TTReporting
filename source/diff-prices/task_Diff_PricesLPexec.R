@@ -59,16 +59,18 @@ if(ncol(resultsaggr) > 0){
   resultsaggr[, slipp_2 := ifelse(grepl("BUY", Command),(execution_price-slippage_requested_price)*(-1), execution_price-slippage_requested_price)]
   
   print("Excluded LP:")
-  setdiff(unique(resultsaggr[, bank_name]), config$business_parameters$selected_lp)
+  print(setdiff(unique(resultsaggr[, bank_name]), config$business_parameters$selected_lp))
 # Apply filters from setups
   resultsaggr <- resultsaggr[bank_name %in% config$business_parameters$selected_lp, 
                              .(AGGR, time, "LP"=bank_name, symbol, OrderType, Command, lp_best_price, slippage_requested_price, user_price, execution_price, requested_volume, filled_volume,
                                lp_execution_slippage, perc_diff, slipp_2, SlippageThreshold, request_id, lp_request_id)]  
   
   print("missed Symbols:")
-  sort(unique(resultsaggr[is.na(SlippageThreshold), symbol]))
+  print(sort(unique(resultsaggr[is.na(SlippageThreshold), symbol])))
   missed_symb <-paste0(sort(unique(resultsaggr[is.na(SlippageThreshold), symbol])), collapse = "," )
-  if(nchar(missed_symb)>1) {statusError <<- append(statusError, paste0("missed Symbols in config:", missed_symb))}
+  if(nchar(missed_symb)>1) {statusError <- append(statusError, paste0("missed Symbols in config:", missed_symb))}
+  print("statusError:")
+  print(statusError)
   
  # Diff_Prices_perc
   res1 <- resultsaggr[abs(perc_diff) >= config$business_parameters$price_threshold_percent][, sensor:="Diff_Prices_perc"]
@@ -110,7 +112,7 @@ if(ncol(resultsaggr) > 0){
   TotalLPexec_res <- rbind(res1, res2, res3)
   fwrite(TotalLPexec_res, task_exec_file)
 }
-
+print("Result table:")
 print(TotalLPexec_res)
 
  if (nrow(TotalLPexec_res)==0) {
