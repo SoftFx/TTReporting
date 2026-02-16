@@ -4,3 +4,4 @@ configDocker
 /run/customcommand_output.log
 /run/count-trades/customcommand_output.log
 /run/big-trades/customcommand_output.log
+/examples/big-trades/customcommand_output.log
