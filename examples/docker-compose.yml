@@ -1,0 +1,32 @@
+services:
+  big-deposits:
+    image: softfx/tt-reporting:latest-big-deposits
+    pull_policy: always
+    volumes:
+      - ./big-deposits/configDocker:/app/configDocker:ro
+      - ./big-deposits/dataDocker:/app/dataDocker:rw
+    restart: "no"
+  big-trades:
+    image: softfx/tt-reporting:latest-big-trades
+    pull_policy: always
+    volumes:
+      - ./big-trades/configDocker:/app/configDocker:ro
+      - ./big-trades/dataDocker:/app/dataDocker:rw
+    restart: "no"
+  count-trades:
+    image: softfx/tt-reporting:latest-count-trades
+    pull_policy: always
+    volumes:
+      - ./count-trades/configDocker:/app/configDocker:ro
+      - ./count-trades/dataDocker:/app/dataDocker:rw
+    restart: "no"
+  diff-prices:
+    image: softfx/tt-reporting:latest-diff-prices
+    pull_policy: always
+    volumes:
+      - ./diff-prices/configDocker:/app/configDocker:ro
+      - ./diff-prices/dataDocker:/app/dataDocker:rw
+    restart: "no"
+
+
+
