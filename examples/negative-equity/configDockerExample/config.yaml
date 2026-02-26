@@ -1,0 +1,36 @@
+monitoring:
+  connection:
+    productKey: 123xyz
+    address: hsm.abc.com
+    port: 123
+    paths:
+      - Negative_Equity_test
+      - TasksErrors_test
+database_connections:
+  mt4:
+    mt4_a:
+      dbname: mt4_alpha
+      user: user1
+      password: flkgdfbdgf43j56
+      host: reporting.xyz.net
+      port: 456
+  mt5:
+    mt5_a:
+      dbname: mt5_alpha
+      user: user2
+      password: dfglgnfh614b56nf
+      host: reporting.xyz.net
+      port: 456
+  tt:
+    ttlive:
+      postgre_DB: Reporting
+      postgre_USER: user3
+      postgre_PASSWORD: fsvfsdv32514g561d
+      postgre_HOST: 123.12.123.123
+      postgre_SCHEMA: tts_ttlive
+business_parameters:
+  equity_valueUSD_threshold:
+    - -10
+  excluded_users:
+    - 1111111
+    - 99999

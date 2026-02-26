@@ -1,0 +1,15 @@
+services:
+  negative-equity:
+    image: softfx/tt-reporting:latest-negative-equity
+    pull_policy: always
+    volumes:
+      - ./configDockerExample:/app/configDocker:ro
+      - ./dataDockerExample:/app/dataDocker:rw
+    restart: "no"
+  negative-equity-local:
+    image: negative-equity
+    volumes:
+      - ../../source/negative-equity/configDocker:/app/configDocker:ro
+      - ../../source/negative-equity/dataDocker:/app/dataDocker:rw
+    restart: "no"
+

@@ -1,0 +1,15 @@
+services:
+  big-deposits:
+    image: softfx/tt-reporting:latest-big-deposits
+    pull_policy: always
+    volumes:
+      - ./configDockerExample:/app/configDocker:ro
+      - ./dataDockerExample:/app/dataDocker:rw
+    restart: "no"
+  big-deposits-local:
+    image: big-deposits
+    volumes:
+      - ../../source/big-deposits/configDocker:/app/configDocker:ro
+      - ../../source/big-deposits/dataDocker:/app/dataDocker:rw
+    restart: "no"
+
