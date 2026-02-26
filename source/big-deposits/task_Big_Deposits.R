@@ -27,6 +27,7 @@ if (!is.na(last_run)&&length(last_run)==1) {
   From <- last_run} else {From <- To}
 
 #get meta time offset
+print("get meta time offset:")
 if (length(config$database_connections[["mt5"]])>0){
   tryCatch({ 
     TimeOffset <- META5Timeoffset(config$database_connections$mt5[[1]])}
@@ -36,17 +37,19 @@ if (length(config$database_connections[["mt5"]])>0){
     })
 } else {TimeOffset <- 0L}
 
-#get symbols from TT 
-if (length(config$database_connections[["tt"]])>0){
-  tryCatch({ 
-    SymbolsDT <- getAllSymbolsTT(config$database_connections$tt[[1]])}
-    , error = function(e){
-      print(e)
-      statusError <<- append(statusError, paste("Errors:", substr(e$message, 1, 50), "..."))
-    })
-} else {SymbolsDT <- data.table()}
+#get symbols from TT
+# print("get symbols from TT:")
+# if (length(config$database_connections[["tt"]])>0){
+#   tryCatch({ 
+#     SymbolsDT <- getAllSymbolsTT(config$database_connections$tt[[1]])}
+#     , error = function(e){
+#       print(e)
+#       statusError <<- append(statusError, paste("Errors:", substr(e$message, 1, 50), "..."))
+#     })
+# } else {SymbolsDT <- data.table()}
 
-#get rate2USD from TT 
+#get rate2USD from TT
+print("get rates to USD from TT:")
 if (length(config$database_connections[["tt"]])>0){
   tryCatch({ 
     Rates2USD <- getAllRates2USDTT(config$database_connections$tt[[1]])}
@@ -56,7 +59,9 @@ if (length(config$database_connections[["tt"]])>0){
     })
 } else {Rates2USD <- data.table()}
 
-### MT4 
+print("Get deposits data:")
+### MT4
+print("MT4:")
 resultsmt4 <- data.table()
 resmt4 <- data.table()
 if (length(config$database_connections[["mt4"]])>0){
@@ -76,6 +81,7 @@ resultsmt4 <- rbind(resultsmt4, resmt4)
 } #if
 
 ### MT5
+print("MT5:")
 resultsmt5 <- data.table()
 resmt5 <- data.table()
 if (length(config$database_connections[["mt5"]])>0){
@@ -96,6 +102,7 @@ resultsmt5 <- rbind(resultsmt5, resmt5)
 
 
 ###TTlive
+print("TT:")
 resultstt <- data.table()
 restt <- data.table()
 if (length(config$database_connections[["tt"]])>0){
@@ -133,8 +140,13 @@ BigDepositsDT[, DataText := paste0("DBName: ", DB, " \n",
                                  "Date: ", DATE
 )]
 ###################################
-
+print("Task result:")
+print(paste("from", From, "to", To))
+print("BigDepositsDT:")
 print(BigDepositsDT)
+print("statusError:")
+print(statusError)
+
  if (nrow(BigDepositsDT)== 0) {
    task_res <- data.table(
      DB        = NA_character_,
@@ -157,11 +169,12 @@ tryCatch({
     UpdateBoolSensorValue(productKey = config$monitoring$connection$productKey,  address = config$monitoring$connection$address, port = config$monitoring$connection$port, 
                           path = config$monitoring$connection$path[2],
                           TRUE,
-                          status = 1, comment = paste("!!!!NEW__BIG_DEPOSITS:\n", paste(statusError, collapse = "; "))) 
+                          status = 1, comment = paste("!BIG_DEPOSITS:\n", paste(statusError, collapse = "; "))) 
   } #send hsm notify only if was some errors (OK green)
   
   if(nrow(BigDepositsDT) > 0){
-    addcomment <- paste("Big Deposits for the previous", as.character(seconds_to_period(round(as.numeric(difftime(To, From), units = "secs"), 0))), ":")
+    #addcomment <- paste("Big Deposits for the previous", as.character(seconds_to_period(round(as.numeric(difftime(To, From), units = "secs"), 0))), ":")
+    addcomment <- paste("Big Deposits:")
     UpdateIntSensorValue(productKey = config$monitoring$connection$productKey,  address = config$monitoring$connection$address, port = config$monitoring$connection$port, 
                          path = config$monitoring$connection$path[1], 
                          value = nrow(BigDepositsDT),
@@ -186,7 +199,5 @@ if (file.exists(task_exec_log_path)){
   }
 ######
 
-print(From)
-print(To)
 return(list(TRUE, From, To))
 }
