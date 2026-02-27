@@ -13,6 +13,7 @@ on:
           - count-trades
           - diff-prices
           - big-deposits
+          - negative-equity
   release:
     types: [published]
 
@@ -46,7 +47,11 @@ jobs:
           - name: big-deposits
             dockerfile: build/big-deposits   
             context: .
-            suffix: big-deposits              
+            suffix: big-deposits
+          - name: negative-equity
+            dockerfile: build/negative-equity   
+            context: .
+            suffix: negative-equity            
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3

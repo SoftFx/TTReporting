@@ -1,11 +1,4 @@
 services:
-  diff-prices:
-    image: softfx/tt-reporting:latest-diff-prices
-    pull_policy: always
-    volumes:
-      - ./configDockerExample:/app/configDocker:ro
-      - ./dataDockerExample:/app/dataDocker:rw
-    restart: "no"
   diff-prices-local:
     image: diff-prices
     volumes:
