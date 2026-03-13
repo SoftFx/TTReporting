@@ -22,7 +22,7 @@ internal static class Program
             // Пути "как в проекте": все лежит в configDocker
             var configYaml = Path.Combine(root, "configDocker", "config.yaml");
             var mappingCsv = Path.Combine(root, "configDocker", "mapping.csv");
-            var libsDir = Path.Combine(root, "configDocker", "libs");
+            var libsDir = Path.Combine(root, "libs");
 
             // Базовая диагностика (чтобы сразу видеть, откуда запускается и какие файлы читаем)
             Console.WriteLine("------------------------------------------------");

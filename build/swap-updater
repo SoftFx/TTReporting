@@ -40,8 +40,8 @@ RUN set -eux; \
   test -f /app/sourcePython/swap-updater/TtsSwapsUploader/TtsSwapsUploader.csproj; \
   test -f /app/sourcePython/swap-updater/configDocker/config.yaml; \
   test -f /app/sourcePython/swap-updater/configDocker/mapping.csv; \
-  test -d /app/sourcePython/swap-updater/configDocker/libs; \
-  test -d /app/sourcePython/swap-updater/configDocker/libs/tts
+  test -d /app/sourcePython/swap-updater/libs; \
+  test -d /app/sourcePython/swap-updater/libs/tts
 
 ENV PYTHONPATH=/app/sourcePython/common:/app/sourcePython/swap-updater
 
