@@ -279,7 +279,7 @@ def main():
         paths_cfg.get("tts_uploader_csproj", "TtsSwapsUploader/TtsSwapsUploader.csproj")
     )
 
-    libs_root = swaps_root / Path(paths_cfg.get("tts_libs_dir", "configDocker/libs"))
+    libs_root = swaps_root / Path(paths_cfg.get("tts_libs_dir", "libs"))
     libs_tts_dir = libs_root / "tts"
 
     uploader_cfg = config.get("tts_uploader", {})
