@@ -1,0 +1,79 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\Nikita.Dmitrouk\\Desktop\\TTReporting\\sourcePython\\swap-updater\\TtsSwapsFetcher\\TtsSwapsFetcher.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\Nikita.Dmitrouk\\Desktop\\TTReporting\\sourcePython\\swap-updater\\TtsSwapsFetcher\\TtsSwapsFetcher.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\Nikita.Dmitrouk\\Desktop\\TTReporting\\sourcePython\\swap-updater\\TtsSwapsFetcher\\TtsSwapsFetcher.csproj",
+        "projectName": "TtsSwapsFetcher",
+        "projectPath": "C:\\Users\\Nikita.Dmitrouk\\Desktop\\TTReporting\\sourcePython\\swap-updater\\TtsSwapsFetcher\\TtsSwapsFetcher.csproj",
+        "packagesPath": "C:\\Users\\Nikita.Dmitrouk\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Nikita.Dmitrouk\\Desktop\\TTReporting\\sourcePython\\swap-updater\\TtsSwapsFetcher\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\Nikita.Dmitrouk\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "System.ServiceModel.NetFramingBase": {
+              "target": "Package",
+              "version": "[8.1.2, )"
+            },
+            "System.ServiceModel.NetTcp": {
+              "target": "Package",
+              "version": "[8.1.2, )"
+            },
+            "System.ServiceModel.Primitives": {
+              "target": "Package",
+              "version": "[8.1.2, )"
+            },
+            "YamlDotNet": {
+              "target": "Package",
+              "version": "[15.1.2, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.123/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

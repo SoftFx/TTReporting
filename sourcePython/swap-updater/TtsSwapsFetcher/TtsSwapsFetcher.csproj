@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ServiceModel.NetTcp" Version="8.1.2" />
+    <PackageReference Include="System.ServiceModel.Primitives" Version="8.1.2" />
+    <PackageReference Include="System.ServiceModel.NetFramingBase" Version="8.1.2" />
+    <PackageReference Include="YamlDotNet" Version="15.1.2" />
+  </ItemGroup>
+
+  <!-- References to TickTrader / TP contracts -->
+  <ItemGroup>
+    <Reference Include="Manager.TP.Contract">
+      <HintPath>..\configDocker\libs\tts\Manager.TP.Contract.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+
+    <Reference Include="TickTrader.BusinessObjects">
+      <HintPath>..\configDocker\libs\tts\TickTrader.BusinessObjects.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+
+    <Reference Include="Manager.Common.Contract">
+      <HintPath>..\configDocker\libs\tts\Manager.Common.Contract.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+
+    <!-- если DLL есть — оставь, если нет — удали этот блок -->
+    <Reference Include="TickTrader.Manager.Contract">
+      <HintPath>..\configDocker\libs\tts\TickTrader.Manager.Contract.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

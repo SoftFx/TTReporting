@@ -1,0 +1,503 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Manager.TP.Contract</name>
+    </assembly>
+    <members>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetAccountById(System.Int64)">
+            <summary>
+            Get account by Id from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <param name="accountLogin">Account login</param>
+            <returns>Current account or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetAccountsForRange(System.Int32)">
+            <summary>
+            Get all accounts for the given range in the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <param name="rangeId">rangeId</param>
+            <returns>List of accounts or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetAccountsByRegistrationDate(System.DateTime,System.DateTime)">
+            <summary>
+            Get all accounts by the given registration date range in the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <param name="from">From timestamp</param>
+            <param name="to">To timestamp</param>
+            <returns>List of accounts or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetAccountsByModifyDate(System.DateTime,System.DateTime)">
+            <summary>
+            Get all accounts by the given modification date range in the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <param name="from">From timestamp</param>
+            <param name="to">To timestamp</param>
+            <returns>List of accounts or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetAllAccounts">
+            <summary>
+            Get all accounts from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <returns>List of all accounts or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetAllAccountLogins">
+            <summary>
+            Get all accounts logins from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <returns>List of all accounts logins or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestAccountById(System.Int64)">
+            <summary>
+            Request account by Id directly from Trading Platform.
+            </summary>
+            <param name="accountLogin">Account login</param>
+            <returns>Account info</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestAccountsByIds(System.Collections.Generic.List{System.Int64})">
+            <summary>
+            Request accounts by Ids directly from Trading Platform.
+            </summary>
+            <param name="accountLogins">Account logins</param>
+            <returns>List of Account info</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestAccountsByRegistrationDate(System.DateTime,System.DateTime)">
+            <summary>
+            Request accounts by the given registration date range directly from Trading Platform.
+            </summary>
+            <param name="from">From timestamp</param>
+            <param name="to">To timestamp</param>
+            <returns>List of Account info</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestAccountsByModifyDate(System.DateTime,System.DateTime)">
+            <summary>
+            Request accounts by the given modification date range directly from Trading Platform.
+            </summary>
+            <param name="from">From timestamp</param>
+            <param name="to">To timestamp</param>
+            <returns>List of Account info</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestAllAccounts">
+            <summary>
+            Request all accounts directly from Trading Platform.
+            </summary>
+            <returns>List of accounts or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestAllAccountLogins">
+            <summary>
+            Request all accounts logins directly from Trading Platform.
+            </summary>
+            <returns>List of accounts logins or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestAllAccountsFilter(System.String)">
+            <summary>
+            Request filtered accounts directly from Trading Platform.
+            </summary>
+            <param name="accountFilter">Accounts filter (groups, logins)</param>
+            <returns>List of accounts or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestAllAccountsFilterList(System.Collections.Generic.List{System.String})">
+            <summary>
+            Request filtered accounts directly from Trading Platform.
+            </summary>
+            <param name="accountFilter">Accounts filter (groups, logins)</param>
+            <returns>List of accounts or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPCreateAccount(TickTrader.BusinessObjects.Requests.AccountNewRequest)">
+            <summary>
+            Create new account.
+            </summary>
+            <param name="accountNewRequest">New account request</param>
+            <returns>Info of successfully created account or null if failed</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPModifyAccount(TickTrader.BusinessObjects.Requests.AccountModifyRequest)">
+            <summary>
+            Modify existing account.
+            </summary>
+            <param name="accountModifyRequest">Modify account request</param>
+            <returns>Successful status</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPModifyAccountBalance(TickTrader.BusinessObjects.Requests.AccountBalanceRequest)">
+            <summary>
+            Modify account balance. Deposit/withdrawal account balance. (Deprecated. Does not support Cash accounts.)
+            </summary>
+            <param name="accountBalanceRequest">Account balance request</param>
+            <returns>Successful status</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPDepositWithdrawal(TickTrader.BusinessObjects.Requests.DepositWithdrawalRequest)">
+            <summary>
+            Deposit (or withdraw) money on account. Replaces ModifyAccountBalance method. Supports Cash accounts.
+            </summary>
+            <param name="request">Deposit request</param>
+            <returns>Operation report</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPTransferMoney(TickTrader.BusinessObjects.Requests.TransferMoneyRequest)">
+            <summary>
+            Transfer money for two accounts
+            </summary>
+            <param name="request">Deposit request</param>
+            <returns>Operation report</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPModifyAccountCredit(TickTrader.BusinessObjects.Requests.AccountCreditRequest)">
+            <summary>
+            Modify account credit. Credit in/out account balance.
+            </summary>
+            <param name="accountCreditRequest">Account credit request</param>
+            <returns>Successful status</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPValidateAccount(System.Int64,System.String)">
+            <summary>
+            Validate account.
+            </summary>
+            <param name="accountLogin">Account login</param>
+            <param name="password">Account password</param>
+            <returns>Successful status</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPValidateReadonlyAccount(System.Int64,System.String)">
+            <summary>
+            Validate readonly account.
+            </summary>
+            <param name="accountLogin">Account login</param>
+            <param name="password">Account password</param>
+            <returns>Successful status</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPValidateLogin(System.String,System.String)">
+            <summary>
+            Validate login.
+            </summary>
+            <param name="username">Username</param>
+            <param name="password">Login password</param>
+            <returns>Successful status</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPModifyAccountState(System.Int64,Manager.Common.Contract.BusinessObjects.TPAccountState)">
+            <summary>
+            Modify account state.
+            </summary>
+            <param name="accountLogin">Account login</param>
+            <param name="state">Account state</param>
+            <returns>Successful status</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetDomain(System.String)">
+            <summary>
+            Get the current domain configuration from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <param name="domain">Domain</param>
+            <returns>Current domain configuration or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetAllDomains">
+            <summary>
+            Get the current domains configurations for all domains from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <returns>List of the current domains configurations or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestDomain(System.String)">
+            <summary>
+            Request domain info by name.
+            </summary>
+            <param name="domain">Domain name</param>
+            <returns>Domain info</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestAllDomains">
+            <summary>
+            Get the current domains configurations for all domains from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <returns>List of the current domains configurations or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestLogin(System.String)">
+            <summary>
+            Request login by username directly from Trading Platform.
+            </summary>
+            <param name="username">Username</param>
+            <returns>Login info</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestLoginsByAccountId(System.Int64)">
+            <summary>
+            Request logins by account login directly from Trading Platform.
+            </summary>
+            <param name="accountLogin">Account login</param>
+            <returns>List of login info for Account</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPCreateLogin(TickTrader.BusinessObjects.Requests.LoginNewRequest)">
+            <summary>
+            Create new login.
+            </summary>
+            <param name="loginNewRequest">New login request</param>
+            <returns>Info of successfully created login or null if failed</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPModifyLogin(TickTrader.BusinessObjects.Requests.LoginModifyRequest)">
+            <summary>
+            Modify existing login.
+            </summary>
+            <param name="loginModifyRequest">Modify login request</param>
+            <returns>Successful status</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPDeleteLogin(System.String)">
+            <summary>
+            Delete existing login.
+            </summary>
+            <param name="username">Username</param>
+            <returns>Successful status</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestWebApiToken(System.String)">
+            <summary>
+            Request Web API token by Id directly from Trading Platform.
+            </summary>
+            <param name="webApiId">Web API token Id</param>
+            <returns>Web API token</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestWebApiTokensByAccountId(System.Int64)">
+            <summary>
+            Request all Web API tokens by account login directly from Trading Platform.
+            </summary>
+            <param name="accountLogin">Account login</param>
+            <returns>List of all Web API tokens for Account</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPCreateWebApiToken(TickTrader.BusinessObjects.Requests.WebApiTokenNewRequest)">
+            <summary>
+            Create new Web API token.
+            </summary>
+            <param name="webApiNewTokenRequest">New Web API token request</param>
+            <returns>Info of successfully created Web API token or null if failed</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPModifyWebApiToken(TickTrader.BusinessObjects.Requests.WebApiTokenModifyRequest)">
+            <summary>
+            Modify existing Web API token.
+            </summary>
+            <param name="webApiModifyTokenRequest">Modify Web API token request</param>
+            <returns>Successful status</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPDeleteWebApiToken(System.String)">
+            <summary>
+            Delete existing Web API token.
+            </summary>
+            <param name="webApiId">Web API token Id</param>
+            <returns>Successful status</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPValidateWebApiToken(System.String,System.String,System.String)">
+            <summary>
+            Validate Web API token key and secret.
+            </summary>
+            <param name="webApiId">Web API token Id</param>
+            <param name="webApiKey">Web API token key</param>
+            <param name="webApiSecret">Web API token secret</param>
+            <returns>Successful status</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPResetWebApiTokenSecret(System.String)">
+            <summary>
+            Reset Web API token key and secret.
+            </summary>
+            <param name="webApiId">Web API token Id</param>
+            <returns>New Web API token key and secret</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPCreateAuthenticationToken(TickTrader.BusinessObjects.Requests.AuthTokenRequest)">
+            <summary>
+            OAuth 2.0: Create new Access Token
+            </summary>
+            <param name="request">New Access token request</param>
+            <returns>The result contains a successfully created Access Token</returns>
+            <exception cref="T:System.NotSupportedException">The method is not supported by TTS</exception>
+            <exception cref="T:System.ServiceModel.FaultException">Invalid request or account with username was not found or internal error</exception>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetCurrency(System.String)">
+            <summary>
+            Get the current currency from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <param name="currency">Currency</param>
+            <returns>Current currency info or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetAllCurrencies">
+            <summary>
+            Get the current currency info for all currencies from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <returns>List of the current currencies or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestCurrency(System.String)">
+            <summary>
+            Request currency info by name.
+            </summary>
+            <param name="currency">Currency name</param>
+            <returns>Currency info</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestAllCurrencies">
+            <summary>
+            Request currency list.
+            </summary>
+            <returns>Currency list</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPCreateCurrency(TickTrader.BusinessObjects.Requests.CurrencyNewRequest)">
+            <summary>
+            Create new currency.
+            </summary>
+            <param name="currencyNewRequest">New currency request</param>
+            <returns>Successful status</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPModifyCurrency(TickTrader.BusinessObjects.Requests.CurrencyModifyRequest)">
+            <summary>
+            Modify existing currency.
+            </summary>
+            <param name="currencyModifyRequest">Modify currency request</param>
+            <returns>Successful status</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPDeleteCurrency(System.Nullable{System.Int32},System.String)">
+            <summary>
+            Delete existing currency.
+            </summary>
+            <param name="configVersion">Configuration version</param>
+            <param name="currency">Currency name</param>
+            <returns>Successful status</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetAllCurrencyTypes">
+            <summary>
+            Get all currency types from the Trading Platform.
+            Works without pumping.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetGroup(System.String)">
+            <summary>
+            Get the current group configuration from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <param name="group">Group</param>
+            <returns>Current group configuration or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetAllGroups">
+            <summary>
+            Get the current groups configurations for all groups from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <returns>List of the current groups configurations or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestGroup(System.String)">
+            <summary>
+            Request group info by name.
+            </summary>
+            <param name="group">Group name</param>
+            <returns>Group info</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestAllGroups">
+            <summary>
+            Get the current groups configurations for all groups from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <returns>List of the current groups configurations or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetGroupSecurity(System.String)">
+            <summary>
+            Get the current group security by Id from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <param name="groupSecurityId">Group security Id</param>
+            <returns>Current group security or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetAllGroupSecurities">
+            <summary>
+            Get the current group securities for all groups from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <returns>List of the current group securities or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestGroupSecurity(System.String)">
+            <summary>
+            Request group security info by Id.
+            </summary>
+            <param name="groupSecurityId">Group security Id</param>
+            <returns>Group security info</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestAllGroupSecurities">
+            <summary>
+            Get the current groups configurations for all groups from the Trading Platform pumping.
+            </summary>
+            <returns>List of the current groups configurations or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetSymbol(System.String)">
+            <summary>
+            Get the current symbol info from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <param name="symbol">Symbol</param>
+            <returns>Current symbol info or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetAllSymbols">
+            <summary>
+            Get the current symbol info for all symbols from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <returns>List of the current symbols or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestSymbol(System.String)">
+            <summary>
+            Request symbol info by name.
+            </summary>
+            <param name="symbol">Symbol name</param>
+            <returns>Symbol info</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestAllSymbols">
+            <summary>
+            Request symbol list.
+            </summary>
+            <returns>Symbol list</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPModifySymbol(TickTrader.BusinessObjects.Requests.SymbolModifyRequest)">
+            <summary>
+            Modify existing symbol.
+            </summary>
+            <param name="symbolModifyRequest">Modify symbol request</param>
+            <returns>Successful status</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetSymbolTick(System.String)">
+            <summary>
+            Get the current symbol tick from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <param name="symbol">Symbol</param>
+            <returns>Current symbol tick or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPGetAllSymbolTicks">
+            <summary>
+            Get the current symbol tick for all symbols from the Trading Platform pumping.
+            Works only in pumping mode! 
+            </summary>
+            <returns>List of the current symbol ticks or null</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestSymbolTick(System.String)">
+            <summary>
+            Request symbol tick by name.
+            </summary>
+            <param name="symbol">Symbol name</param>
+            <returns>Symbol tick</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestAllSymbolTicks">
+            <summary>
+            Request symbol ticks list.
+            </summary>
+            <returns>Symbol ticks list</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestOverallTradeHistory(TickTrader.BusinessObjects.Requests.TradeHistoryOverallRequest)">
+            <summary>
+            Request overall trade history
+            </summary>
+            <param name="request">Overall trade history request</param>
+            <returns>Trade history overall report</returns>
+        </member>
+        <member name="M:Manager.TP.Contract.ITPManagerContract.TPRequestDailyDataForAccount(System.Int64,System.DateTime,System.DateTime)">
+            <summary>
+            Request account daily snapshots directly from the Trading Platform.
+            </summary>
+            <param name="account">Account</param>
+            <param name="from">From timestamp</param>
+            <param name="to">To timestamp</param>
+            <returns>List of daily account snapshots</returns>
+        </member>
+    </members>
+</doc>
