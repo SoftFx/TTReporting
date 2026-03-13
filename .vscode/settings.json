@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "./sourcePython/swap-updater",
+        "./sourcePython/common"
+    ]
+}

@@ -1,0 +1,50 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /app
+
+RUN set -eux; \
+  apt-get update; \
+  apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    python3-venv \
+    ca-certificates \
+    curl \
+    git; \
+  rm -rf /var/lib/apt/lists/*
+
+RUN set -eux; \
+  python3 -m pip install --no-cache-dir --break-system-packages \
+    pandas \
+    requests \
+    PyYAML \
+    urllib3
+
+COPY sourcePython/ /app/sourcePython/
+
+RUN set -eux; \
+  mkdir -p /app/sourcePython/swap-updater/dataDocker/today; \
+  mkdir -p /app/sourcePython/swap-updater/dataDocker/storage; \
+  mkdir -p /app/sourcePython/swap-updater/dataDocker/log
+
+RUN set -eux; \
+  test -f /app/sourcePython/swap-updater/main.py; \
+  test -f /app/sourcePython/common/hsm_report.py; \
+  test -f /app/sourcePython/swap-updater/diff.py; \
+  test -f /app/sourcePython/swap-updater/swap_markup.py; \
+  test -f /app/sourcePython/swap-updater/TtsSwapsFetcher/TtsSwapsFetcher.csproj; \
+  test -f /app/sourcePython/swap-updater/TtsSwapsUploader/TtsSwapsUploader.csproj; \
+  test -f /app/sourcePython/swap-updater/configDocker/config.yaml; \
+  test -f /app/sourcePython/swap-updater/configDocker/mapping.csv; \
+  test -d /app/sourcePython/swap-updater/configDocker/libs; \
+  test -d /app/sourcePython/swap-updater/configDocker/libs/tts
+
+ENV PYTHONPATH=/app/sourcePython/common:/app/sourcePython/swap-updater
+
+WORKDIR /app/sourcePython/swap-updater
+
+ENTRYPOINT ["python3", "main.py"]

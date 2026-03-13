@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dgSpecHash": "92c6S9T3LJRFFN/sXKGdiPb0hGq8vcgOVEKRwCC54GS+TflWcYBWK1jDrs3tcBSnGax+MIqIp0wIchYpohvrRw==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Nikita.Dmitrouk\\Desktop\\TTReporting\\sourcePython\\swap-updater\\TtsSwapsFetcher\\TtsSwapsFetcher.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Nikita.Dmitrouk\\.nuget\\packages\\microsoft.extensions.objectpool\\8.0.10\\microsoft.extensions.objectpool.8.0.10.nupkg.sha512",
+    "C:\\Users\\Nikita.Dmitrouk\\.nuget\\packages\\system.security.cryptography.pkcs\\8.0.1\\system.security.cryptography.pkcs.8.0.1.nupkg.sha512",
+    "C:\\Users\\Nikita.Dmitrouk\\.nuget\\packages\\system.security.cryptography.xml\\8.0.2\\system.security.cryptography.xml.8.0.2.nupkg.sha512",
+    "C:\\Users\\Nikita.Dmitrouk\\.nuget\\packages\\system.servicemodel.netframingbase\\8.1.2\\system.servicemodel.netframingbase.8.1.2.nupkg.sha512",
+    "C:\\Users\\Nikita.Dmitrouk\\.nuget\\packages\\system.servicemodel.nettcp\\8.1.2\\system.servicemodel.nettcp.8.1.2.nupkg.sha512",
+    "C:\\Users\\Nikita.Dmitrouk\\.nuget\\packages\\system.servicemodel.primitives\\8.1.2\\system.servicemodel.primitives.8.1.2.nupkg.sha512",
+    "C:\\Users\\Nikita.Dmitrouk\\.nuget\\packages\\yamldotnet\\15.1.2\\yamldotnet.15.1.2.nupkg.sha512"
+  ],
+  "logs": []
+}

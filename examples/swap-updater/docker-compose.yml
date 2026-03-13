@@ -1,0 +1,7 @@
+services:
+  swap-updater-local:
+    image: swap-updater
+    volumes:
+      - ../../sourcePython/swap-updater/configDocker:/app/configDocker:ro
+      - ../../sourcePython/swap-updater/dataDocker:/app/dataDocker:rw
+    restart: "no"
