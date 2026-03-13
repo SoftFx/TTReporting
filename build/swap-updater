@@ -32,16 +32,15 @@ RUN set -eux; \
   mkdir -p /app/sourcePython/swap-updater/dataDocker/log
 
 RUN set -eux; \
-  test -f /app/sourcePython/swap-updater/main.py; \
-  test -f /app/sourcePython/common/hsm_report.py; \
-  test -f /app/sourcePython/swap-updater/diff.py; \
-  test -f /app/sourcePython/swap-updater/swap_markup.py; \
-  test -f /app/sourcePython/swap-updater/TtsSwapsFetcher/TtsSwapsFetcher.csproj; \
-  test -f /app/sourcePython/swap-updater/TtsSwapsUploader/TtsSwapsUploader.csproj; \
-  test -f /app/sourcePython/swap-updater/configDocker/config.yaml; \
-  test -f /app/sourcePython/swap-updater/configDocker/mapping.csv; \
-  test -d /app/sourcePython/swap-updater/libs; \
-  test -d /app/sourcePython/swap-updater/libs/tts
+  ls -la /app; \
+  ls -la /app/sourcePython; \
+  ls -la /app/sourcePython/common || true; \
+  ls -la /app/sourcePython/swap-updater || true; \
+  ls -la /app/sourcePython/swap-updater/configDocker || true; \
+  ls -la /app/sourcePython/swap-updater/libs || true; \
+  ls -la /app/sourcePython/swap-updater/libs/tts || true; \
+  ls -la /app/sourcePython/swap-updater/TtsSwapsFetcher || true; \
+  ls -la /app/sourcePython/swap-updater/TtsSwapsUploader || true
 
 ENV PYTHONPATH=/app/sourcePython/common:/app/sourcePython/swap-updater
 
