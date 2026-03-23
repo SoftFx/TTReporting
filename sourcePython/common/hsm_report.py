@@ -3,15 +3,32 @@ from __future__ import annotations
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
+import os
 import sys
 
 import logging
 import requests
 
+
+def _detect_swap_updater_root() -> Path:
+    # 1) Если явно передан root через env — используем его
+    env_root = os.environ.get("SWAP_UPDATER_ROOT")
+    if env_root:
+        return Path(env_root).resolve()
+
+    # 2) Локальная структура репозитория:
+    # .../sourcePython/common/hsm_report.py
+    # .../sourcePython/swap-updater
+    local_candidate = Path(__file__).resolve().parents[1] / "swap-updater"
+    if local_candidate.exists():
+        return local_candidate
+
+    # 3) Docker fallback
+    return Path("/app").resolve()
+
+
 # common/hsm_report.py
-# Поднимаемся до sourcePython, потом идём в swap-updater
-SOURCEPYTHON_ROOT = Path(__file__).resolve().parents[1]
-SWAP_UPDATER_ROOT = SOURCEPYTHON_ROOT / "swap-updater"
+SWAP_UPDATER_ROOT = _detect_swap_updater_root()
 
 # Чтобы hsm_report.py видел модули из swap-updater
 if str(SWAP_UPDATER_ROOT) not in sys.path:
