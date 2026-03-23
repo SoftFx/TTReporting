@@ -24,26 +24,35 @@ RUN set -eux; \
     PyYAML \
     urllib3
 
-COPY sourcePython/ /app/sourcePython/
+# 1) Application code
+COPY sourcePython/swap-updater/ /app
 
+# 2) Shared Python code
+RUN mkdir -p /common
+COPY sourcePython/common/ /common/
+
+RUN chmod -R a+rX /common
+
+# 3) Runtime folders
 RUN set -eux; \
-  mkdir -p /app/sourcePython/swap-updater/dataDocker/today; \
-  mkdir -p /app/sourcePython/swap-updater/dataDocker/storage; \
-  mkdir -p /app/sourcePython/swap-updater/dataDocker/log
+  mkdir -p /app/dataDocker/today; \
+  mkdir -p /app/dataDocker/storage; \
+  mkdir -p /app/dataDocker/log
 
+# 4) Sanity checks for non-private files only
 RUN set -eux; \
-  ls -la /app; \
-  ls -la /app/sourcePython; \
-  ls -la /app/sourcePython/common || true; \
-  ls -la /app/sourcePython/swap-updater || true; \
-  ls -la /app/sourcePython/swap-updater/configDocker || true; \
-  ls -la /app/sourcePython/swap-updater/libs || true; \
-  ls -la /app/sourcePython/swap-updater/libs/tts || true; \
-  ls -la /app/sourcePython/swap-updater/TtsSwapsFetcher || true; \
-  ls -la /app/sourcePython/swap-updater/TtsSwapsUploader || true
+  test -f /app/main.py; \
+  test -f /common/hsm_report.py; \
+  test -f /app/diff.py; \
+  test -f /app/swap_markup.py; \
+  test -f /app/TtsSwapsFetcher/TtsSwapsFetcher.csproj; \
+  test -f /app/TtsSwapsUploader/TtsSwapsUploader.csproj; \
+  test -d /app/libs; \
+  test -d /app/libs/tts
 
-ENV PYTHONPATH=/app/sourcePython/common:/app/sourcePython/swap-updater
+ENV PYTHONPATH=/common:/app
+ENV SWAP_UPDATER_ROOT=/app
 
-WORKDIR /app/sourcePython/swap-updater
+WORKDIR /app
 
 ENTRYPOINT ["python3", "main.py"]

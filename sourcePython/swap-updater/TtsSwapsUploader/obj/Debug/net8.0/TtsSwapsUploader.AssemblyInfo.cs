@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TtsSwapsUploader")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e2deff1fc0db6586a586f388871424a1a5e1e395")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f6cfa923f8591170c25b6080aa05b4d8157ec750")]
 [assembly: System.Reflection.AssemblyProductAttribute("TtsSwapsUploader")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TtsSwapsUploader")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
