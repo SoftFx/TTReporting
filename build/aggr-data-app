@@ -11,7 +11,6 @@ RUN set -eux; \
     build-essential gfortran pkg-config cmake \
     libcurl4-openssl-dev libssl-dev libxml2-dev \
     libpq-dev \
-    libmariadb-dev-compat \
     ca-certificates curl git; \
   rm -rf /var/lib/apt/lists/*
 
@@ -34,11 +33,10 @@ COPY source/common/ /common/
 #RUN chmod -R a+rX /common
 
 
-# 4) Runtime libraries (MySQL client runtime for RMySQL + Postgres)
+# 4) Runtime libraries
 RUN set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends \
-    libmariadb3 \
     libpq5 libcurl4 libssl3 libxml2; \
   rm -rf /var/lib/apt/lists/*
 
