@@ -20,7 +20,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          base_branch: master
+          base_branch: main
           claude_args: --allowedTools "Bash(gh pr comment*),Bash(gh pr diff*),Bash(gh pr view*),Bash(git diff*),Bash(git log*),Write"
           prompt: |
             REPO: ${{ github.repository }}
