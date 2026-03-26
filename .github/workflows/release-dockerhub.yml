@@ -15,6 +15,7 @@ on:
           - big-deposits
           - negative-equity
           - swap-updater
+          - aggr-data-app
   release:
     types: [published]
 
@@ -54,9 +55,13 @@ jobs:
             context: .
             suffix: negative-equity  
           - name: swap-updater
-            dockerfile: build/swap-updater  
+            dockerfile: build/swap-updater
             context: .
-            suffix: swap-updater         
+            suffix: swap-updater
+          - name: aggr-data-app
+            dockerfile: build/aggr-data-app
+            context: .
+            suffix: aggr-data-app
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
