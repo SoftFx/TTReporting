@@ -34,6 +34,14 @@ services:
       - ./diff-prices/configDocker:/app/configDocker:ro
       - ./diff-prices/dataDocker:/app/dataDocker:rw
     restart: "no"
+  aggr-data-app:
+    image: softfx/tt-reporting:latest-aggr-data-app
+    pull_policy: always
+    ports:
+      - "3838:3838"
+    volumes:
+      - ./aggr-data/configDocker:/app/configDocker:ro
+    restart: unless-stopped
 
 
 
