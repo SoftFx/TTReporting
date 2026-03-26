@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TtsSwapsFetcher")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f6cfa923f8591170c25b6080aa05b4d8157ec750")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e30d130225a5e8147b64dd09bcb174ed09620a43")]
 [assembly: System.Reflection.AssemblyProductAttribute("TtsSwapsFetcher")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TtsSwapsFetcher")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
