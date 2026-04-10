@@ -11,7 +11,7 @@ library(data.table)
 library(bsplus)
 library(shinycssloaders)
 library(lubridate)
-source('../common/PostgresHost.R') #help functions
+#source('../common/PostgresHost.R') #help functions
 source('helpFunctions.R')
 
 options(digits.secs = 10)
@@ -19,9 +19,9 @@ options(scipen=999)
 Sys.setenv("TZ" = "UTC")
 
 RatesServerName <- "ttlive"
- cfg <- yaml.load_file('./configDocker/dbCon_config.yaml')
- OrderTypesMap <- fread("./configDocker/orderTypes.csv")
- CommandNamesMap <- fread("./configDocker/commands.csv")
+cfg <- yaml.load_file('./configDocker/dbCon_config.yaml')
+OrderTypesMap <- fread("./configDocker/orderTypes.csv")
+CommandNamesMap <- fread("./configDocker/commands.csv")
 
 
 as.sunburstDF <- function(DF, value_column = NULL, add_root = FALSE){
@@ -131,6 +131,11 @@ server <- function(input, output, session) {
     selectedAggr <- input$aggr_name_input #ttmaster
     From <- input$dateRange_lpexec[1] # To-days(6)
     To <- input$dateRange_lpexec[2] #today() #
+    
+    shiny::validate(
+      shiny::need(From <= To, "Start date must be before end date"),
+      shiny::need(as.numeric(difftime(To, From, units = "days")) <= 90, "Date range must not exceed 90 days")
+    )
     
     tryCatch({
       rate2usd <- getAllRates2USDTT(cfg$ReportingServer$servers[[RatesServerName]])
@@ -271,6 +276,11 @@ server <- function(input, output, session) {
     selectedAggr <- input$aggr_name_input2 #ttmaster
     From <- input$dateRange_userexec[1] # To-days(6)
     To <- input$dateRange_userexec[2] #today() #
+
+    shiny::validate(
+      shiny::need(From <= To, "Start date must be before end date"),
+      shiny::need(as.numeric(difftime(To, From, units = "days")) <= 90, "Date range must not exceed 90 days")
+    )
     
     tryCatch({
       rate2usd <- getAllRates2USDTT(cfg$ReportingServer$servers[[RatesServerName]])
@@ -290,7 +300,7 @@ server <- function(input, output, session) {
     
     userexec <- aggrUserExec[[1]]
     userexecErr <- aggrUserExec[[2]]
-    #userexecDetails <- aggrLpExec[[3]]
+    #userexecDetails <- aggrUserExec[[3]]
     
     userexecErr_temp <- data.table()
     #data validation 
@@ -478,9 +488,27 @@ server <- function(input, output, session) {
           ),
           column(2,),
           column(7, 
-                 if (nrow(LPresult$fails_desc)>0){
-                   renderTable({LPresult$fails_desc})
-                 } else {}
+                 h4("Failed by ErrorType:"),
+                 DT::renderDT({
+                   DT::datatable(LPresult$fails_desc, escape = FALSE, rownames = F, width = '100%',#server=FALSE, 
+                                 #caption = "Failed transactions by ErrorType:",
+                                 extensions = c('Scroller',  'Buttons'),
+                                 options = list(
+                                   dom = 'Blfrtip',
+                                   deferRender = TRUE,
+                                   scrollX = TRUE,
+                                   scrollY = 250,#ifelse(nrow(result[[9]])<7,200,400), #600px high
+                                   scroller = TRUE,
+                                   autoWidth = FALSE,
+                                   buttons =list(list(extend = 'collection', buttons = c('excel','csv'), text = as.character(icon("download-alt", lib = "glyphicon")), titleAttr = 'Save as...')),
+                                   initComplete = JS("function(settings, json) {
+                          var table = this.api();
+                          $(this.api().table().header()).css({'background-color': '#e5e5e5', 'color': '#000'});
+                          $(this.api().table().container()).css({'font-size': '80%'}); 
+                          table.columns.adjust(); }")
+                                 )#options
+                   )#dt
+                 }, server = FALSE),
                  )
           ), 
         
