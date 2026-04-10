@@ -167,7 +167,7 @@ server <- function(input, output, session) {
 
     #data validation 
     if (nrow(lpexec[filled_volume==0]) > 0) {
-      lpexecErr_temp <- lpexec[filled_volume==0]
+      lpexecErr_temp <- lpexec[filled_volume==0][, desc := ""]
       lpexec <- lpexec[filled_volume>0]
       lpexecErr <- rbind(lpexecErr[, .(log_date, time, LP, symbol, command_name, lp_best_price, slippage_requested_price, user_price, requested_volume, request_id, desc, aggrName)],
                          lpexecErr_temp[, .(log_date, time, LP, symbol, command_name, lp_best_price, slippage_requested_price, user_price, requested_volume, request_id, desc, aggrName)])
@@ -312,6 +312,9 @@ server <- function(input, output, session) {
       userexecErr <- rbind(userexecErr[, .(log_date, time, login, symbol, order_type, command_name, requested_price, requested_volume, type, request_id, order_id, duration, error_desc, aggrName)],
                       userexecErr_temp[, .(log_date, time, login, symbol, order_type, command_name, requested_price, requested_volume, type, request_id, order_id, duration, error_desc, aggrName)])
     }
+    userexecErr[, timestep := floor_date(time, "minute")]
+    userexecErr[, ErrorDescription := gsub("\\d+", "X", error_desc)]
+    
     userexec[, MarginCurr := sub("/.*","", symbol)]
     userexec[, ProfitCurr := sub(".*/","", symbol)]
     userexec[rate2usd, c("MCtoUSD") := .(i.Value), on = .(MarginCurr = FromCurrencyName)][MarginCurr=="USD", MCtoUSD := 1]
@@ -320,16 +323,13 @@ server <- function(input, output, session) {
     userexec[OrderTypesMap, c("OrderType") := .(i.OrderType), on = .(order_type = order_type)]
     userexec[CommandNamesMap, c("Command") := .(i.commandName), on = .(command_name = commandId)]
     
-    #userexec[, price_diff := filled_price - requested_price] #i need correct trade side!!!!!!!!!!!!!!!!!
     userexec[, price_diff := ifelse(grepl("BUY", Command),(filled_price-requested_price)*(-1), filled_price-requested_price)] #i need correct trade side!!!!!!!!!!!!!!!!!
     userexec[, `price_diff_%` := round((price_diff/requested_price)*100, 2)]  
 
     userexec[, diffType := c("negative", "exact", "positive")[sign(price_diff)+2 ]]  #sing() return -1 0 +1, when +2 we get 1,2,3 (indices for vector)
     userexec[, timestep := floor_date(time, "minute")]
     
-    userexecErr[, timestep := floor_date(time, "minute")]
-    #userexecErr[, ErrorDescription := sub("=.*", "...", error_desc)]
-    userexecErr[, ErrorDescription := gsub("\\d+", "X", error_desc)]
+
     
     #SUMMARY by Login
     summaryLogin <- userexec[, .("VolumeUSD" = round(sum(TradedVolumeUSD, na.rm=T),2),
@@ -457,10 +457,33 @@ server <- function(input, output, session) {
                  + scale_fill_manual('Order status', values=c('Failed' = "red", 'Approved' = "darkgreen"))
                  + labs(title = "", x = "", y = "transactions per 1min", fill = "Status"), dynamicTicks = TRUE
         ), #density
-        #errorsDesc
-        if (nrow(LPresult$fails_desc)>0){
-        renderTable({LPresult$fails_desc})
-          } else renderText("No Failed Transaction"),
+        
+        h3(strong('Approved/Failed Transactions:')),
+        #by SlippageType and by ErrorType
+        fluidRow(
+          column(3, 
+                 renderPlotly(
+                   plot_ly(
+                     labels = c("Approved", "Failed"),
+                     values = c(
+                       LPresult$summaryLP[, sum(ApprovedCount, na.rm=T)],
+                       LPresult$summaryLP[, sum(FailedCount, na.rm=T)]
+                     ),
+                     type = "pie",
+                     marker = list(colors = c("#63a65b", "#db5151")),
+                     textinfo = "label+value",
+                     hovertemplate = "%{label}: %{percent}<extra></extra>"
+                   )%>% layout(showlegend = FALSE)
+                 )
+          ),
+          column(2,),
+          column(7, 
+                 if (nrow(LPresult$fails_desc)>0){
+                   renderTable({LPresult$fails_desc})
+                 } else {}
+                 )
+          ), 
+        
         h3(strong('LP Slippage')),
         fluidRow(
           column(5, 
@@ -675,9 +698,24 @@ h3(strong('TradedVolume_USD by LOGIN&Symbol:')),
 
         ), #fluidrow
 br(),
-h3(strong(paste('Approved/Failed Transactions:', USERresult$summaryLogin[, sum(ApprovedCount, na.rm=T)], "/", USERresult$summaryLogin[, sum(FailedCount, na.rm=T)]))),
+h3(strong('Approved/Failed Transactions:')),
 #by SlippageType and by ErrorType
 fluidRow(
+  column(3, 
+         renderPlotly(
+           plot_ly(
+             labels = c("Approved", "Failed"),
+             values = c(
+               USERresult$summaryLogin[, sum(ApprovedCount, na.rm=T)],
+               USERresult$summaryLogin[, sum(FailedCount, na.rm=T)]
+             ),
+             type = "pie",
+             marker = list(colors = c("#63a65b", "#db5151")),
+             textinfo = "label+value",
+             hovertemplate = "%{label}: %{percent}<extra></extra>"
+           )%>% layout(showlegend = FALSE)
+         )
+  ),
   column(4, 
          ggplotly(height = 350, tooltip = c("text"), 
                   ggplot(USERresult$slippageType, aes(y = reorder(OrderType, Count, sum, na.rm = T), x = `Count%`, fill =  reorder(diffType, -Count, sum, na.rm = T),
@@ -689,11 +727,11 @@ fluidRow(
                   + geom_col() + geom_text(aes(label = `Count%`), position = position_stack(vjust=0.5), size = 3)
                   + scale_fill_manual('SlippageType:', values=c('exact' = "#4DA3FF", 'positive' = "#2ECC71", 'negative' = "#FA8072"))
                   + scale_x_continuous(labels = NULL)
-                  + labs(title = "Approved transactions by SlippageType", x = "%", y = "", fill = "Type")
+                  + labs(title = "Approved by SlippageType", x = "%", y = "", fill = "Type")
          )
   ),
-  column(8,
-         h4("Failed transactions by ErrorType:"),
+  column(5,
+         h4("Failed by ErrorType:"),
          DT::renderDT({
            DT::datatable(USERresult$fails_desc, escape = FALSE, rownames = F, width = '100%',#server=FALSE, 
                          #caption = "Failed transactions by ErrorType:",
