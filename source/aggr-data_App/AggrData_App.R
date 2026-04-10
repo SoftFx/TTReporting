@@ -508,7 +508,7 @@ server <- function(input, output, session) {
                           table.columns.adjust(); }")
                                  )#options
                    )#dt
-                 }, server = FALSE),
+                 }, server = FALSE)
                  )
           ), 
         
