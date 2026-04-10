@@ -3,29 +3,29 @@ library(jsonlite)
 library(shiny)
 library(shinyjs)
 library(plotly)#
+library(ggplot2)
 library(DT)
 library(shinyWidgets)
 library(shinyBS)
-#library(RGraphics)
-#library(htmltools)
+library(data.table)
 library(bsplus)
 library(shinycssloaders)
 library(lubridate)
-#source('AggrPostgresHost.R')
-source('../common/PostgresHost.R') #help functions
+#source('../common/PostgresHost.R') #help functions
 source('helpFunctions.R')
 
 options(digits.secs = 10)
 options(scipen=999)
 Sys.setenv("TZ" = "UTC")
 
+RatesServerName <- "ttlive"
 cfg <- yaml.load_file('./configDocker/dbCon_config.yaml')
-print(names(cfg$ReportingServer[["aggrs"]]))
 OrderTypesMap <- fread("./configDocker/orderTypes.csv")
 CommandNamesMap <- fread("./configDocker/commands.csv")
 
+
 as.sunburstDF <- function(DF, value_column = NULL, add_root = FALSE){
-  require(data.table)
+  #require(data.table)
   
   colNamesDF <- names(DF)
   
@@ -75,8 +75,6 @@ as.sunburstDF <- function(DF, value_column = NULL, add_root = FALSE){
   return(hierarchyDT)
 }
 
-
-
 ui <- fluidPage(useShinyjs(), use_bs_tooltip(),use_bs_popover(),
                 navbarPage(id = "TABS", 
                            strong("AGGREGATOR DB:"),  # page name   
@@ -85,7 +83,7 @@ ui <- fluidPage(useShinyjs(), use_bs_tooltip(),use_bs_popover(),
                                       
                                       fluidRow(column(2, selectInput("aggr_name_input", "Select source (AggrName):", choices = names(cfg$ReportingServer[["aggrs"]]))),
                                                column(2, dateRangeInput("dateRange_lpexec", "Select Period (Y-m-d 00:00:00 UTC):", weekstart = 1)), #start = Sys.Date() - 2, end = Sys.Date() - 1, max = Sys.Date() - 1, weekstart = 1)
-                                               column(2, actionButton("get_LPexec_data", "Get Data", class = "btn btn-success", style = "width: 50%; margin-top: 25px") 
+                                               column(3, actionButton("get_LPexec_data", "Get LPexec Data", class = "btn btn-success", style = "width: 50%; margin-top: 25px") 
                                                       #,downloadButton("downloadReport", "html", style = "margin-top: 25px")
                                                )
                                       ) #fluidRow
@@ -95,7 +93,23 @@ ui <- fluidPage(useShinyjs(), use_bs_tooltip(),use_bs_popover(),
                                                        column(10, uiOutput("LPexec")),#resUIrating
                                                        column(1))
                                     ) #mainPanel
-                           )#tabPanel"LPexecution"
+                           ),#tabPanel"LPexecution"
+                           tabPanel("USERexecution", #icon = icon("table"),
+                                    wellPanel(
+                                      
+                                      fluidRow(column(2, selectInput("aggr_name_input2", "Select source (AggrName):", choices = names(cfg$ReportingServer[["aggrs"]]))),
+                                               column(2, dateRangeInput("dateRange_userexec", "Select Period (Y-m-d 00:00:00 UTC):", weekstart = 1)), #start = Sys.Date() - 2, end = Sys.Date() - 1, max = Sys.Date() - 1, weekstart = 1)
+                                               column(3, actionButton("get_USERexec_data", "Get USERexec Data", class = "btn btn-success", style = "width: 50%; margin-top: 25px") 
+                                                      #,downloadButton("downloadReport", "html", style = "margin-top: 25px")
+                                               )
+                                      ) #fluidRow
+                                    ), #wellPanel
+                                    mainPanel(width = 12,
+                                              fluidRow(column(1),        
+                                                       column(10, uiOutput("USERexec")),#resUIrating
+                                                       column(1))
+                                    ) #mainPanel
+                           )                           
                            
                 ),#navbarPage
                 conditionalPanel(condition="$('html').hasClass('shiny-busy')",
@@ -105,51 +119,64 @@ ui <- fluidPage(useShinyjs(), use_bs_tooltip(),use_bs_popover(),
 )#fluidPage ui
 
 server <- function(input, output, session) {
+
+
+  
   #update period when click reload page
   updateDateRangeInput(session, "dateRange_lpexec", start = now() - lubridate::days(6), end = now() + lubridate::days(1), max = now() + lubridate::days(1))
+  updateDateRangeInput(session, "dateRange_userexec", start = now() - lubridate::days(6), end = now() + lubridate::days(1), max = now() + lubridate::days(1))
   
-  getData <- eventReactive(input$get_LPexec_data, {
+  getDataLPexec <- eventReactive(input$get_LPexec_data, {
     
     selectedAggr <- input$aggr_name_input #ttmaster
     From <- input$dateRange_lpexec[1] # To-days(6)
     To <- input$dateRange_lpexec[2] #today() #
-    Warning <- NULL
+    
+    shiny::validate(
+      shiny::need(From <= To, "Start date must be before end date"),
+      shiny::need(as.numeric(difftime(To, From, units = "days")) <= 90, "Date range must not exceed 90 days")
+    )
     
     tryCatch({
-      tryCatch({ 
-        rate2usd <- getAllRates2USDTT(cfg$ReportingServer$servers[["ttlive"]])
-        #symbprop <- getAllSymbolsTT(cfg$ReportingServer$servers[["ttlive"]])
-      }, error = function(e){
-        print(e)
-        Warning <<- append(Warning, paste("GetRatesToUSDerror:", substr(e$message, 1, 50), "..."))
-      })
-      if (length(Warning)>0 ) { stop(paste("!!", Warning, collapse= ", "))}
-      
-      CredsAggr <- cfg$ReportingServer$aggrs[[selectedAggr]]
-      aggrLpExec <- getLPexecdataAggr(CredsAggr, From, To)
-    }, error = function(e){
+      rate2usd <- getAllRates2USDTT(cfg$ReportingServer$servers[[RatesServerName]])
+    }, error = function(e) {
       print(e)
-      Warning <<- append(Warning, paste("GetAggrDataError:", substr(e$message, 1, 50), "..."))
+      stop(paste("GetRatesToUSDerror:", substr(e$message, 1, 150), "..."))
     })
-    if (length(Warning)>0 ) { stop(paste("!!", Warning, collapse= ", "))}
+    
+    CredsAggr <- cfg$ReportingServer$aggrs[[selectedAggr]]
+    tryCatch({
+      aggrLpExec <- getLPexecdataAggr(CredsAggr, From, To)
+    }, error = function(e) {
+      print(e)
+      stop(paste("GetAggrDataError:", substr(e$message, 1, 150), "..."))
+    })
     
     lpexec <- aggrLpExec[[1]]
     lpexecErr <- aggrLpExec[[2]]
-    lpexecDetails <- aggrLpExec[[3]]
+    #lpexecDetails <- aggrLpExec[[3]]
     
     lpexecErr_temp <- data.table()
+    #data validation 
+    if (nrow(lpexecErr)==0){
+      lpexecErr <-  data.table(log_date=as.Date(character(), tz = "UTC"), 
+                               time=as.POSIXct(character(), tz = "UTC"), 
+                               lp=character(), config_symbol=character(), 
+                               command_name=integer(), 
+                               lp_best_price=numeric(), slippage_requested_price=numeric(), user_price=numeric(), requested_volume=numeric(), 
+                               request_id=character(), desc=character(), aggrName=character())
+    }
     
     setnames(lpexec, c("bank_name"), c("LP"))
     setnames(lpexecErr, c("lp", "config_symbol"), c("LP", "symbol"))
-    
+
     #data validation 
     if (nrow(lpexec[filled_volume==0]) > 0) {
-      lpexecErr_temp <- lpexec[filled_volume==0]
+      lpexecErr_temp <- lpexec[filled_volume==0][, desc := ""]
       lpexec <- lpexec[filled_volume>0]
-      lpexecErr <- rbind(lpexecErr[, .(log_date, time, LP, symbol, command_name, lp_best_price, slippage_requested_price, user_price, requested_volume, request_id, aggrName)],
-                         lpexecErr_temp[, .(log_date, time, LP, symbol, command_name, lp_best_price, slippage_requested_price, user_price, requested_volume, request_id, aggrName)])
+      lpexecErr <- rbind(lpexecErr[, .(log_date, time, LP, symbol, command_name, lp_best_price, slippage_requested_price, user_price, requested_volume, request_id, desc, aggrName)],
+                         lpexecErr_temp[, .(log_date, time, LP, symbol, command_name, lp_best_price, slippage_requested_price, user_price, requested_volume, request_id, desc, aggrName)])
     }
-    
     lpexec[, MarginCurr := sub("/.*","", symbol)]
     lpexec[, ProfitCurr := sub(".*/","", symbol)]
     lpexec[rate2usd, c("MCtoUSD") := .(i.Value), on = .(MarginCurr = FromCurrencyName)][MarginCurr=="USD", MCtoUSD := 1]
@@ -165,6 +192,8 @@ server <- function(input, output, session) {
     lpexec[, timestep := floor_date(time, "minute")]
     
     lpexecErr[, timestep := floor_date(time, "minute")]
+    #lpexecErr[, ErrorDescription := sub("=.*", "", desc)]
+    lpexecErr[, ErrorDescription := gsub("\\d+", "X", desc)]
     
     #SUMMARY by LP
     summaryLP <- lpexec[, .("VolumeUSD" = round(sum(TradedVolumeUSD),2),
@@ -193,55 +222,191 @@ server <- function(input, output, session) {
     # SLIPPAGE by LP (by Type) for chart
     slippageLP <- lpexec[, .("SlippageUSD" = round(sum(LpSlippageUSD, na.rm = T),2), 
                              "Count" = .N), by = .(LP, SlippageType)][order(LP, SlippageType)]
-    slippageLP[, `Count%` := round(Count/sum(Count, na.rm = T)*100,2), by = LP]
+    slippageLP[, `Count%` := round(Count/sum(Count, na.rm = T)*100,1), by = LP]
     
     # SLIPPAGE LP & Symbol (by Type)
     slippageLPsymbol <- lpexec[, .("SlippageUSD" = round(sum(LpSlippageUSD, na.rm = T),2),
                                    "Slippage%(mean)" = round(mean(`lp_exec_slipp_%`),2),
                                    "Count" = .N), by = .(LP, symbol, SlippageType)][order(-abs(SlippageUSD))]
     # SLIPPAGE by LP (by OrderType) for chart
-    slippageLPb_orderType <- lpexec[, .("SlippageUSD" = round(sum(LpSlippageUSD, na.rm = T),2),
+    slippageLP_orderType <- lpexec[, .("SlippageUSD" = round(sum(LpSlippageUSD, na.rm = T),2),
                                         "Count" = .N), by = .(LP, OrderType)][order(LP, OrderType)]
-    slippageLPb_orderType[, `Count%` := round(Count/sum(Count, na.rm = T)*100,2), by = LP]  
+    slippageLP_orderType[, `Count%` := round(Count/sum(Count, na.rm = T)*100,1), by = LP]  
     
     # SLIPPAGE by LP (by OrderType+SlippType)
-    slippageLPb_orderAndSlipType <- lpexec[, .("SlippageUSD" = round(sum(LpSlippageUSD, na.rm = T),2), 
+    slippageLP_orderAndSlipType <- lpexec[, .("SlippageUSD" = round(sum(LpSlippageUSD, na.rm = T),2), 
                                                "Slippage%(mean)" = round(mean(`lp_exec_slipp_%`),2),
                                                "Count" = .N), by = .(LP, OrderType, SlippageType)][order(-abs(SlippageUSD))]
     #top 
-    topSlippageUSDTransactions <- lpexec[, .(time , LP, symbol, OrderType, Command, lp_best_price, slippage_requested_price, user_price, execution_price, lp_execution_slippage, `lp_exec_slipp_%`,
+    topSlippageUSDTransactions <- lpexec[LpSlippageUSD!=0, .(time , LP, symbol, OrderType, Command, lp_best_price, slippage_requested_price, user_price, execution_price, lp_execution_slippage, `lp_exec_slipp_%`,
                                              "LpSlippageUSD"=round(LpSlippageUSD,2), SlippageType, requested_volume, filled_volume,  "TradedVolumeUSD"=round(TradedVolumeUSD,2), 
-                                             request_id, lp_request_id, order_id, aggrName)][order(-(abs(LpSlippageUSD)))][1:20][!is.na(time)]
-    topSlippagePercTransactions <- lpexec[, .(time , LP, symbol, OrderType, Command, lp_best_price, slippage_requested_price, user_price, execution_price, lp_execution_slippage, `lp_exec_slipp_%`,
+                                             request_id, lp_request_id, order_id, aggrName)][order(-(abs(LpSlippageUSD)))][1:min(20, .N)]
+    topSlippagePercTransactions <- lpexec[`lp_exec_slipp_%`!=0, .(time , LP, symbol, OrderType, Command, lp_best_price, slippage_requested_price, user_price, execution_price, lp_execution_slippage, `lp_exec_slipp_%`,
                                               "LpSlippageUSD"=round(LpSlippageUSD,2), SlippageType, requested_volume, filled_volume,  "TradedVolumeUSD"=round(TradedVolumeUSD,2), 
-                                              request_id, lp_request_id, order_id, aggrName)][order(-(abs(`lp_exec_slipp_%`)))][1:20][!is.na(time)]
+                                              request_id, lp_request_id, order_id, aggrName)][order(-(abs(`lp_exec_slipp_%`)))][1:min(20, .N)]
     slippage2_dt <- lpexec[slipp_2<0, .(time , LP, symbol, OrderType, Command, lp_best_price, slippage_requested_price, user_price, execution_price, lp_execution_slippage, `lp_exec_slipp_%`,
                                         "negative_execution"=signif(slipp_2,5),
                                         "LpSlippageUSD"=round(LpSlippageUSD,2), SlippageType, requested_volume, filled_volume,  "TradedVolumeUSD"=round(TradedVolumeUSD,2), 
-                                        request_id, lp_request_id, order_id, aggrName)][order(time)][!is.na(time)]
+                                        request_id, lp_request_id, order_id, aggrName)][order(time)]
+    
+    #errors
+    fails_desc <- lpexecErr[, .("FailedCount" = .N), by = ErrorDescription][order(-FailedCount)]
     
     INFO <- paste("Aggr: ", selectedAggr, 'from', From, 'to',  To, "(loaded", nrow(lpexec)+nrow(lpexecErr), "rows from db)")
     
     
-    return(list(INFO, Warning, summaryLP, LPsymbol, LPsymbolsunb, 
-                lpExecQuality1, slippageLP, slippageLPsymbol, slippageLPb_orderType, slippageLPb_orderAndSlipType,
-                topSlippageUSDTransactions, topSlippagePercTransactions, slippage2_dt))
+    return(list(INFO=INFO, 
+                summaryLP=summaryLP, 
+                LPsymbol=LPsymbol, 
+                LPsymbolsunb=LPsymbolsunb, 
+                lpExecQuality1=lpExecQuality1, 
+                slippageLP=slippageLP, 
+                slippageLPsymbol=slippageLPsymbol, 
+                slippageLP_orderType=slippageLP_orderType, 
+                slippageLP_orderAndSlipType=slippageLP_orderAndSlipType,
+                topSlippageUSDTransactions=topSlippageUSDTransactions, 
+                topSlippagePercTransactions=topSlippagePercTransactions, 
+                slippage2_dt=slippage2_dt, 
+                fails_desc=fails_desc))
     
-  }) #getdata()
-  
+  }) #getdataLPexec()
+ ################################################################################ 
+  getDataUSERexec <- eventReactive(input$get_USERexec_data, {
+    
+    selectedAggr <- input$aggr_name_input2 #ttmaster
+    From <- input$dateRange_userexec[1] # To-days(6)
+    To <- input$dateRange_userexec[2] #today() #
+
+    shiny::validate(
+      shiny::need(From <= To, "Start date must be before end date"),
+      shiny::need(as.numeric(difftime(To, From, units = "days")) <= 90, "Date range must not exceed 90 days")
+    )
+    
+    tryCatch({
+      rate2usd <- getAllRates2USDTT(cfg$ReportingServer$servers[[RatesServerName]])
+      #symbprop <- getAllSymbolsTT(cfg$ReportingServer$servers[["ttlive"]])
+    }, error = function(e) {
+      print(e)
+      stop(paste("GetRatesToUSDerror:", substr(e$message, 1, 150), "..."))
+    })
+    
+    CredsAggr <- cfg$ReportingServer$aggrs[[selectedAggr]]
+    tryCatch({
+      aggrUserExec <- getUSERexecdataAggr(CredsAggr, From, To)
+    }, error = function(e) {
+      print(e)
+      stop(paste("GetAggrDataError:", substr(e$message, 1, 150), "..."))
+    })
+    
+    userexec <- aggrUserExec[[1]]
+    userexecErr <- aggrUserExec[[2]]
+    #userexecDetails <- aggrUserExec[[3]]
+    
+    userexecErr_temp <- data.table()
+    #data validation 
+    if (nrow(userexecErr)==0){
+      userexecErr <-  data.table(log_date=as.Date(character(), tz = "UTC"), 
+                               time=as.POSIXct(character(), tz = "UTC"), 
+                               login=numeric(), symbol=character(), 
+                               order_type=integer(), command_name=integer(), 
+                               requested_price=numeric(), requested_volume=numeric(), 
+                               request_id=character(), type=character(), order_id=integer(),
+                               duration =integer(), error_desc=character(), aggrName=character())
+    }
+    
+    
+    #data validation 
+    if (nrow(userexec[filled_volume==0]) > 0) {
+      userexecErr_temp <- userexec[filled_volume==0][, error_desc := ""]
+      userexec <- userexec[filled_volume>0]
+      userexecErr <- rbind(userexecErr[, .(log_date, time, login, symbol, order_type, command_name, requested_price, requested_volume, type, request_id, order_id, duration, error_desc, aggrName)],
+                      userexecErr_temp[, .(log_date, time, login, symbol, order_type, command_name, requested_price, requested_volume, type, request_id, order_id, duration, error_desc, aggrName)])
+    }
+    userexecErr[, timestep := floor_date(time, "minute")]
+    userexecErr[, ErrorDescription := gsub("\\d+", "X", error_desc)]
+    
+    userexec[, MarginCurr := sub("/.*","", symbol)]
+    userexec[, ProfitCurr := sub(".*/","", symbol)]
+    userexec[rate2usd, c("MCtoUSD") := .(i.Value), on = .(MarginCurr = FromCurrencyName)][MarginCurr=="USD", MCtoUSD := 1]
+    userexec[rate2usd, c("PCtoUSD") := .(i.Value), on = .(ProfitCurr = FromCurrencyName)][ProfitCurr=="USD", PCtoUSD := 1]
+    userexec[, TradedVolumeUSD := filled_volume * MCtoUSD]
+    userexec[OrderTypesMap, c("OrderType") := .(i.OrderType), on = .(order_type = order_type)]
+    userexec[CommandNamesMap, c("Command") := .(i.commandName), on = .(command_name = commandId)]
+    
+    userexec[, price_diff := ifelse(grepl("BUY", Command),(filled_price-requested_price)*(-1), filled_price-requested_price)] #i need correct trade side!!!!!!!!!!!!!!!!!
+    userexec[, `price_diff_%` := round((price_diff/requested_price)*100, 2)]  
+
+    userexec[, diffType := c("negative", "exact", "positive")[sign(price_diff)+2 ]]  #sing() return -1 0 +1, when +2 we get 1,2,3 (indices for vector)
+    userexec[, timestep := floor_date(time, "minute")]
+    
+
+    
+    #SUMMARY by Login
+    summaryLogin <- userexec[, .("VolumeUSD" = round(sum(TradedVolumeUSD, na.rm=T),2),
+                            "MedianExecDuration" = round(median(duration),0),
+                            "MaxExecDuration" = round(max(duration),0),
+                            "AverageSlippage,%" = round(mean(`price_diff_%`),2),
+                            "ApprovedCount" = .N), by = .(login)]
+    failedLogin <- userexecErr[, .("FailedCount" = .N), by = .(login)]
+    summaryLogin <- merge(summaryLogin, failedLogin, by = "login", all = TRUE)[order(-VolumeUSD)]
+    summaryLogin[is.na(FailedCount), FailedCount := 0]
+    
+    # by Login & SYMBOL
+    Loginsymbol <- userexec[, .(
+                           "VolumeMargin" = round(sum(filled_volume),2),
+                           "rateToUSD" = head(MCtoUSD,1),
+                           "VolumeUSD" = round(sum(TradedVolumeUSD, na.rm=T),2),
+                           "MedianExecDuration" = round(median(duration),0),
+                           "ApprovedCount" = .N), by = .(login, symbol)]
+    Loginsymbolsunb <- as.sunburstDF(Loginsymbol[, .(login, symbol, VolumeUSD)], value_column = "VolumeUSD", add_root = TRUE)
+    failedLoginsymbol <- userexecErr[, .("FailedCount" = .N), by = .(login, symbol)]
+    Loginsymbol <- merge(Loginsymbol, failedLoginsymbol, by = c("login", "symbol"), all = TRUE)[order(-VolumeUSD)]
+    
+    
+    # SLIPPAGE by OrderType and (by DiffType) for chart
+    slippageType <- userexec[, .("AverageSlippage,%" = round(mean(`price_diff_%`),2), 
+                                 "Count" = .N), by = .(OrderType, diffType)][order(OrderType, diffType)]
+    slippageType[, `Count%` := round(Count/sum(Count, na.rm = T)*100,1), by = OrderType]
+    
+
+    #top 
+    topSlippagePercTransactions <- userexec[price_diff!=0, .(time, login, user_coefficient, symbol, OrderType, Command, 
+                                                requested_price, filled_price, "price_diff"= signif(price_diff,5), `price_diff_%`, diffType, 
+                                                requested_volume, filled_volume, "TradedVolumeUSD"=round(TradedVolumeUSD,2), 
+                                                order_id, duration, type, request_id, aggrName)][order(-(abs(`price_diff_%`)))][1:min(20, .N)]
+    topMaxDurationTransactions <- userexec[, .(time, login, user_coefficient, symbol, OrderType, Command, 
+                                                requested_price, filled_price, "price_diff"= signif(price_diff,5), `price_diff_%`, diffType, 
+                                                requested_volume, filled_volume, "TradedVolumeUSD"=round(TradedVolumeUSD,2), 
+                                                order_id, duration, type, request_id, aggrName)][order(-duration)][1:min(20, .N)]
+    #errors
+    fails_desc <- userexecErr[, .("FailedCount" = .N), by = ErrorDescription][order(-FailedCount)]
+    fails_desc[, `FailedCount%` := round(FailedCount/sum(FailedCount, na.rm = T)*100,2)]
+    
+    INFO <- paste("Aggr: ", selectedAggr, 'from', From, 'to',  To, "(loaded", nrow(userexec)+nrow(userexecErr), "rows from db)")
+    
+    
+    return(list(INFO=INFO, 
+                summaryLogin= summaryLogin, 
+                Loginsymbol=Loginsymbol, 
+                Loginsymbolsunb=Loginsymbolsunb, 
+                slippageType=slippageType, 
+                topSlippagePercTransactions=topSlippagePercTransactions, 
+                topMaxDurationTransactions=topMaxDurationTransactions, 
+                fails_desc=fails_desc))
+    
+  }) #getdataUSERexec()
   
   output$LPexec <-  renderUI({
-    result <- getData()
+    LPresult <- getDataLPexec()
     #step <- median(diff(result[[6]]$timestep))
     
-    if (nrow(result[[3]]) > 0) {
+    if (nrow(LPresult$summaryLP) > 0) {
       tagList(
-        h4(strong(result[[1]])),
-        renderText(result[[2]]),
+        h4(strong(LPresult$INFO)),
         h3(strong('Common statistics by LP')),
         #summary dt by LP,
         DT::renderDT({
-          DT::datatable(result[[3]], escape = FALSE, rownames = FALSE, width = '100%',
+          DT::datatable(LPresult$summaryLP, escape = FALSE, rownames = FALSE, width = '100%',
                         extensions = c('Scroller',  'Buttons'),
                         options = list(
                           buttons =list(list(extend = 'collection', buttons = c('excel','csv'), text = as.character(icon("download-alt", lib = "glyphicon")), titleAttr = 'Save as...')),
@@ -257,10 +422,10 @@ server <- function(input, output, session) {
         fluidRow(
           column(4, 
                  renderPlotly(plot_ly() %>% add_trace(
-                   ids = result[[5]]$ids,
-                   labels = result[[5]]$labels,
-                   parents = result[[5]]$parents,
-                   values=result[[5]]$values,
+                   ids = LPresult$LPsymbolsunb$ids,
+                   labels = LPresult$LPsymbolsunb$labels,
+                   parents = LPresult$LPsymbolsunb$parents,
+                   values=LPresult$LPsymbolsunb$values,
                    type = 'sunburst',
                    branchvalues = 'total',
                    domain = list(row = 0, column = 1),
@@ -269,14 +434,14 @@ server <- function(input, output, session) {
           ),
           column(8,
                  DT::renderDT({
-                   DT::datatable(result[[4]], escape = FALSE, rownames = FALSE, width = '100%',
+                   DT::datatable(LPresult$LPsymbol, escape = FALSE, rownames = FALSE, width = '100%',
                                  extensions = c('Scroller',  'Buttons'),
                                  options = list(
                                    buttons =list(list(extend = 'collection', buttons = c('excel','csv'), text = as.character(icon("download-alt", lib = "glyphicon")), titleAttr = 'Save as...')),
                                    dom = 'Brfti',
                                    deferRender = TRUE,
                                    scroller = TRUE,
-                                   scrollY = ifelse(nrow(result[[4]])<4,120,300),
+                                   scrollY = ifelse(nrow(LPresult$LPsymbol)<4,120,300),
                                    initComplete = JS("function(settings, json) {
                           var table = this.api();
                           $(this.api().table().header()).css({'background-color': '#e5e5e5', 'color': '#000'});
@@ -290,7 +455,7 @@ server <- function(input, output, session) {
         #density
         h3(strong('Transactions density')),
         ggplotly(height = 350, tooltip = c("text"), 
-                 ggplot(result[[6]], aes(x = timestep, y = Count, colour =  Status, fill =  Status,
+                 ggplot(LPresult$lpExecQuality1, aes(x = timestep, y = Count, colour =  Status, fill =  Status,
                                          text= paste0("datetime: ", timestep,"<br>",
                                                       "Count/min: ", Count,"<br>",
                                                       "Status: ", Status)                 
@@ -302,11 +467,56 @@ server <- function(input, output, session) {
                  + scale_fill_manual('Order status', values=c('Failed' = "red", 'Approved' = "darkgreen"))
                  + labs(title = "", x = "", y = "transactions per 1min", fill = "Status"), dynamicTicks = TRUE
         ), #density
+        
+        h3(strong('Approved/Failed Transactions:')),
+        #by SlippageType and by ErrorType
+        fluidRow(
+          column(3, 
+                 renderPlotly(
+                   plot_ly(
+                     labels = c("Approved", "Failed"),
+                     values = c(
+                       LPresult$summaryLP[, sum(ApprovedCount, na.rm=T)],
+                       LPresult$summaryLP[, sum(FailedCount, na.rm=T)]
+                     ),
+                     type = "pie",
+                     marker = list(colors = c("#63a65b", "#db5151")),
+                     textinfo = "label+value",
+                     hovertemplate = "%{label}: %{percent}<extra></extra>"
+                   )%>% layout(showlegend = FALSE)
+                 )
+          ),
+          column(2,),
+          column(7, 
+                 h4("Failed by ErrorType:"),
+                 DT::renderDT({
+                   DT::datatable(LPresult$fails_desc, escape = FALSE, rownames = F, width = '100%',#server=FALSE, 
+                                 #caption = "Failed transactions by ErrorType:",
+                                 extensions = c('Scroller',  'Buttons'),
+                                 options = list(
+                                   dom = 'Blfrtip',
+                                   deferRender = TRUE,
+                                   scrollX = TRUE,
+                                   scrollY = 250,#ifelse(nrow(result[[9]])<7,200,400), #600px high
+                                   scroller = TRUE,
+                                   autoWidth = FALSE,
+                                   buttons =list(list(extend = 'collection', buttons = c('excel','csv'), text = as.character(icon("download-alt", lib = "glyphicon")), titleAttr = 'Save as...')),
+                                   initComplete = JS("function(settings, json) {
+                          var table = this.api();
+                          $(this.api().table().header()).css({'background-color': '#e5e5e5', 'color': '#000'});
+                          $(this.api().table().container()).css({'font-size': '80%'}); 
+                          table.columns.adjust(); }")
+                                 )#options
+                   )#dt
+                 }, server = FALSE),
+                 )
+          ), 
+        
         h3(strong('LP Slippage')),
         fluidRow(
           column(5, 
                  ggplotly(height = 350, tooltip = c("text"), 
-                          ggplot(result[[7]], aes(y = reorder(LP, Count, sum, na.rm = T), x = `Count%`, fill =  reorder(SlippageType, -Count, sum, na.rm = T),
+                          ggplot(LPresult$slippageLP, aes(y = reorder(LP, Count, sum, na.rm = T), x = `Count%`, fill =  reorder(SlippageType, -Count, sum, na.rm = T),
                                                   text= paste0("LP: ", LP,"<br>",
                                                                "SlippageType: ", SlippageType,"<br>",
                                                                "Slippage_USD: ", SlippageUSD,"<br>",
@@ -320,7 +530,7 @@ server <- function(input, output, session) {
           ),
           column(7,
                  DT::renderDT({
-                   DT::datatable(result[[8]], escape = FALSE, rownames = FALSE, width = '100%',
+                   DT::datatable(LPresult$slippageLPsymbol, escape = FALSE, rownames = FALSE, width = '100%',
                                  caption = "Slippage by LP & Symbol & Type:",
                                  extensions = c('Scroller',  'Buttons'),
                                  options = list(
@@ -328,7 +538,7 @@ server <- function(input, output, session) {
                                    dom = 'Brfti',
                                    deferRender = TRUE,
                                    scroller = TRUE,
-                                   scrollY = ifelse(nrow(result[[8]])<4,120,300),
+                                   scrollY = ifelse(nrow(LPresult$slippageLPsymbol)<4,120,300),
                                    initComplete = JS("function(settings, json) {
                           $(this.api().table().header()).css({'background-color': '#e5e5e5', 'color': '#000'});
                           $(this.api().table().container()).css({'font-size': '80%'}); }")
@@ -341,7 +551,7 @@ server <- function(input, output, session) {
         fluidRow(
           column(5, 
                  ggplotly(height = 350, tooltip = c("text"), 
-                          ggplot(result[[9]], aes(y = reorder(LP, Count, sum, na.rm = T), x = `Count%`, fill =  reorder(OrderType, -Count, sum, na.rm = T),
+                          ggplot(LPresult$slippageLP_orderType, aes(y = reorder(LP, Count, sum, na.rm = T), x = `Count%`, fill =  reorder(OrderType, -Count, sum, na.rm = T),
                                                   text= paste0("LP: ", LP,"<br>",
                                                                "OrderType: ", OrderType,"<br>",
                                                                "Slippage_USD: ", SlippageUSD,"<br>",
@@ -355,7 +565,7 @@ server <- function(input, output, session) {
           ),
           column(7,
                  DT::renderDT({
-                   DT::datatable(result[[10]], escape = FALSE, rownames = FALSE, width = '100%',
+                   DT::datatable(LPresult$slippageLP_orderAndSlipType, escape = FALSE, rownames = FALSE, width = '100%',
                                  caption = "Slippage by LP & OrderType:",
                                  extensions = c('Scroller',  'Buttons'),
                                  options = list(
@@ -363,7 +573,7 @@ server <- function(input, output, session) {
                                    dom = 'Brfti',
                                    deferRender = TRUE,
                                    scroller = TRUE,
-                                   scrollY = ifelse(nrow(result[[10]])<4,120,300),
+                                   scrollY = ifelse(nrow(LPresult$slippageLP_orderAndSlipType)<4,120,300),
                                    initComplete = JS("function(settings, json) {
                           $(this.api().table().header()).css({'background-color': '#e5e5e5', 'color': '#000'});
                           $(this.api().table().container()).css({'font-size': '80%'}); }")
@@ -376,14 +586,14 @@ server <- function(input, output, session) {
         
         #topSlippageTransactions USD
         DT::renderDT({
-          DT::datatable(result[[11]], escape = FALSE, rownames = F, width = '100%',#server=FALSE, 
+          DT::datatable(LPresult$topSlippageUSDTransactions, escape = FALSE, rownames = F, width = '100%',#server=FALSE, 
                         caption = "Top20 transactions with the largest (+/-) slippagesUSD ( = lp_execution_slippage * filled_volume * ProfitCurrToUSDrate)",
                         extensions = c('Scroller',  'Buttons'),
                         options = list(
                           dom = 'Blfrtip',
                           deferRender = TRUE,
                           scrollX = TRUE,
-                          scrollY = ifelse(nrow(result[[11]])<7,200,400), #600px high
+                          scrollY = ifelse(nrow(LPresult$topSlippageUSDTransactions)<7,200,400), #600px high
                           scroller = TRUE,
                           autoWidth = FALSE,
                           buttons =list(list(extend = 'collection', buttons = c('excel','csv'), text = as.character(icon("download-alt", lib = "glyphicon")), titleAttr = 'Save as...')),
@@ -398,14 +608,14 @@ server <- function(input, output, session) {
         
         #topSlippageTransactions %
         DT::renderDT({
-          DT::datatable(result[[12]], escape = FALSE, rownames = F, width = '100%',#server=FALSE, 
+          DT::datatable(LPresult$topSlippagePercTransactions, escape = FALSE, rownames = F, width = '100%',#server=FALSE, 
                         caption = "Top20 transactions with the largest slippage % ( = lp_execution_slippage / lp_best_price *100)",
                         extensions = c('Scroller',  'Buttons'),
                         options = list(
                           dom = 'Blfrtip',
                           deferRender = TRUE,
                           scrollX = TRUE,
-                          scrollY = ifelse(nrow(result[[12]])<7,200,400), #600px high
+                          scrollY = ifelse(nrow(LPresult$topSlippagePercTransactions)<7,200,400), #600px high
                           scroller = TRUE,
                           autoWidth = FALSE,
                           buttons =list(list(extend = 'collection', buttons = c('excel','csv'), text = as.character(icon("download-alt", lib = "glyphicon")), titleAttr = 'Save as...')),
@@ -419,16 +629,16 @@ server <- function(input, output, session) {
         }, server = FALSE),
         
         #Slippage_2
-        if (nrow(result[[13]])>0){
+        if (nrow(LPresult$slippage2_dt)>0){
           DT::renderDT({
-            DT::datatable(result[[13]], escape = FALSE, rownames = F, width = '100%',#server=FALSE, 
+            DT::datatable(LPresult$slippage2_dt, escape = FALSE, rownames = F, width = '100%',#server=FALSE, 
                           caption = "Negative exec slippage ( = execution_price - slippage_requested_price)",
                           extensions = c('Scroller',  'Buttons'),
                           options = list(
                             dom = 'Blfrtip',
                             deferRender = TRUE,
                             scrollX = TRUE,
-                            scrollY = ifelse(nrow(result[[13]])<7,200,400), #600px high
+                            scrollY = ifelse(nrow(LPresult$slippage2_dt)<7,200,400), #600px high
                             scroller = TRUE,
                             autoWidth = FALSE,
                             buttons =list(list(extend = 'collection', buttons = c('excel','csv'), text = as.character(icon("download-alt", lib = "glyphicon")), titleAttr = 'Save as...')),
@@ -445,10 +655,184 @@ server <- function(input, output, session) {
       )#taglist
     } #if  data is
     else{tagList(
-      h4(strong(result[[1]])),
-      h4(span("No data", style = "color: #0a6ed1")),
-      renderText(result[[2]]))}
-  })
+      h4(strong(LPresult$INFO)),
+      h4(span("No data", style = "color: #0a6ed1"))
+      )}
+  }) #ui output LPexec
+  
+#################################################  
+  output$USERexec <-  renderUI({
+    USERresult <- getDataUSERexec()  
+    if (nrow(USERresult$summaryLogin) > 0) {
+      tagList(
+        h4(strong(USERresult$INFO)),
+        h3(strong('Common statistics by LOGIN')),
+        #summary dt by Login,
+        DT::renderDT({
+          DT::datatable(USERresult$summaryLogin, escape = FALSE, rownames = FALSE, width = '100%',
+                        extensions = c('Scroller',  'Buttons'),
+                        options = list(
+                          buttons =list(list(extend = 'collection', buttons = c('excel','csv'), text = as.character(icon("download-alt", lib = "glyphicon")), titleAttr = 'Save as...')),
+                          dom = 'Brfti',
+                          deferRender = TRUE,
+                          scroller = TRUE,
+                          scrollY = ifelse(nrow(USERresult$summaryLogin)<=4,150,300),
+                          initComplete = JS("function(settings, json) {
+                          var table = this.api();
+                          $(this.api().table().header()).css({'background-color': '#e5e5e5', 'color': '#000'});
+                          $(this.api().table().container()).css({'font-size': '80%'}); 
+                          table.columns.adjust(); }")
+                        )
+          ) %>% formatRound(columns = c("VolumeUSD"),  digits = 2, mark = " ") %>% formatRound(columns = c("ApprovedCount", "FailedCount"),  digits = 0, mark = " ")
+        }, server = FALSE),
+        
+#charts
+h3(strong('TradedVolume_USD by LOGIN&Symbol:')),
+        fluidRow(
+          column(4, 
+                 renderPlotly(plot_ly() %>% add_trace(
+                   ids = USERresult$Loginsymbolsunb$ids,
+                   labels = USERresult$Loginsymbolsunb$labels,
+                   parents = USERresult$Loginsymbolsunb$parents,
+                   values=USERresult$Loginsymbolsunb$values,
+                   type = 'sunburst',
+                   branchvalues = 'total',
+                   domain = list(row = 0, column = 1),
+                   hovertemplate = "%{label}<br>%{value:,.0f}$<extra></extra>")
+                 )
+          ),
+          column(8, 
+                 DT::renderDT({
+                   DT::datatable(USERresult$Loginsymbol, escape = FALSE, rownames = F, width = '100%',#server=FALSE, 
+                                 #caption = "Failed transactions by ErrorType:",
+                                 extensions = c('Scroller',  'Buttons'),
+                                 options = list(
+                                   dom = 'Blfrtip',
+                                   deferRender = TRUE,
+                                   scrollX = TRUE,
+                                   scrollY = ifelse(nrow(USERresult$Loginsymbol)<7,200,400), #600px high
+                                   scroller = TRUE,
+                                   autoWidth = FALSE,
+                                   buttons =list(list(extend = 'collection', buttons = c('excel','csv'), text = as.character(icon("download-alt", lib = "glyphicon")), titleAttr = 'Save as...')),
+                                   initComplete = JS("function(settings, json) {
+                          var table = this.api();
+                          $(this.api().table().header()).css({'background-color': '#e5e5e5', 'color': '#000'});
+                          $(this.api().table().container()).css({'font-size': '80%'}); 
+                          table.columns.adjust(); }")
+                                 )#options
+                   )%>% formatRound(columns = c("VolumeUSD", "VolumeMargin"),  digits = 2, mark = " ") %>% formatRound(columns = c("ApprovedCount", "FailedCount"),  digits = 0, mark = " ")#dt
+                 }, server = FALSE),
+          ),
+
+        ), #fluidrow
+br(),
+h3(strong('Approved/Failed Transactions:')),
+#by SlippageType and by ErrorType
+fluidRow(
+  column(3, 
+         renderPlotly(
+           plot_ly(
+             labels = c("Approved", "Failed"),
+             values = c(
+               USERresult$summaryLogin[, sum(ApprovedCount, na.rm=T)],
+               USERresult$summaryLogin[, sum(FailedCount, na.rm=T)]
+             ),
+             type = "pie",
+             marker = list(colors = c("#63a65b", "#db5151")),
+             textinfo = "label+value",
+             hovertemplate = "%{label}: %{percent}<extra></extra>"
+           )%>% layout(showlegend = FALSE)
+         )
+  ),
+  column(4, 
+         ggplotly(height = 350, tooltip = c("text"), 
+                  ggplot(USERresult$slippageType, aes(y = reorder(OrderType, Count, sum, na.rm = T), x = `Count%`, fill =  reorder(diffType, -Count, sum, na.rm = T),
+                                          text= paste0("OrderType: ", OrderType,"<br>",
+                                                       "UserSlippageType: ", diffType,"<br>",
+                                                       "AverageSlippage_%: ", `AverageSlippage,%`,"<br>",
+                                                       "TransactionCount: ", Count, " (", `Count%`, "%)")                 
+                  ))
+                  + geom_col() + geom_text(aes(label = `Count%`), position = position_stack(vjust=0.5), size = 3)
+                  + scale_fill_manual('SlippageType:', values=c('exact' = "#4DA3FF", 'positive' = "#2ECC71", 'negative' = "#FA8072"))
+                  + scale_x_continuous(labels = NULL)
+                  + labs(title = "Approved by SlippageType", x = "%", y = "", fill = "Type")
+         )
+  ),
+  column(5,
+         h4("Failed by ErrorType:"),
+         DT::renderDT({
+           DT::datatable(USERresult$fails_desc, escape = FALSE, rownames = F, width = '100%',#server=FALSE, 
+                         #caption = "Failed transactions by ErrorType:",
+                         extensions = c('Scroller',  'Buttons'),
+                         options = list(
+                           dom = 'Blfrtip',
+                           deferRender = TRUE,
+                           scrollX = TRUE,
+                           scrollY = 250,#ifelse(nrow(result[[9]])<7,200,400), #600px high
+                           scroller = TRUE,
+                           autoWidth = FALSE,
+                           buttons =list(list(extend = 'collection', buttons = c('excel','csv'), text = as.character(icon("download-alt", lib = "glyphicon")), titleAttr = 'Save as...')),
+                           initComplete = JS("function(settings, json) {
+                          var table = this.api();
+                          $(this.api().table().header()).css({'background-color': '#e5e5e5', 'color': '#000'});
+                          $(this.api().table().container()).css({'font-size': '80%'}); 
+                          table.columns.adjust(); }")
+                         )#options
+           )#dt
+         }, server = FALSE),
+  )
+), #fluidrow
+          h3(strong('Details')),
+                DT::renderDT({
+          DT::datatable(USERresult$topSlippagePercTransactions, escape = FALSE, rownames = F, width = '100%',#server=FALSE, 
+                        caption = "Top20 transactions with the largest slippage % ( = price_diff / requested_price) *100)",
+                        extensions = c('Scroller',  'Buttons'),
+                        options = list(
+                          dom = 'Blfrtip',
+                          deferRender = TRUE,
+                          scrollX = TRUE,
+                          scrollY = ifelse(nrow(USERresult$topSlippagePercTransactions)<7,200,400), #600px high
+                          scroller = TRUE,
+                          autoWidth = FALSE,
+                          buttons =list(list(extend = 'collection', buttons = c('excel','csv'), text = as.character(icon("download-alt", lib = "glyphicon")), titleAttr = 'Save as...')),
+                          initComplete = JS("function(settings, json) {
+                          var table = this.api();
+                          $(this.api().table().header()).css({'background-color': '#e5e5e5', 'color': '#000'});
+                          $(this.api().table().container()).css({'font-size': '80%'}); 
+                          table.columns.adjust(); }")
+                        )#options
+          ) %>% formatStyle("price_diff_%", color = styleInterval(0, c('red', 'green')))#dt
+        }, server = FALSE),
+
+                DT::renderDT({
+          DT::datatable(USERresult$topMaxDurationTransactions, escape = FALSE, rownames = F, width = '100%',#server=FALSE, 
+                        caption = "Top20 transactions with greatest duration",
+                        extensions = c('Scroller',  'Buttons'),
+                        options = list(
+                          dom = 'Blfrtip',
+                          deferRender = TRUE,
+                          scrollX = TRUE,
+                          scrollY = ifelse(nrow(USERresult$topMaxDurationTransactions)<7,200,400), #600px high
+                          scroller = TRUE,
+                          autoWidth = FALSE,
+                          buttons =list(list(extend = 'collection', buttons = c('excel','csv'), text = as.character(icon("download-alt", lib = "glyphicon")), titleAttr = 'Save as...')),
+                          initComplete = JS("function(settings, json) {
+                          var table = this.api();
+                          $(this.api().table().header()).css({'background-color': '#e5e5e5', 'color': '#000'});
+                          $(this.api().table().container()).css({'font-size': '80%'}); 
+                          table.columns.adjust(); }")
+                        )#options
+          )#dt
+        }, server = FALSE),        
+      )#taglist
+    } #if  data is
+    else{tagList(
+      h4(strong(USERresult$INFO)),
+      h4(span("No data", style = "color: #0a6ed1"))
+    )
+      }
+  }) #ui output USERexec
+  
 } #shinyServer
 
 shinyApp(ui, server)
