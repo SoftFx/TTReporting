@@ -11,6 +11,14 @@ RUN set -eux; \
     build-essential gfortran pkg-config cmake \
     libcurl4-openssl-dev libssl-dev libxml2-dev \
     libpq-dev \
+    zlib1g-dev \
+    libfontconfig1-dev \
+    libfreetype6-dev \
+    libharfbuzz-dev \
+    libfribidi-dev \
+    libpng-dev \
+    libtiff-dev \
+    libjpeg-dev \
     ca-certificates curl git; \
   rm -rf /var/lib/apt/lists/*
 
@@ -38,6 +46,12 @@ RUN set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends \
     libpq5 libcurl4 libssl3 libxml2; \
+    zlib1g \
+    libfontconfig1 \
+    libfreetype6 \
+    libpng16-16 \
+    libtiff5 \
+    libjpeg8; \
   rm -rf /var/lib/apt/lists/*
 
 
