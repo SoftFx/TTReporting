@@ -45,13 +45,15 @@ COPY source/common/ /common/
 RUN set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends \
-    libpq5 libcurl4 libssl3 libxml2; \
+    libpq5 libcurl4 libssl3 libxml2 \
     zlib1g \
     libfontconfig1 \
     libfreetype6 \
     libpng16-16 \
     libtiff5 \
-    libjpeg8; \
+    libjpeg8 \
+    libharfbuzz0b \
+    libfribidi0; \
   rm -rf /var/lib/apt/lists/*
 
 
