@@ -1,0 +1,74 @@
+{
+    auto_https off
+}
+
+# Users are defined in users.caddyfile (gitignored)
+import users.caddyfile
+
+(service_proxy) {
+    route /{args[0]}/* {
+        uri strip_prefix /{args[0]}
+        reverse_proxy {args[1]}
+    }
+}
+
+:443 {
+    tls /srv/home/server.crt /srv/home/server.key
+
+    root * /srv/home
+    file_server {
+        index index.html
+    }
+
+    # ── Home page — admin only ──────────────────
+    handle /home* {
+        basic_auth {
+            import admin_creads
+        }
+    }
+
+    # ── Root — same auth as home ─────────────────
+    handle / {
+        basic_auth {
+            import admin_creads
+        }
+    }
+
+    # ── Download root CA certificate ─────────────
+    handle /root-ca.crt {
+        basic_auth {
+            import admin_creads
+        }
+        root * /srv/home
+        file_server
+    }
+
+    # ── products.yaml (same auth as home) ────────
+    handle /products.yaml {
+        basic_auth {
+            import admin_creads
+        }
+    }
+
+    # ── Aggregator Data ─────────────────────────
+    handle /aggr-data/ {
+        basic_auth {
+            import admin_creads
+        }
+    }
+    import service_proxy aggr-data aggr-data-app:3838
+
+    # ── Future products ─────────────────────────
+    # handle /product-two/ {
+    #     basic_auth {
+    #         import admin_creads
+    #         # user.name $2a$10$HASH...
+    #     }
+    # }
+    # import service_proxy product-two product-two:8080
+
+    log {
+        output stdout
+        format json
+    }
+}
