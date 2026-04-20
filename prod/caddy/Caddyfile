@@ -39,7 +39,6 @@ import users.caddyfile
         basic_auth {
             import admin_creads
         }
-        root * /srv/home
         file_server
     }
 

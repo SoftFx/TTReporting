@@ -1,0 +1,55 @@
+# ── Admins (full access to everything) ────────
+(admin_creads) {
+    admin $2a$10$3bzLPEiMV7TrfuyReQ/L4uDZf1FlNT/GhkraxH3FJ21o/.lp54v2G
+    admin2 $2a$10$z5/RpTSq54ULCCUaSyDPp.WfGrqok2xeWBFlEczREXreDANTOqLSa
+    oksana.hilevich $2a$10$EQTa2rt7gKA8rcVzj/bSRu/YWP7RIe3NH9S.XcJxUNStr4QY5NG3G
+    andrei.pazniak $2a$10$anT96.EWAoK8i1fwrmLRAOfJnAWHchcvQ0WW/HimOatWeEW4MKB.K
+}
+
+# ── Per-service user groups ──────────────────
+# Reference in Caddyfile:  import aggr-data-users
+
+(aggr-data-users) {
+    nick.hambridge $2a$10$ztUYb/czXLUH4KskAFt72OfLmrWeiUw2.1HNDjPvFbbExXS4UwBZm
+    loukas.krasias $2a$10$qu0lhKlhym5FCzwwFv6DyuZdx2DI6LfEvQFuEt2UfE0i59pTIb.uG
+}
+
+(userobserver-users) {
+    evgeny.malyukov $2a$10$etE9OtUJeTMpjmzfv6tk5eAuyO9ovG71DLPnic5vZB1ivgl0vS99S
+    siarhei.shyrko $2a$10$IctGIvOH3rkqisEoDCnys.JRwWZBKyXPJERFQzYM95nk49mLwQDi6
+    yahor.dzmitryieu $2a$10$cnMgcd7D0mHxb2lN/L8W.ea2HnTpOEIt7aQorKSiaPWUByI3Z7k6W
+    nick.hambridge $2a$10$ztUYb/czXLUH4KskAFt72OfLmrWeiUw2.1HNDjPvFbbExXS4UwBZm
+    nikita.dmitrouk $2a$10$O4uU54MisxC8b4zCzX6RZeOvQNrq.WZ6jJK5ruVLmbhbZA8XY.e5C
+    dzmitry.ehert $2a$10$hDfIpqR7Yab4mJincsT1Lezxa8x7Oe8c/vZTM/1SF9Zsp1n.d.9/i
+}
+
+(lpquotesshiny-users) {
+    siarhei.shyrko $2a$10$IctGIvOH3rkqisEoDCnys.JRwWZBKyXPJERFQzYM95nk49mLwQDi6
+    yahor.dzmitryieu $2a$10$cnMgcd7D0mHxb2lN/L8W.ea2HnTpOEIt7aQorKSiaPWUByI3Z7k6W
+    nick.hambridge $2a$10$ztUYb/czXLUH4KskAFt72OfLmrWeiUw2.1HNDjPvFbbExXS4UwBZm
+    evgeny.malyukov $2a$10$etE9OtUJeTMpjmzfv6tk5eAuyO9ovG71DLPnic5vZB1ivgl0vS99S
+}
+
+(mtquoteuploader-users) {
+    yahor.dzmitryieu $2a$10$cnMgcd7D0mHxb2lN/L8W.ea2HnTpOEIt7aQorKSiaPWUByI3Z7k6W
+    andrei.barysenka $2a$10$J3w/eXiLFfiANRbYAISbdOUqCvEcBOqC0kh3nG4kHc/o1PBNsOPOe
+    evgeny.malyukov $2a$10$etE9OtUJeTMpjmzfv6tk5eAuyO9ovG71DLPnic5vZB1ivgl0vS99S
+}
+
+(spreadanalyzer-users) {
+    yahor.dzmitryieu $2a$10$cnMgcd7D0mHxb2lN/L8W.ea2HnTpOEIt7aQorKSiaPWUByI3Z7k6W
+    andrei.barysenka $2a$10$J3w/eXiLFfiANRbYAISbdOUqCvEcBOqC0kh3nG4kHc/o1PBNsOPOe
+}
+
+(tttthistorytransfer-users) {
+    yahor.dzmitryieu $2a$10$cnMgcd7D0mHxb2lN/L8W.ea2HnTpOEIt7aQorKSiaPWUByI3Z7k6W
+}
+
+(lpreplibotstatereport-users) {
+    siarhei.shyrko $2a$10$IctGIvOH3rkqisEoDCnys.JRwWZBKyXPJERFQzYM95nk49mLwQDi6
+    yahor.dzmitryieu $2a$10$cnMgcd7D0mHxb2lN/L8W.ea2HnTpOEIt7aQorKSiaPWUByI3Z7k6W
+}
+
+(mt5tthistorytransfer-users) {
+    andrei.barysenka $2a$10$J3w/eXiLFfiANRbYAISbdOUqCvEcBOqC0kh3nG4kHc/o1PBNsOPOe
+}

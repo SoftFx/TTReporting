@@ -5,10 +5,20 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+if [ -z "$1" ]; then
+    echo "Usage: bash generate-cert.sh <IP1,IP2,...>"
+    echo "Example: bash generate-cert.sh 195.13.245.138,192.168.10.32"
+    exit 1
+fi
+
 if [ -f "$SCRIPT_DIR/server.crt" ] && [ -f "$SCRIPT_DIR/server.key" ]; then
     echo "Certificate already exists. To regenerate, delete server.crt and server.key first."
     exit 0
 fi
+
+# Build SAN from comma-separated IPs
+SAN=$(echo "$1" | tr ',' '\n' | sed 's/^/IP:/' | tr '\n' ',' | sed 's/,$//')
+echo "Certificate SAN: $SAN"
 
 # 1. Generate Root CA
 openssl req -x509 -newkey rsa:2048 \
@@ -36,7 +46,8 @@ openssl x509 -req \
     -days 3650 \
     -extfile <(echo "basicConstraints=CA:FALSE
 keyUsage=critical,digitalSignature,keyEncipherment
-extendedKeyUsage=serverAuth") \
+extendedKeyUsage=serverAuth
+subjectAltName=$SAN") \
     -sha256
 
 # 4. Cleanup CSR
@@ -46,3 +57,4 @@ echo ""
 echo "Done!"
 echo "  server.crt + server.key  -> for Caddy"
 echo "  root-ca.crt              -> install on client machines (Trusted Root CA)"
+echo "  root-ca.key              -> keep safe or delete after deployment"

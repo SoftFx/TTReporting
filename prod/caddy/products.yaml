@@ -1,7 +1,7 @@
 # Products registry
 # Adding a new product:
 #   1. Add entry here
-#   2. Add basicauth + service_proxy block in caddy/Caddyfile
+#   2. Add basic_auth + service_proxy block in caddy/Caddyfile
 #   3. Add service in docker-compose.yml with networks: [tt-internal]
 
 - slug: aggr-data
