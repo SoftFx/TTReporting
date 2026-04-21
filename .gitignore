@@ -5,6 +5,7 @@ configDocker
 /run/count-trades/customcommand_output.log
 /run/big-trades/customcommand_output.log
 /examples/big-trades/customcommand_output.log
+/prod/.env
 /prod/caddy/users.caddyfile
 /prod/caddy/server.crt
 /prod/caddy/server.key

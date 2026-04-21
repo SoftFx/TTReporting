@@ -1,7 +1,21 @@
 @echo off
 setlocal
 
-set SERVER=user@YOUR_SERVER_IP
+:: Load .env
+if not exist "%~dp0.env" (
+    echo ERROR: %~dp0.env not found.
+    echo Create it with:
+    echo.
+    echo   SERVER=user@your.server.ip
+    echo   CADDY_CONTAINER=jobs-caddy-1
+    echo   COMPOSE_DIR=/opt/automation/jobs
+    echo.
+    exit /b 1
+)
+
+for /f "usebackq tokens=1,* delims==" %%A in ("%~dp0.env") do (
+    if not "%%A"=="" if not "%%A:~0,1%"=="#" set "%%A=%%B"
+)
 
 if "%~1"=="" (
     echo Usage: add-user.bat ^<username^>
@@ -17,7 +31,7 @@ for /f "usebackq" %%P in (`powershell -Command "-join ((65..90)+(97..122)+(48..5
 :: SSH to server, generate bcrypt hash
 echo.
 echo Generating hash via %SERVER%...
-for /f "usebackq delims=" %%H in (`ssh %SERVER% "docker exec jobs-caddy-1 caddy hash-password --plaintext '%PASSWORD%'"`) do set HASH=%%H
+for /f "usebackq delims=" %%H in (`ssh %SERVER% "docker exec %CADDY_CONTAINER% caddy hash-password --plaintext '%PASSWORD%'"`) do set HASH=%%H
 
 echo.
 echo ========================================
@@ -29,6 +43,6 @@ echo Copy this line to users.caddyfile:
 echo.
 echo     %USERNAME% %HASH%
 echo.
-echo Then reload: docker exec jobs-caddy-1 caddy reload --config /etc/caddy/Caddyfile
+echo Then run: prod\reload-caddy.bat
 echo.
 endlocal
