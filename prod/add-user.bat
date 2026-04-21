@@ -4,17 +4,17 @@ setlocal
 :: Load .env
 if not exist "%~dp0.env" (
     echo ERROR: %~dp0.env not found.
-    echo Create it with:
+    echo Create it from .env.example with:
     echo.
     echo   SERVER=user@your.server.ip
     echo   CADDY_CONTAINER=jobs-caddy-1
-    echo   COMPOSE_DIR=/opt/automation/jobs
     echo.
     exit /b 1
 )
 
 for /f "usebackq tokens=1,* delims==" %%A in ("%~dp0.env") do (
-    if not "%%A"=="" if not "%%A:~0,1%"=="#" set "%%A=%%B"
+    set "line=%%A"
+    if not "%%A"=="" set "%%A=%%B"
 )
 
 if "%~1"=="" (
