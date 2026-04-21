@@ -18,10 +18,11 @@ import users.caddyfile
         X-Frame-Options "SAMEORIGIN"
         X-Content-Type-Options "nosniff"
         Referrer-Policy "strict-origin-when-cross-origin"
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'unsafe-inline' 'self';"
     }
 
     # ── Rate limiting (requires caddy-ratelimit plugin) ──
-    # Uncomment after adding the plugin to the Caddy image:
+    # Uncomment after building a custom Caddy image with the plugin:
     # rate_limit {
     #     zone auth_zone {
     #         key {remote_host}
@@ -33,13 +34,22 @@ import users.caddyfile
     root * /srv/home
 
     # ── Home page — all authenticated users ──────
-    handle / {
+    @homepage path / /index.html
+    handle @homepage {
         basic_auth {
             import all-users
         }
         file_server {
             index index.html
         }
+    }
+
+    # ── Static assets (vendored JS) ─────────────
+    handle /static/* {
+        basic_auth {
+            import all-users
+        }
+        file_server
     }
 
     # ── Download root CA certificate (public) ────
@@ -65,7 +75,7 @@ import users.caddyfile
         reverse_proxy aggr-data-app:3838
     }
 
-    # ── Catch-all: deny everything else ──────────
+    # ── Catch-all: deny unmatched paths ──────────
     handle {
         respond 403
     }
