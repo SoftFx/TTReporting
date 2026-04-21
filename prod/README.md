@@ -75,73 +75,137 @@ docker compose run --rm diff-prices
 
 ## Adding a new product
 
-### 1. Add to `caddy/products.yaml`
+### 1. Add product entry to `caddy/products.yaml`
+
+This file drives the home page cards. Each product needs a unique `slug` (used in URLs).
 
 ```yaml
-- slug: product-name
-  name: Product Name
+- slug: my-product
+  name: My Product
   description: |
-    Description here.
-  category: Category
+    Short description shown on the home page card.
+  category: Analytics
+  # image: static/image/my-product.png   # optional
 ```
 
-### 2. Add route in `caddy/Caddyfile`
+### 2. Create a user group in `caddy/users.caddyfile`
 
-Inside the `:443 { ... }` block, add:
+Define who has access to this product. Add a new snippet group with the product slug + `-users` suffix:
 
 ```
-handle /product-name/ {
+(my-product-users) {
+    john.doe $2a$10$BCRYPT_HASH_HERE
+    jane.doe $2a$10$BCRYPT_HASH_HERE
+}
+```
+
+To generate a bcrypt hash for a new user, run on the server:
+
+```bash
+docker exec caddy caddy hash-password --plaintext 'PASSWORD'
+```
+
+Or use `add-user.bat` from a Windows machine:
+
+```bat
+prod\add-user.bat john.doe
+```
+
+### 3. Add the new users to `all-users` snippet
+
+Open `caddy/users.caddyfile` and add every user from the new group to the `(all-users)` snippet. This gives them access to the home page so they can see the product cards:
+
+```
+(all-users) {
+    ...existing users...
+    john.doe $2a$10$BCRYPT_HASH_HERE
+    jane.doe $2a$10$BCRYPT_HASH_HERE
+}
+```
+
+### 4. Add route and auth in `caddy/Caddyfile`
+
+Inside the `:443 { ... }` block, add a `handle` block for the product URL path and a `service_proxy` import:
+
+```
+# ── My Product ───────────────────────────────
+handle /my-product/* {
     basic_auth {
         import admin_creads
-        # import product-name-users   (if defined in users.caddyfile)
+        import my-product-users
     }
 }
-import service_proxy product-name product-name-container:PORT
+import service_proxy my-product my-product-container:8080
 ```
 
-### 3. Add service in `docker-compose.yml`
+How it works:
+- `handle /my-product/*` — matches all requests to `/my-product/...`
+- `basic_auth` — only `admin_creads` (full admins) and `my-product-users` can access
+- `service_proxy my-product my-product-container:8080` — strips `/my-product` prefix and forwards to the container on port 8080
+
+### 5. Add service in `docker-compose.yml`
+
+Add the container definition. It must be on the `tt-internal` network (Caddy routes traffic through it) and must NOT expose ports to the host (Caddy handles that):
 
 ```yaml
-product-name:
-  image: softfx/tt-reporting:latest-product-name
+my-product:
+  image: softfx/tt-reporting:latest-my-product
   pull_policy: always
   volumes:
-    - ./product-name/configDocker:/app/configDocker:ro
+    - ./my-product/configDocker:/app/configDocker:ro
   restart: unless-stopped
   networks:
     - tt-internal
 ```
 
-### 4. Restart
+### 6. Deploy
+
+On the server:
 
 ```bash
-docker compose up -d
+cd /path/to/prod
+
+# Pull the new image
+docker compose pull my-product
+
+# Start the new service and reload Caddy
+docker compose up -d my-product
+docker exec caddy caddy reload --config /etc/caddy/Caddyfile
 ```
+
+### Summary: files to edit
+
+| File | What to change |
+|---|---|
+| `caddy/products.yaml` | Add product card entry |
+| `caddy/users.caddyfile` | Add `<slug>-users` group + update `all-users` |
+| `caddy/Caddyfile` | Add `handle` + `import service_proxy` |
+| `docker-compose.yml` | Add service container |
 
 ## Adding a new user
 
-All commands run on the server via SSH from any machine:
+### Option A: from Windows (add-user.bat)
+
+```bat
+prod\add-user.bat john.doe
+```
+
+This generates a random 12-character password and prints the bcrypt hash. Copy the output line into `caddy/users.caddyfile`.
+
+### Option B: from the server
 
 ```bash
-ssh apazniak@195.13.245.138
-cd /opt/automation/jobs
+# SSH to server
+cd /path/to/prod
 
-# 1. Generate bcrypt hash for the password
-docker exec jobs-caddy-1 caddy hash-password --plaintext 'PASSWORD'
-# Output: $2a$10$xxxxx...
+# 1. Generate bcrypt hash
+docker exec caddy caddy hash-password --plaintext 'PASSWORD'
 
-# 2. Add user to caddy/users.caddyfile
+# 2. Add to caddy/users.caddyfile — paste into the right group(s)
 nano caddy/users.caddyfile
-# Paste the hash under the appropriate snippet, e.g.:
-#   (admin_creads) {
-#       admin $2a$10$existing...
-#       newuser $2a$10$xxxxx...    <- add here
-#   }
 
-# 3. If the user needs access to a specific service, add to Caddyfile
-nano caddy/Caddyfile
-# Add username + hash in the service's basic_auth block
+# 3. Also add to (all-users) so they can see the home page
 
-# 4. Restart Caddy to apply changes
-docker compose restart caddy
+# 4. Reload Caddy
+docker exec caddy caddy reload --config /etc/caddy/Caddyfile
 ```
