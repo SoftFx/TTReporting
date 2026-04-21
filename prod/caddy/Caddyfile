@@ -50,9 +50,10 @@ import users.caddyfile
     }
 
     # ── Aggregator Data ─────────────────────────
-    handle /aggr-data/ {
+    handle /aggr-data/* {
         basic_auth {
             import admin_creads
+            import aggr-data-users
         }
     }
     import service_proxy aggr-data aggr-data-app:3838
