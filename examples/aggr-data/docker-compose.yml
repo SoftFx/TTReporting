@@ -1,0 +1,9 @@
+services:
+  aggr-data-local:
+    image: aggr-data-app
+    ports:
+      - "3838:3838"
+    volumes:
+      - ../../source/aggr-data_App/configDocker:/app/configDocker:ro
+    restart: unless-stopped
+

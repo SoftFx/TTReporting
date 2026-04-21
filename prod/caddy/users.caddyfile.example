@@ -1,0 +1,55 @@
+# ── Admins (full access to everything) ────────
+(admin_creads) {
+    admin $2a$10$REPLACE_WITH_BCRYPT_HASH
+    admin2 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user3 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user4 $2a$10$REPLACE_WITH_BCRYPT_HASH
+}
+
+# ── Per-service user groups ──────────────────
+# Reference in Caddyfile:  import aggr-data-users
+
+(aggr-data-users) {
+    user1 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user2 $2a$10$REPLACE_WITH_BCRYPT_HASH
+}
+
+(userobserver-users) {
+    user1 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user2 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user3 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user4 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user5 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user6 $2a$10$REPLACE_WITH_BCRYPT_HASH
+}
+
+(lpquotesshiny-users) {
+    user1 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user2 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user3 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user4 $2a$10$REPLACE_WITH_BCRYPT_HASH
+}
+
+(mtquoteuploader-users) {
+    user1 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user2 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user3 $2a$10$REPLACE_WITH_BCRYPT_HASH
+}
+
+(spreadanalyzer-users) {
+    user1 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user2 $2a$10$REPLACE_WITH_BCRYPT_HASH
+}
+
+(tttthistorytransfer-users) {
+    user1 $2a$10$REPLACE_WITH_BCRYPT_HASH
+}
+
+(lpreplibotstatereport-users) {
+    user1 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user2 $2a$10$REPLACE_WITH_BCRYPT_HASH
+}
+
+(mt5tthistorytransfer-users) {
+    user1 $2a$10$REPLACE_WITH_BCRYPT_HASH
+}

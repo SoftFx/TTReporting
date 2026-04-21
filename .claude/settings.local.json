@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(python -m http.server 8080)",
+      "Bash(git commit:*)",
+      "Bash(curl -k --max-time 15 -v https://195.13.245.138/)",
+      "Bash(curl:*)",
+      "Bash(openssl s_client -connect 195.13.245.138:443 -showcerts)",
+      "Bash(openssl x509:*)",
+      "Bash(sed -n '/BEGIN CERT/,/END CERT/p')",
+      "Bash(openssl verify:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr:*)",
+      "Bash(grep -v '^$')"
+    ]
+  }
+}
