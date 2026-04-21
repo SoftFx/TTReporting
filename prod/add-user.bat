@@ -24,13 +24,20 @@ if "%~1"=="" (
 
 set USERNAME=%~1
 
+:: Validate username (letters, numbers, dots, underscores, hyphens only)
+echo %USERNAME% | findstr /R "^[a-zA-Z0-9._-]*$" > nul
+if %errorlevel% neq 0 (
+    echo ERROR: Username must contain only letters, numbers, dots, underscores, or hyphens.
+    exit /b 1
+)
+
 :: Generate random 12-char password
 for /f "usebackq" %%P in (`powershell -Command "-join ((65..90)+(97..122)+(48..57) | Get-Random -Count 12 | %%{[char]$_})"`) do set PASSWORD=%%P
 
 :: SSH to server, pipe password via stdin to generate bcrypt hash
 echo.
 echo Generating hash via %SERVER%...
-for /f "usebackq delims=" %%H in (`echo %PASSWORD% | ssh %SERVER% "docker exec -i %CADDY_CONTAINER% caddy hash-password"`) do set HASH=%%H
+for /f "usebackq delims=" %%H in (`echo %PASSWORD% | ssh %SERVER% "docker exec -i %CADDY_CONTAINER% caddy hash-password 2>/dev/null" ^| findstr /R "^\$2"`) do set HASH=%%H
 
 if "%HASH%"=="" (
     echo.

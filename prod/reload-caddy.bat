@@ -18,6 +18,11 @@ for /f "usebackq tokens=1,* delims==" %%A in ("%~dp0.env") do (
 
 echo Formatting Caddyfile on %SERVER%...
 ssh %SERVER% "docker exec %CADDY_CONTAINER% caddy fmt --overwrite /etc/caddy/Caddyfile"
+if %errorlevel% neq 0 (
+    echo.
+    echo FAILED: Caddyfile has syntax errors. Fix before reloading.
+    exit /b 1
+)
 
 echo Reloading Caddy on %SERVER%...
 ssh %SERVER% "docker exec %CADDY_CONTAINER% caddy reload --config /etc/caddy/Caddyfile"

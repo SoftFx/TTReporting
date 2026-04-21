@@ -10,7 +10,25 @@ import users.caddyfile
 }
 
 :443 {
-    tls /srv/home/server.crt /srv/home/server.key
+    tls /srv/certs/server.crt /srv/certs/server.key
+
+    # ── Security headers ──────────────────────────
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # ── Rate limiting (requires caddy-ratelimit plugin) ──
+    # Uncomment after adding the plugin to the Caddy image:
+    # rate_limit {
+    #     zone auth_zone {
+    #         key {remote_host}
+    #         events 20
+    #         window 60s
+    #     }
+    # }
 
     root * /srv/home
 

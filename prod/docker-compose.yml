@@ -7,11 +7,17 @@ services:
     image: caddy:2-alpine
     pull_policy: always
     ports:
+      - "80:80"
       - "443:443"
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./caddy/users.caddyfile:/etc/caddy/users.caddyfile:ro
-      - ./caddy:/srv/home:ro
+      - ./caddy/server.crt:/srv/certs/server.crt:ro
+      - ./caddy/server.key:/srv/certs/server.key:ro
+      - ./caddy/index.html:/srv/home/index.html:ro
+      - ./caddy/products.yaml:/srv/home/products.yaml:ro
+      - ./caddy/root-ca.crt:/srv/home/root-ca.crt:ro
+      - ./caddy/static:/srv/home/static:ro
     depends_on:
       aggr-data-app:
         condition: service_healthy
