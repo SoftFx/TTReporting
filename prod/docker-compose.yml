@@ -1,0 +1,130 @@
+services:
+
+  # ────────────────────────────────────────────
+  # Gateway: Caddy reverse proxy with basicauth
+  # ────────────────────────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    pull_policy: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/users.caddyfile:/etc/caddy/users.caddyfile:ro
+      - ./caddy/server.crt:/srv/certs/server.crt:ro
+      - ./caddy/server.key:/srv/certs/server.key:ro
+      - ./caddy/index.html:/srv/home/index.html:ro
+      - ./caddy/products.yaml:/srv/home/products.yaml:ro
+      - ./caddy/root-ca.crt:/srv/home/root-ca.crt:ro
+      - ./caddy/static:/srv/home/static:ro
+    depends_on:
+      aggr-data-app:
+        condition: service_healthy
+    networks:
+      - tt-internal
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ────────────────────────────────────────────
+  # Web applications (always-on, behind Caddy)
+  # ────────────────────────────────────────────
+  aggr-data-app:
+    image: softfx/tt-reporting:latest-aggr-data-app
+    pull_policy: always
+    volumes:
+      - ./aggr-data-app/configDocker:/app/configDocker:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3838"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - tt-internal
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "1.0"
+
+  # ── Future web apps ────────────────────────
+  # product-two:
+  #   image: softfx/tt-reporting:latest-product-two
+  #   pull_policy: always
+  #   volumes:
+  #     - ./product-two/configDocker:/app/configDocker:ro
+  #   restart: unless-stopped
+  #   networks:
+  #     - tt-internal
+
+  # ────────────────────────────────────────────
+  # Batch jobs (run via: docker compose run --rm <name>)
+  # ────────────────────────────────────────────
+  swap-updater:
+    profiles: ["jobs"]
+    image: softfx/tt-reporting:latest-swap-updater
+    pull_policy: always
+    volumes:
+      - ./swap-updater/configDocker:/app/configDocker:ro
+      - ./swap-updater/dataDocker:/app/dataDocker:rw
+    restart: "no"
+
+  negative-equity:
+    profiles: ["jobs"]
+    image: softfx/tt-reporting:latest-negative-equity
+    pull_policy: always
+    volumes:
+      - ./negative-equity/configDocker:/app/configDocker:ro
+      - ./negative-equity/dataDocker:/app/dataDocker:rw
+    restart: "no"
+
+  big-deposits:
+    profiles: ["jobs"]
+    image: softfx/tt-reporting:latest-big-deposits
+    pull_policy: always
+    volumes:
+      - ./big-deposits/configDocker:/app/configDocker:ro
+      - ./big-deposits/dataDocker:/app/dataDocker:rw
+    restart: "no"
+
+  big-trades:
+    profiles: ["jobs"]
+    image: softfx/tt-reporting:latest-big-trades
+    pull_policy: always
+    volumes:
+      - ./big-trades/configDocker:/app/configDocker:ro
+      - ./big-trades/dataDocker:/app/dataDocker:rw
+    restart: "no"
+
+  count-trades:
+    profiles: ["jobs"]
+    image: softfx/tt-reporting:latest-count-trades
+    pull_policy: always
+    volumes:
+      - ./count-trades/configDocker:/app/configDocker:ro
+      - ./count-trades/dataDocker:/app/dataDocker:rw
+    restart: "no"
+
+  diff-prices:
+    profiles: ["jobs"]
+    image: softfx/tt-reporting:latest-diff-prices
+    pull_policy: always
+    volumes:
+      - ./diff-prices/configDocker:/app/configDocker:ro
+      - ./diff-prices/dataDocker:/app/dataDocker:rw
+    restart: "no"
+
+networks:
+  tt-internal:
+    driver: bridge

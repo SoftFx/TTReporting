@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TT Reporting</title>
+    <link rel="icon" href="data:,">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f0f2f5;
+            color: #1a1a2e;
+            min-height: 100vh;
+        }
+        header {
+            background: #081521;
+            color: #cfcfcf;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header .logo {
+            color: #b1d149;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        header .title {
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        header a {
+            color: #a0aec0;
+            text-decoration: none;
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            border: 1px solid #4a5568;
+            border-radius: 4px;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        header a:hover { color: #fff; border-color: #fff; }
+        main {
+            max-width: 960px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        h2 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #718096;
+            margin-bottom: 1rem;
+        }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        .card {
+            background: #fff;
+            border-radius: 6px;
+            padding: 1.2rem;
+            border: 1px solid #e2e8f0;
+            transition: box-shadow 0.2s, transform 0.15s;
+        }
+        .card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
+        }
+        .card .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+        .card h3 { font-size: 1.05rem; }
+        .card .category {
+            font-size: 0.7rem;
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
+        }
+        .card p {
+            font-size: 0.85rem;
+            color: #718096;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+            white-space: pre-line;
+        }
+        .card a {
+            display: inline-block;
+            background: #355C7D;
+            color: #fff;
+            padding: 6px 18px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .card a:hover { background: #487ca8; }
+        .error { color: #e53e3e; padding: 2rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <span class="logo">soft FX</span>
+            <span class="title">Analytical Applications & Reports</span>
+        </div>
+        <a href="/root-ca.crt" download>Install Root CA</a>
+    </header>
+    <main>
+        <h2>Products</h2>
+        <div class="cards" id="cards"></div>
+    </main>
+
+    <script src="/static/js-yaml.min.js"></script>
+    <script>
+        function esc(s) {
+            var d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        fetch('products.yaml')
+            .then(r => r.text())
+            .then(text => jsyaml.load(text))
+            .then(products => {
+                var container = document.getElementById('cards');
+                container.innerHTML = products.map(function(p) {
+                    var slug = esc(p.slug).replace(/[^a-z0-9-]/gi, '');
+                    return '<div class="card">' +
+                        '<div class="card-header">' +
+                            '<h3>' + esc(p.name) + '</h3>' +
+                            (p.category ? '<span class="category">' + esc(p.category) + '</span>' : '') +
+                        '</div>' +
+                        '<p>' + esc(p.description) + '</p>' +
+                        '<a href="/' + slug + '/">Open</a>' +
+                    '</div>';
+                }).join('');
+            })
+            .catch(function(err) {
+                document.getElementById('cards').innerHTML =
+                    '<p class="error">Failed to load products: ' + esc(err.message) + '</p>';
+            });
+    </script>
+</body>
+</html>

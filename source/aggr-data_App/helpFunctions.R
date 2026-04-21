@@ -87,7 +87,7 @@ getUSERexecdataAggr <- function(CredsAggr, From, To){
   return(list(res1,res2,res3))
 }
 
-#get Symbol Properties from TT db 
+#get Symbol Properties from TT db
 getAllSymbolsTT <- function(Credstt){
   con <- dbConnect(RPostgres::Postgres(), dbname = Credstt$postgre_DB, user = Credstt$postgre_USER, password = Credstt$postgre_PASSWORD, host = Credstt$postgre_HOST)
   on.exit(dbDisconnect(con))  
