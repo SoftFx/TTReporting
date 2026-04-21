@@ -20,24 +20,23 @@ import users.caddyfile
         index index.html
     }
 
-    # ── Home page — admin only ──────────────────
+    # ── Home + static assets — all authenticated users ──
     handle /home* {
         basic_auth {
-            import admin_creads
+            import all-users
         }
     }
 
-    # ── Root — same auth as home ─────────────────
     handle / {
         basic_auth {
-            import admin_creads
+            import all-users
         }
     }
 
     # ── Download root CA certificate ─────────────
     handle /root-ca.crt {
         basic_auth {
-            import admin_creads
+            import all-users
         }
         file_server
     }
@@ -45,7 +44,7 @@ import users.caddyfile
     # ── products.yaml (same auth as home) ────────
     handle /products.yaml {
         basic_auth {
-            import admin_creads
+            import all-users
         }
     }
 
