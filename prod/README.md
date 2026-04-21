@@ -13,6 +13,7 @@ prod/
 │   ├── server.key       # Server private key (generated, gitignored)
 │   ├── root-ca.crt      # Root CA certificate (generated, gitignored)
 │   ├── root-ca.key      # Root CA private key (generated, gitignored)
+│   ├── static/          # Vendored JS libraries
 │   ├── index.html       # Home page (reads products.yaml dynamically)
 │   └── products.yaml    # Product registry (names, descriptions, categories)
 └── aggr-data-app/
@@ -25,22 +26,28 @@ prod/
 
 ```bash
 cd prod/caddy
-bash generate-cert.sh
+bash generate-cert.sh <SERVER_IP>
+# Example: bash generate-cert.sh 10.0.0.5
+# For multiple IPs: bash generate-cert.sh 10.0.0.5,192.168.1.100
 ```
 
-Run once. Generates Root CA + server certificate (valid 10 years). Server IP is auto-detected and included in SAN.
+Run once. Generates Root CA + server certificate (valid 10 years) with the given IP(s) in SAN.
 
 ### 2. Create users file
 
 ```bash
 # Generate hash:
-docker run --rm caddy:2-alpine caddy hash-password --plaintext 'PASSWORD'
+echo 'PASSWORD' | docker run --rm -i caddy:2-alpine caddy hash-password
 ```
 
 Create `caddy/users.caddyfile` with content:
 
 ```
 (admin_creads) {
+    admin $2a$10$GENERATED_HASH_HERE
+}
+
+(all-users) {
     admin $2a$10$GENERATED_HASH_HERE
 }
 ```
@@ -102,7 +109,7 @@ Define who has access to this product. Add a new snippet group with the product 
 To generate a bcrypt hash for a new user, run on the server:
 
 ```bash
-docker exec caddy caddy hash-password --plaintext 'PASSWORD'
+echo 'PASSWORD' | docker exec -i caddy caddy hash-password
 ```
 
 Or use `add-user.bat` from a Windows machine:
@@ -125,7 +132,7 @@ Open `caddy/users.caddyfile` and add every user from the new group to the `(all-
 
 ### 4. Add route and auth in `caddy/Caddyfile`
 
-Inside the `:443 { ... }` block, add a `handle` block for the product URL path and a `service_proxy` import:
+Inside the `:443 { ... }` block, add a `handle` block. Auth and proxy must be in the **same** handle block:
 
 ```
 # ── My Product ───────────────────────────────
@@ -134,14 +141,16 @@ handle /my-product/* {
         import admin_creads
         import my-product-users
     }
+    uri strip_prefix /my-product
+    reverse_proxy my-product-container:8080
 }
-import service_proxy my-product my-product-container:8080
 ```
 
 How it works:
 - `handle /my-product/*` — matches all requests to `/my-product/...`
 - `basic_auth` — only `admin_creads` (full admins) and `my-product-users` can access
-- `service_proxy my-product my-product-container:8080` — strips `/my-product` prefix and forwards to the container on port 8080
+- `uri strip_prefix /my-product` — removes the prefix before forwarding
+- `reverse_proxy my-product-container:8080` — forwards to the container
 
 ### 5. Add service in `docker-compose.yml`
 
@@ -173,13 +182,15 @@ docker compose up -d my-product
 docker exec caddy caddy reload --config /etc/caddy/Caddyfile
 ```
 
+Or from Windows: `prod\reload-caddy.bat`
+
 ### Summary: files to edit
 
 | File | What to change |
 |---|---|
 | `caddy/products.yaml` | Add product card entry |
 | `caddy/users.caddyfile` | Add `<slug>-users` group + update `all-users` |
-| `caddy/Caddyfile` | Add `handle` + `import service_proxy` |
+| `caddy/Caddyfile` | Add `handle` block with auth + proxy |
 | `docker-compose.yml` | Add service container |
 
 ## Adding a new user
@@ -199,7 +210,7 @@ This generates a random 12-character password and prints the bcrypt hash. Copy t
 cd /path/to/prod
 
 # 1. Generate bcrypt hash
-docker exec caddy caddy hash-password --plaintext 'PASSWORD'
+echo 'PASSWORD' | docker exec -i caddy caddy hash-password
 
 # 2. Add to caddy/users.caddyfile — paste into the right group(s)
 nano caddy/users.caddyfile

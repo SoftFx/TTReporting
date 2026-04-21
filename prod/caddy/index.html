@@ -118,27 +118,34 @@
         <div class="cards" id="cards"></div>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
+    <script src="/static/js-yaml.min.js"></script>
     <script>
+        function esc(s) {
+            var d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
         fetch('products.yaml')
             .then(r => r.text())
             .then(text => jsyaml.load(text))
             .then(products => {
-                const container = document.getElementById('cards');
-                container.innerHTML = products.map(p => `
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>${p.name}</h3>
-                            ${p.category ? `<span class="category">${p.category}</span>` : ''}
-                        </div>
-                        <p>${p.description}</p>
-                        <a href="/${p.slug}/">Open</a>
-                    </div>
-                `).join('');
+                var container = document.getElementById('cards');
+                container.innerHTML = products.map(function(p) {
+                    var slug = esc(p.slug).replace(/[^a-z0-9-]/gi, '');
+                    return '<div class="card">' +
+                        '<div class="card-header">' +
+                            '<h3>' + esc(p.name) + '</h3>' +
+                            (p.category ? '<span class="category">' + esc(p.category) + '</span>' : '') +
+                        '</div>' +
+                        '<p>' + esc(p.description) + '</p>' +
+                        '<a href="/' + slug + '/">Open</a>' +
+                    '</div>';
+                }).join('');
             })
-            .catch(err => {
+            .catch(function(err) {
                 document.getElementById('cards').innerHTML =
-                    '<p class="error">Failed to load products: ' + err.message + '</p>';
+                    '<p class="error">Failed to load products: ' + esc(err.message) + '</p>';
             });
     </script>
 </body>

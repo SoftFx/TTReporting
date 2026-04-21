@@ -6,6 +6,15 @@
     user4 $2a$10$REPLACE_WITH_BCRYPT_HASH
 }
 
+# ── All authenticated users (home page, products.yaml, CA cert) ──
+# Add every user who should see the home page here.
+(all-users) {
+    admin $2a$10$REPLACE_WITH_BCRYPT_HASH
+    admin2 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user1 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user2 $2a$10$REPLACE_WITH_BCRYPT_HASH
+}
+
 # ── Per-service user groups ──────────────────
 # Reference in Caddyfile:  import aggr-data-users
 

@@ -13,9 +13,11 @@ if not exist "%~dp0.env" (
 )
 
 for /f "usebackq tokens=1,* delims==" %%A in ("%~dp0.env") do (
-    set "line=%%A"
     if not "%%A"=="" set "%%A=%%B"
 )
+
+echo Formatting Caddyfile on %SERVER%...
+ssh %SERVER% "docker exec %CADDY_CONTAINER% caddy fmt --overwrite /etc/caddy/Caddyfile"
 
 echo Reloading Caddy on %SERVER%...
 ssh %SERVER% "docker exec %CADDY_CONTAINER% caddy reload --config /etc/caddy/Caddyfile"

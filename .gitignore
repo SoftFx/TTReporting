@@ -1,4 +1,5 @@
 /.Rproj.user
+/.claude/settings.local.json
 dataDocker
 configDocker
 /run/customcommand_output.log

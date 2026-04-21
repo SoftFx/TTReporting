@@ -87,31 +87,7 @@ getUSERexecdataAggr <- function(CredsAggr, From, To){
   return(list(res1,res2,res3))
 }
 
-getUSERexecdataAggr <- function(CredsAggr, From, To){
-  ConnectToDB(dbname = CredsAggr$postgre_DB, user = CredsAggr$postgre_USER, password = CredsAggr$postgre_PASSWORD, host = CredsAggr$postgre_HOST)
-  setPathToSchema(CredsAggr$postgre_SCHEMA)
-  #querry <- paste('SELECT * from', paste0("\"",table_name, "\""), 'WHERE "time" >=', quoteString(from), 'and "time" < ', quoteString(to))
-  querry1 <- paste('SELECT * from "userexecution" WHERE "time" >=', quoteString(From), 'and "time" < ', quoteString(To))
-  res1 <- GetDataFromDB(DBCON, querry1)
-  
-  querry2 <- paste('SELECT * from "userexecutionfailed" WHERE "time" >=', quoteString(From), 'and "time" < ', quoteString(To))
-  res2 <- GetDataFromDB(DBCON, querry2)
-  
-  querry3 <- paste('SELECT * from "userexecutiondetails" WHERE "time" >=', quoteString(From), 'and "time" < ', quoteString(To))
-  res3 <- GetDataFromDB(DBCON, querry3)
-  
-  setDefaultSchema()
-  
-  DissconnectFromDB()
-  
-  res1 <- as.data.table(res1)[, aggrName := CredsAggr$postgre_SCHEMA]
-  res2 <- as.data.table(res2)[, aggrName := CredsAggr$postgre_SCHEMA]
-  res3 <- as.data.table(res3)[, aggrName := CredsAggr$postgre_SCHEMA]
-  
-  return(list(res1,res2,res3))
-}
-
-#get Symbol Properties from TT db 
+#get Symbol Properties from TT db
 getAllSymbolsTT <- function(Credstt){
   con <- dbConnect(RPostgres::Postgres(), dbname = Credstt$postgre_DB, user = Credstt$postgre_USER, password = Credstt$postgre_PASSWORD, host = Credstt$postgre_HOST)
   on.exit(dbDisconnect(con))  

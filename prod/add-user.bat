@@ -13,7 +13,6 @@ if not exist "%~dp0.env" (
 )
 
 for /f "usebackq tokens=1,* delims==" %%A in ("%~dp0.env") do (
-    set "line=%%A"
     if not "%%A"=="" set "%%A=%%B"
 )
 
@@ -28,10 +27,16 @@ set USERNAME=%~1
 :: Generate random 12-char password
 for /f "usebackq" %%P in (`powershell -Command "-join ((65..90)+(97..122)+(48..57) | Get-Random -Count 12 | %%{[char]$_})"`) do set PASSWORD=%%P
 
-:: SSH to server, generate bcrypt hash
+:: SSH to server, pipe password via stdin to generate bcrypt hash
 echo.
 echo Generating hash via %SERVER%...
-for /f "usebackq delims=" %%H in (`ssh %SERVER% "docker exec %CADDY_CONTAINER% caddy hash-password --plaintext '%PASSWORD%'"`) do set HASH=%%H
+for /f "usebackq delims=" %%H in (`echo %PASSWORD% | ssh %SERVER% "docker exec -i %CADDY_CONTAINER% caddy hash-password"`) do set HASH=%%H
+
+if "%HASH%"=="" (
+    echo.
+    echo ERROR: Failed to generate hash. Check SSH connection and container name.
+    exit /b 1
+)
 
 echo.
 echo ========================================
