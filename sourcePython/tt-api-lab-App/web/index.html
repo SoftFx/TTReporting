@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TickTrader API Lab</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div>
+          <h1>TickTrader API Lab</h1>
+          <p id="connectionLine">Загрузка состояния</p>
+        </div>
+      </div>
+
+      <div class="health-row" aria-live="polite">
+        <span class="health-pill" id="hmacStatus">REST</span>
+        <span class="health-pill" id="fixStatus">FIX</span>
+        <span class="health-pill" id="orderStatus">ORDER</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="left-rail" aria-label="Настройки">
+        <div class="profile-switcher">
+          <button class="profile-btn active" id="profileDemo" type="button">Demo</button>
+          <button class="profile-btn" id="profileLive" type="button">Live</button>
+        </div>
+        <p class="profile-hint" id="profileHint">Активен: Demo</p>
+
+        <div class="panel-title">
+          <h2>Настройки</h2>
+          <button class="icon-button" id="refreshStatus" type="button" aria-label="Обновить статус" title="Обновить статус">
+            <span class="refresh-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+
+        <form class="settings-form" id="settingsForm">
+          <section class="settings-group">
+            <span class="group-label">REST / Web API</span>
+            <label class="field">
+              <span>REST port</span>
+              <input id="restPort" name="restPort" type="number" min="1" max="65535" step="1" value="443">
+            </label>
+          </section>
+
+          <section class="settings-group">
+            <span class="group-label">FIX доступ</span>
+            <div class="two-col">
+              <label class="field">
+                <span>Trade port</span>
+                <input id="fixTradePort" name="fixTradePort" type="number" min="1" max="65535" value="5002" autocomplete="off">
+              </label>
+              <label class="field">
+                <span>Feed port</span>
+                <input id="fixFeedPort" name="fixFeedPort" type="number" min="1" max="65535" value="5001" autocomplete="off">
+              </label>
+            </div>
+            <div class="switch-list compact-switches">
+              <label class="switch">
+                <input id="fixTls" name="fixTls" type="checkbox">
+                <span class="switch-track" aria-hidden="true"></span>
+                <span>FIX TLS / SSL</span>
+              </label>
+              <label class="switch">
+                <input id="fixResetSeqNum" name="fixResetSeqNum" type="checkbox">
+                <span class="switch-track" aria-hidden="true"></span>
+                <span>ResetSeqNumFlag на logon</span>
+              </label>
+              <label class="switch">
+                <input id="testRequest" name="testRequest" type="checkbox" checked>
+                <span class="switch-track" aria-hidden="true"></span>
+                <span>FIX heartbeat</span>
+              </label>
+            </div>
+          </section>
+
+          <section class="settings-group">
+            <span class="group-label">WebSocket</span>
+            <div class="two-col">
+              <label class="field">
+                <span>Feed port</span>
+                <input id="wsFeedPort" name="wsFeedPort" type="number" min="1" max="65535" value="443" autocomplete="off">
+              </label>
+              <label class="field">
+                <span>Trade port</span>
+                <input id="wsTradePort" name="wsTradePort" type="number" min="1" max="65535" value="443" autocomplete="off">
+              </label>
+            </div>
+          </section>
+
+          <section class="settings-group">
+            <span class="group-label">Символ и таймаут</span>
+            <label class="field wide">
+              <span>Символ</span>
+              <input id="symbol" name="symbol" type="text" autocomplete="off">
+            </label>
+            <label class="field">
+              <span>Таймаут</span>
+              <input id="timeout" name="timeout" type="number" min="1" max="120" step="1" value="15">
+            </label>
+          </section>
+
+          <section class="settings-group order-group">
+            <span class="group-label">Ордер</span>
+            <div class="two-col">
+              <label class="field">
+                <span>Сторона</span>
+                <select id="orderSide" name="orderSide">
+                  <option value="Buy">Buy</option>
+                  <option value="Sell">Sell</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Тип</span>
+                <select id="orderType" name="orderType">
+                  <option value="Limit">Limit</option>
+                  <option value="Market">Market</option>
+                </select>
+              </label>
+            </div>
+            <div class="two-col">
+              <label class="field">
+                <span>Объем</span>
+                <input id="orderAmount" name="orderAmount" type="number" min="0" step="0.01" autocomplete="off">
+              </label>
+            </div>
+            <label class="field wide" id="limitPriceField">
+              <span>Цена limit</span>
+              <input id="orderLimitPrice" name="orderLimitPrice" type="number" min="0" step="0.00001" autocomplete="off">
+            </label>
+          </section>
+
+          <section class="settings-group">
+            <span class="group-label">Котировки</span>
+            <label class="field wide">
+              <span>API для скачивания</span>
+              <select id="quoteDownloadApi" name="quoteDownloadApi">
+                <option value="REST">REST</option>
+                <option value="WS">WebSocket</option>
+                <option value="FIX">FIX</option>
+              </select>
+            </label>
+            <label class="field wide">
+              <span>Что скачать</span>
+              <select id="quoteHistoryKind" name="quoteHistoryKind">
+                <option value="Ticks">Ticks</option>
+                <option value="Bars">Bars</option>
+              </select>
+            </label>
+            <div class="two-col" id="barsOptions">
+              <label class="field">
+                <span>Период</span>
+                <select id="periodicity" name="periodicity">
+                  <option value="S1">S1</option>
+                  <option value="S10">S10</option>
+                  <option value="M1">M1</option>
+                  <option value="M5">M5</option>
+                  <option value="M15">M15</option>
+                  <option value="M30">M30</option>
+                  <option value="H1">H1</option>
+                  <option value="H4">H4</option>
+                  <option value="D1">D1</option>
+                  <option value="W1">W1</option>
+                  <option value="MN1">MN1</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Цена</span>
+                <select id="priceType" name="priceType">
+                  <option value="Bid">Bid</option>
+                  <option value="Ask">Ask</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="date-time-grid">
+              <label class="field">
+                <span>Дата с UTC</span>
+                <input id="barsFromDate" name="barsFromDate" type="date" autocomplete="off">
+              </label>
+              <label class="field">
+                <span>Время с UTC</span>
+                <input id="barsFromTime" name="barsFromTime" type="time" step="1" autocomplete="off">
+              </label>
+            </div>
+            <div class="date-time-grid">
+              <label class="field">
+                <span>Дата по UTC</span>
+                <input id="barsToDate" name="barsToDate" type="date" autocomplete="off">
+              </label>
+              <label class="field">
+                <span>Время по UTC</span>
+                <input id="barsToTime" name="barsToTime" type="time" step="1" autocomplete="off">
+              </label>
+            </div>
+          </section>
+
+          <div class="switch-list">
+            <label class="switch danger-switch">
+              <input id="enableTrading" name="enableTrading" type="checkbox">
+              <span class="switch-track" aria-hidden="true"></span>
+              <span>Разрешить тест ордера</span>
+            </label>
+          </div>
+        </form>
+      </section>
+
+      <section class="main-stage" aria-label="Проверки API">
+        <div class="api-grid">
+          <article class="api-card" data-card="fix-trade">
+            <div class="api-card-head">
+              <span class="card-state locked" data-state-for="fix-trade">Нужен логин</span>
+            </div>
+            <h3>FIX торговля</h3>
+            <p class="card-copy">Соединение, logon, heartbeat и logout.</p>
+            <button class="primary-button" data-check="fix-trade" type="button">
+              <span class="play-glyph" aria-hidden="true"></span>
+              Проверить и закрыть
+            </button>
+          </article>
+
+          <article class="api-card" data-card="fix-feed">
+            <div class="api-card-head">
+              <span class="card-state locked" data-state-for="fix-feed">Нужен логин</span>
+            </div>
+            <h3>FIX котировки</h3>
+            <p class="card-copy">Feed-порт, logon, MarketDataRequest и поток тиков.</p>
+            <div class="button-row">
+              <button class="primary-button" data-check="fix-feed-open" type="button">
+                <span class="play-glyph" aria-hidden="true"></span>
+                Проверить
+              </button>
+              <button class="secondary-button" data-check="fix-feed-close" type="button">Закрыть</button>
+            </div>
+          </article>
+
+          <article class="api-card danger-card" data-card="order-fix">
+            <div class="api-card-head">
+              <span class="card-state locked" data-state-for="order-fix">Закрыто</span>
+            </div>
+            <h3>Ордер FIX</h3>
+            <p class="card-copy">FIX Trade: NewOrderSingle и cancel для Limit.</p>
+            <button class="primary-button danger-button" data-check="order-fix" type="button">
+              <span class="play-glyph" aria-hidden="true"></span>
+              Проверить и закрыть
+            </button>
+          </article>
+
+          <article class="api-card" data-card="ws-trade">
+            <div class="api-card-head">
+              <span class="card-state locked" data-state-for="ws-trade">Нужны ключи</span>
+            </div>
+            <h3>WS торговля</h3>
+            <p class="card-copy">WebSocket Trade: login, account и торговая сессия.</p>
+            <button class="primary-button" data-check="ws-trade" type="button">
+              <span class="play-glyph" aria-hidden="true"></span>
+              Проверить и закрыть
+            </button>
+          </article>
+
+          <article class="api-card" data-card="ws-feed">
+            <div class="api-card-head">
+              <span class="card-state locked" data-state-for="ws-feed">Нужны ключи</span>
+            </div>
+            <h3>WS котировки</h3>
+            <p class="card-copy">WebSocket Feed: login, subscribe и живые тики в журнале.</p>
+            <div class="button-row">
+              <button class="primary-button" data-check="ws-feed-open" type="button">
+                <span class="play-glyph" aria-hidden="true"></span>
+                Проверить
+              </button>
+              <button class="secondary-button" data-check="ws-feed-close" type="button">Закрыть</button>
+            </div>
+          </article>
+
+          <article class="api-card danger-card" data-card="order-ws">
+            <div class="api-card-head">
+              <span class="card-state locked" data-state-for="order-ws">Закрыто</span>
+            </div>
+            <h3>Ордер WS</h3>
+            <p class="card-copy">WebSocket Trade: TradeCreate и TradeDelete для Limit.</p>
+            <button class="primary-button danger-button" data-check="order-ws" type="button">
+              <span class="play-glyph" aria-hidden="true"></span>
+              Проверить и закрыть
+            </button>
+          </article>
+
+          <article class="api-card" data-card="rest-quotes">
+            <div class="api-card-head">
+              <span class="card-state locked" data-state-for="rest-quotes">Нужны ключи</span>
+            </div>
+            <h3>REST котировки</h3>
+            <p class="card-copy">Private REST: выбранный символ и текущий тик.</p>
+            <button class="primary-button" data-check="rest-quotes" type="button">
+              <span class="play-glyph" aria-hidden="true"></span>
+              Проверить
+            </button>
+          </article>
+
+          <article class="api-card" data-card="rest-trade">
+            <div class="api-card-head">
+              <span class="card-state locked" data-state-for="rest-trade">Нужны ключи</span>
+            </div>
+            <h3>REST торговля</h3>
+            <p class="card-copy">Private REST: account, trade session и trade history.</p>
+            <button class="primary-button" data-check="rest-trade" type="button">
+              <span class="play-glyph" aria-hidden="true"></span>
+              Проверить
+            </button>
+          </article>
+
+          <article class="api-card danger-card" data-card="order-rest">
+            <div class="api-card-head">
+              <span class="card-state locked" data-state-for="order-rest">Закрыто</span>
+            </div>
+            <h3>Ордер REST</h3>
+            <p class="card-copy">WebREST: Market отправляет, Limit создает и отменяет.</p>
+            <button class="primary-button danger-button" data-check="order-rest" type="button">
+              <span class="play-glyph" aria-hidden="true"></span>
+              Проверить
+            </button>
+          </article>
+
+          <article class="api-card" data-card="bars">
+            <div class="api-card-head">
+              <span class="card-state idle" data-state-for="bars">Готово</span>
+            </div>
+            <h3>Скачивание котир</h3>
+            <p class="card-copy">CSV через REST, WebSocket или FIX по выбранным настройкам.</p>
+            <button class="primary-button" data-check="bars" type="button">
+              <span class="play-glyph" aria-hidden="true"></span>
+              Скачать
+            </button>
+          </article>
+
+          <article class="api-card" data-card="public">
+            <div class="api-card-head">
+              <span class="card-state idle" data-state-for="public">Готово</span>
+            </div>
+            <h3>Публичный REST</h3>
+            <p class="card-copy">Сессия, список символов и текущий публичный тик.</p>
+            <button class="primary-button" data-check="public" type="button">
+              <span class="play-glyph" aria-hidden="true"></span>
+              Проверить
+            </button>
+          </article>
+        </div>
+
+        <section class="console-panel" aria-label="API console">
+          <div class="panel-title">
+            <h2>Консоль API</h2>
+            <button class="secondary-button console-toggle" id="toggleConsole" type="button" aria-expanded="false" aria-controls="consoleBody">Показать</button>
+          </div>
+          <div id="consoleBody" class="hidden">
+            <div class="console-grid">
+              <label class="field">
+                <span>API</span>
+                <select id="consoleApi">
+                  <option value="rest">REST</option>
+                  <option value="fix">FIX</option>
+                  <option value="ws">WebSocket</option>
+                </select>
+              </label>
+              <label class="field" id="consoleChannelField">
+                <span>Канал</span>
+                <select id="consoleChannel">
+                  <option value="feed">Feed / котировки</option>
+                  <option value="trade">Trade / торговля</option>
+                </select>
+              </label>
+              <label class="switch console-auth" id="consoleAuthField">
+                <input id="consoleAuth" type="checkbox">
+                <span class="switch-track" aria-hidden="true"></span>
+                <span>HMAC auth</span>
+              </label>
+            </div>
+            <label class="field wide console-request">
+              <span>Request</span>
+              <textarea id="consoleRequest" rows="7" spellcheck="false">GET /api/v1/public/tick/EURUSD</textarea>
+            </label>
+            <div class="console-actions">
+              <button class="primary-button" id="sendConsoleRequest" type="button">
+                <span class="play-glyph" aria-hidden="true"></span>
+                Отправить
+              </button>
+              <button class="secondary-button" id="clearConsoleResponse" type="button">Очистить</button>
+            </div>
+            <pre id="consoleResponse"></pre>
+          </div>
+        </section>
+
+        <section class="results-panel" aria-label="Результаты">
+          <div class="results-head">
+            <div>
+              <span class="eyebrow">Последний запуск</span>
+              <h2 id="runSummary">Ожидаю проверку</h2>
+            </div>
+            <div class="spinner" id="spinner" hidden></div>
+          </div>
+          <div class="result-list" id="resultList">
+            <div class="empty-state">
+              <span class="empty-dot" aria-hidden="true"></span>
+              <p>Выбери любую проверку выше.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="log-panel" aria-label="Журнал">
+          <div class="panel-title">
+            <h2>Журнал</h2>
+            <button class="icon-button" id="clearLog" type="button" aria-label="Очистить журнал">
+              <span class="clear-icon" aria-hidden="true"></span>
+            </button>
+          </div>
+          <pre id="runLog"></pre>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
