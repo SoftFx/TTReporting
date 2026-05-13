@@ -412,6 +412,8 @@ server <- function(input, output, session) {
                           buttons =list(list(extend = 'collection', buttons = c('excel','csv'), text = as.character(icon("download-alt", lib = "glyphicon")), titleAttr = 'Save as...')),
                           dom = 'Brfti',
                           deferRender = TRUE,
+                          scroller = TRUE,
+                          scrollY = ifelse(nrow(LPresult$summaryLP) <= 4, 150, 300),
                           initComplete = JS(
                             "function(settings, json) { $(this.api().table().header()).css({'background-color': '#e5e5e5', 'color': '#000'}); }")
                         )
