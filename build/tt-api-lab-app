@@ -1,0 +1,20 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+COPY sourcePython/tt-api-lab-App/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY sourcePython/tt-api-lab-App/ticktrader_gui.py sourcePython/tt-api-lab-App/ticktrader_smoke.py ./
+COPY sourcePython/tt-api-lab-App/web ./web
+COPY sourcePython/tt-api-lab-App/docs ./docs
+COPY sourcePython/tt-api-lab-App/README.md ./
+
+RUN mkdir -p /app/downloads /app/configDocker
+
+EXPOSE 8765
+
+CMD ["python", "ticktrader_gui.py", "--host", "0.0.0.0", "--port", "8765"]

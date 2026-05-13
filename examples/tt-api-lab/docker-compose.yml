@@ -1,0 +1,9 @@
+services:
+  tt-api-lab-local:
+    image: tt-api-lab-app
+    ports:
+      - "8765:8765"
+    volumes:
+      - ../../sourcePython/tt-api-lab-App/configDocker:/app/configDocker:ro
+      - ../../sourcePython/tt-api-lab-App/downloads:/app/downloads
+    restart: unless-stopped
