@@ -11,3 +11,11 @@
     Common statistics by liquidity providers: transactions, traded volume, slippage analysis.
   category: Aggregator
   # image: static/image/aggr-data.png
+
+- slug: tt-api-lab
+  name: TT API Lab
+  description: |
+    Interactive tool for exploring and testing TT Open API endpoints.
+    Build requests, view responses, and experiment with API parameters.
+  category: Tools
+  # image: static/image/tt-api-lab.png

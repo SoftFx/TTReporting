@@ -58,15 +58,25 @@ services:
           memory: 2G
           cpus: "1.0"
 
-  # ── Future web apps ────────────────────────
-  # product-two:
-  #   image: softfx/tt-reporting:latest-product-two
-  #   pull_policy: always
-  #   volumes:
-  #     - ./product-two/configDocker:/app/configDocker:ro
-  #   restart: unless-stopped
-  #   networks:
-  #     - tt-internal
+  tt-api-lab-app:
+    image: softfx/tt-reporting:latest-tt-api-lab-app
+    pull_policy: always
+    volumes:
+      - ./tt-api-lab-app/configDocker:/app/configDocker:ro
+      - ./tt-api-lab-app/downloads:/app/downloads
+    restart: unless-stopped
+    networks:
+      - tt-internal
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "1.0"
 
   # ────────────────────────────────────────────
   # Batch jobs (run via: docker compose run --rm <name>)
