@@ -62,3 +62,9 @@
 (mt5tthistorytransfer-users) {
     user1 $2a$10$REPLACE_WITH_BCRYPT_HASH
 }
+
+(tt-api-lab-users) {
+    user1 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user2 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user3 $2a$10$REPLACE_WITH_BCRYPT_HASH
+}

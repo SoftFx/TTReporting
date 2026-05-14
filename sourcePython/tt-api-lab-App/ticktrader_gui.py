@@ -98,8 +98,11 @@ def switch_profile(name: str) -> None:
         with contextlib.suppress(Exception):
             stop_stream(stream_name)
     _active_profile = name
+    old_keys = set(_config_env)
     _config_env = dict(_all_profiles[name])
     apply_config_to_env(_config_env)
+    for key in old_keys - set(_config_env):
+        os.environ.pop(key, None)
 
 
 def _deep_get(data: dict, dotted_key: str) -> Any:
@@ -239,8 +242,7 @@ def request_env_updates(payload: dict[str, Any]) -> dict[str, str]:
             updates[env_key] = "true" if bool(payload.get(payload_key)) else "false"
     if payload.get("symbol"):
         updates["TT_ORDER_SYMBOL"] = str(payload.get("symbol")).strip()
-    if payload.get("enableTrading"):
-        updates["TT_ENABLE_TRADING"] = "true"
+    updates["TT_ENABLE_TRADING"] = "true" if bool(payload.get("enableTrading")) else "false"
     check = str(payload.get("check", "")).strip()
     quote_api = str(payload.get("quoteDownloadApi", "")).strip()
     if check in {"fix-feed", "fix-feed-open", "fix-feed-close"} or (check == "bars" and quote_api == "FIX"):
@@ -677,7 +679,7 @@ def ws_quote_download_checks(
                 first = rows[0].get("Timestamp") if rows else "none"
                 last = rows[-1].get("Timestamp") if rows else "none"
                 detail = f"WS ticks downloaded: {len(rows)} rows, first={first}, last={last}\nSENT:\n{client.command_log()}"
-            return smoke.CheckResult(f"WS quote download {kind.lower()} {symbol}", True, detail, f"/downloads/{urllib.parse.quote(file_name)}", file_name)
+            return smoke.CheckResult(f"WS quote download {kind.lower()} {symbol}", True, detail, f"downloads/{urllib.parse.quote(file_name)}", file_name)
         finally:
             client.close()
 
@@ -746,7 +748,7 @@ def fix_quote_download_checks(
             file_name, file_path = quote_download_file_name(symbol, "fix", kind)
             write_fix_tick_csv(file_path, rows)
             detail = f"FIX ticks downloaded: {len(rows)} rows\nSENT:\n{client.command_log()}"
-            return smoke.CheckResult(f"FIX quote download ticks {symbol}", True, detail, f"/downloads/{urllib.parse.quote(file_name)}", file_name)
+            return smoke.CheckResult(f"FIX quote download ticks {symbol}", True, detail, f"downloads/{urllib.parse.quote(file_name)}", file_name)
         finally:
             client.close()
 
@@ -838,7 +840,7 @@ def run_check(payload: dict[str, Any]) -> dict[str, Any]:
                         timestamp_ms,
                         timestamp_to_ms,
                         str(DOWNLOAD_ROOT),
-                        "/downloads",
+                        "downloads",
                     )
             elif check == "rest-bundle":
                 periodicity = str(payload.get("periodicity") or os.environ.get("TT_PERIODICITY", "M1"))
@@ -943,10 +945,14 @@ class GuiHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    MAX_BODY = 512 * 1024  # 512 KB
+
     def do_POST(self) -> None:
         if self.path == "/api/switch-profile":
             try:
                 length = int(self.headers.get("Content-Length", "0"))
+                if length > self.MAX_BODY:
+                    raise ValueError(f"payload too large ({length} bytes, max {self.MAX_BODY})")
                 payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
                 profile = str(payload.get("profile", "")).strip()
                 if not profile:
@@ -963,6 +969,8 @@ class GuiHandler(BaseHTTPRequestHandler):
             return
         try:
             length = int(self.headers.get("Content-Length", "0"))
+            if length > self.MAX_BODY:
+                raise ValueError(f"payload too large ({length} bytes, max {self.MAX_BODY})")
             payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
             if self.path == "/api/console":
                 response = run_console(payload)

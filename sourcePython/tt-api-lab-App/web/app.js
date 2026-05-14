@@ -49,7 +49,7 @@ profileBtns.live.addEventListener("click", () => switchProfile("live"));
 
 async function switchProfile(name) {
   try {
-    const response = await fetch("/api/switch-profile", {
+    const response = await fetch("api/switch-profile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ profile: name }),
@@ -156,7 +156,7 @@ updateConsoleMode();
 
 async function refreshStatus(options = {}) {
   try {
-    const response = await fetch("/api/status", { cache: "no-store" });
+    const response = await fetch("api/status", { cache: "no-store" });
     const status = await response.json();
     applyStatus(status, { preserveInputs: Boolean(options.preserveInputs || didLoadStatus) });
     didLoadStatus = true;
@@ -328,7 +328,7 @@ async function runCheck(check) {
   appendLog(`запуск: ${labels[check] || check}`);
 
   try {
-    const response = await fetch("/api/check", {
+    const response = await fetch("api/check", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payloadFor(check)),
@@ -367,7 +367,7 @@ async function runConsoleRequest() {
   consoleResponse.textContent = "Отправляю...";
   appendLog(`консоль: ${api.toUpperCase()} ${api === "rest" ? "" : channel}`);
   try {
-    const response = await fetch("/api/console", {
+    const response = await fetch("api/console", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -600,7 +600,7 @@ function stopStreamPolling(name, clearOffset = true) {
 
 async function pollStream(name) {
   try {
-    const response = await fetch(`/api/stream-status?name=${encodeURIComponent(name)}`, { cache: "no-store" });
+    const response = await fetch(`api/stream-status?name=${encodeURIComponent(name)}`, { cache: "no-store" });
     const data = await response.json();
     const events = data.events || [];
     const offset = streamOffsets[name] || 0;
