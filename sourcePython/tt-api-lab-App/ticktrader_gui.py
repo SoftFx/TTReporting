@@ -917,7 +917,7 @@ class GuiHandler(BaseHTTPRequestHandler):
                 self.send_error(404)
                 return
             file_path = (DOWNLOAD_ROOT / raw_name).resolve()
-            if not str(file_path).startswith(str(DOWNLOAD_ROOT.resolve())) or not file_path.exists():
+            if not file_path.is_relative_to(DOWNLOAD_ROOT.resolve()) or not file_path.exists():
                 self.send_error(404)
                 return
             data = file_path.read_bytes()
@@ -933,7 +933,7 @@ class GuiHandler(BaseHTTPRequestHandler):
         if path == "/":
             path = "/index.html"
         file_path = (WEB_ROOT / path.lstrip("/")).resolve()
-        if not str(file_path).startswith(str(WEB_ROOT.resolve())) or not file_path.exists():
+        if not file_path.is_relative_to(WEB_ROOT.resolve()) or not file_path.exists():
             self.send_error(404)
             return
         content_type = mimetypes.guess_type(str(file_path))[0] or "application/octet-stream"

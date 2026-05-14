@@ -53,7 +53,7 @@ services:
     image: softfx/tt-reporting:latest-tt-api-lab-app
     pull_policy: always
     ports:
-      - "8765:8765"
+      - "127.0.0.1:8765:8765"
     volumes:
       - ./tt-api-lab/configDocker:/app/configDocker:ro
       - ./tt-api-lab/downloads:/app/downloads

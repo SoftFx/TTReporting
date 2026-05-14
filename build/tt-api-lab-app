@@ -10,8 +10,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY sourcePython/tt-api-lab-App/ticktrader_gui.py sourcePython/tt-api-lab-App/ticktrader_smoke.py ./
 COPY sourcePython/tt-api-lab-App/web ./web
-COPY sourcePython/tt-api-lab-App/docs ./docs
-COPY sourcePython/tt-api-lab-App/README.md ./
 
 RUN mkdir -p /app/downloads /app/configDocker
 

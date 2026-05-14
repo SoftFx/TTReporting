@@ -39,13 +39,21 @@ const statusNodes = {
 };
 
 const profileBtns = {
-  demo: document.querySelector("#profileDemo"),
-  live: document.querySelector("#profileLive"),
+  container: document.querySelector("#profileSwitcher"),
   hint: document.querySelector("#profileHint"),
 };
 
-profileBtns.demo.addEventListener("click", () => switchProfile("demo"));
-profileBtns.live.addEventListener("click", () => switchProfile("live"));
+function renderProfileButtons(available, active) {
+  profileBtns.container.innerHTML = "";
+  available.forEach((name) => {
+    const btn = document.createElement("button");
+    btn.className = "profile-btn" + (name === active ? " active" : "");
+    btn.type = "button";
+    btn.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+    btn.addEventListener("click", () => switchProfile(name));
+    profileBtns.container.appendChild(btn);
+  });
+}
 
 async function switchProfile(name) {
   try {
@@ -222,10 +230,10 @@ function applyStatus(status, options = {}) {
     fields.orderLimitPrice.value = status.order?.limitPrice || "";
   }
 
-  const profile = (status.profile || "demo").toLowerCase();
-  profileBtns.demo.classList.toggle("active", profile === "demo");
-  profileBtns.live.classList.toggle("active", profile === "live");
-  const label = profile === "live" ? "Live" : "Demo";
+  const profile = (status.profile || "").toLowerCase();
+  const available = status.availableProfiles || [profile || "demo"];
+  renderProfileButtons(available, profile);
+  const label = profile.charAt(0).toUpperCase() + profile.slice(1);
   profileBtns.hint.textContent = `Активен: ${label}`;
 
   document.querySelector("#connectionLine").textContent =
