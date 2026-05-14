@@ -75,6 +75,21 @@ import users.caddyfile
         reverse_proxy aggr-data-app:3838
     }
 
+    # ── TT API Lab ─────────────────────────────
+    @ttApiLabRoot path /tt-api-lab
+    handle @ttApiLabRoot {
+        redir /tt-api-lab/ permanent
+    }
+
+    handle /tt-api-lab/* {
+        basic_auth {
+            import admin_creads
+            import tt-api-lab-users
+        }
+        uri strip_prefix /tt-api-lab
+        reverse_proxy tt-api-lab-app:8765
+    }
+
     # ── Catch-all: deny unmatched paths ──────────
     handle {
         respond 403
