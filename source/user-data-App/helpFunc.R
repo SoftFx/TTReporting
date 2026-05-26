@@ -34,17 +34,20 @@ META5Timeoffset <- function(dbCreds) {
 getMT4userTradesPeriod <- function(dbCreds, UserLogin, From, To, TimeOffset) {
   con <- .make_con_mysql(dbCreds)
   on.exit(DBI::dbDisconnect(con), add = TRUE)
-  From <- as.character(From + minutes(TimeOffset))
-  To <- as.character(To + minutes(TimeOffset))
-  sql <- sprintf("SELECT mt4_trades.TICKET, mt4_trades.OPEN_TIME, mt4_trades.CLOSE_TIME, mt4_trades.LOGIN, mt4_trades.SYMBOL, mt4_trades.CMD, mt4_trades.VOLUME,
+  From <- From + minutes(TimeOffset)
+  To <- To + minutes(TimeOffset)
+  From_sql <- as.character(From)
+  To_sql <- as.character(To)
+  sql <- DBI::sqlInterpolate(con,
+    "SELECT mt4_trades.TICKET, mt4_trades.OPEN_TIME, mt4_trades.CLOSE_TIME, mt4_trades.LOGIN, mt4_trades.SYMBOL, mt4_trades.CMD, mt4_trades.VOLUME,
                             mt4_trades.OPEN_PRICE, mt4_trades.CLOSE_PRICE,  mt4_trades.CONV_RATE1, mt4_trades.CONV_RATE2,
                             mt4_trades.COMMISSION, mt4_trades.SWAPS, mt4_trades.PROFIT, mt4_trades.COMMENT,
                             mt4_users.`NAME`, mt4_users.`GROUP`, mt4_users.CURRENCY, mt4_users.LEVERAGE, mt4_users.ID
                    FROM mt4_trades
                    LEFT JOIN mt4_users
                    ON mt4_trades.LOGIN = mt4_users.LOGIN
-                   WHERE mt4_trades.LOGIN = %s AND ((mt4_trades.`OPEN_TIME`>='%s' AND mt4_trades.`OPEN_TIME`<'%s') OR (mt4_trades.`CLOSE_TIME`>='%s' AND mt4_trades.`CLOSE_TIME`<'%s'))
-                   ", UserLogin, From, To, From, To)
+                   WHERE mt4_trades.LOGIN = ?UserLogin AND ((mt4_trades.`OPEN_TIME`>=?From AND mt4_trades.`OPEN_TIME`<?To) OR (mt4_trades.`CLOSE_TIME`>=?From AND mt4_trades.`CLOSE_TIME`<?To))
+                   ", UserLogin = UserLogin, From = From_sql, To = To_sql)
   data <- DBI::dbGetQuery(con, sql)
   data <- as.data.table(data)
   data[!CMD%in%c(6,7) & grepl("cancelled", COMMENT)==F, VOLUMElot := VOLUME/100]
@@ -58,14 +61,16 @@ getMT5userdealsPeriod <- function(dbCreds, UserLogin, From, To, TimeOffset) {
   on.exit(DBI::dbDisconnect(con), add = TRUE)
   From <- as.character(From + minutes(TimeOffset))
   To <- as.character(To + minutes(TimeOffset))
-  sql <- sprintf("select mt5_deals.Deal, mt5_deals.Order, mt5_deals.PositionID, mt5_deals.Time, mt5_deals.Login, mt5_deals.Symbol, mt5_deals.Action, mt5_deals.Entry, mt5_deals.Volume, mt5_deals.Price, mt5_deals.RateProfit, mt5_deals.RateMargin, mt5_deals.Commission, mt5_deals.Storage as Swap, mt5_deals.Profit, mt5_deals.Comment,
+  sql <- DBI::sqlInterpolate(con,
+    "select mt5_deals.Deal, mt5_deals.Order, mt5_deals.PositionID, mt5_deals.Time, mt5_deals.Login, mt5_deals.Symbol, mt5_deals.Action, mt5_deals.Entry, mt5_deals.Volume, mt5_deals.Price, mt5_deals.RateProfit, mt5_deals.RateMargin, mt5_deals.Commission, mt5_deals.Storage as Swap, mt5_deals.Profit, mt5_deals.Comment,
                          mt5_users.`Name`, mt5_users.`Group`, mt5_groups.Currency, mt5_users.Leverage, mt5_users.ID
                          from mt5_deals
                          left join mt5_users
                          on mt5_deals.Login = mt5_users.Login
                          left join mt5_groups
                          on mt5_users.`Group` = mt5_groups.`Group`
-                         where mt5_deals.Login = '%s' and mt5_deals.Time >= '%s' and mt5_deals.Time < '%s'", UserLogin, From, To)
+                         where mt5_deals.Login = ?UserLogin and mt5_deals.Time >= ?From and mt5_deals.Time < ?To",
+    UserLogin = UserLogin, From = From, To = To)
   deals <- DBI::dbGetQuery(con, sql)
   deals <- as.data.table(deals)
   deals[Action <=1, VOLUMElot := Volume/10000]
@@ -79,15 +84,16 @@ getMT5dealsPeriod <- function(dbCreds, From, To, TimeOffset) {
   on.exit(DBI::dbDisconnect(con), add = TRUE)
   From <- as.character(From + minutes(TimeOffset))
   To <- as.character(To + minutes(TimeOffset))
-  sql <- sprintf(paste("select mt5_deals.Deal, mt5_deals.Time, mt5_deals.Login, mt5_deals.Symbol, mt5_deals.Action, mt5_deals.Volume,
+  sql <- DBI::sqlInterpolate(con,
+    "select mt5_deals.Deal, mt5_deals.Time, mt5_deals.Login, mt5_deals.Symbol, mt5_deals.Action, mt5_deals.Volume,
                          mt5_users.`Name`, mt5_users.`Group`, mt5_groups.Currency, mt5_users.Leverage, mt5_users.ID
                          from mt5_deals
                          left join mt5_users
                          on mt5_deals.Login = mt5_users.Login
                          left join mt5_groups
                          on mt5_users.`Group` = mt5_groups.`Group`
-                         where mt5_deals.Time >= '%s' and mt5_deals.Time < '%s' and mt5_deals.Action <= 1"),
-                   From, To)
+                         where mt5_deals.Time >= ?From and mt5_deals.Time < ?To and mt5_deals.Action <= 1",
+    From = From, To = To)
   deals <- DBI::dbGetQuery(con, sql)
   deals <- as.data.table(deals)
   setnames(deals, old = c("Deal", "Time", "Login", "Symbol", "Action", "Volume", "Name", "Group", "Currency", "Leverage"),
@@ -102,10 +108,9 @@ getMT5dealsPeriod <- function(dbCreds, From, To, TimeOffset) {
 # --- PostgreSQL (TT) functions ---
 
 # Fetch rates + prices in one connection
-getRefDataTT <- function(creds) {
-  con <- .make_con_postgres(creds)
-  on.exit(DBI::dbDisconnect(con), add = TRUE)
-  DBI::dbExecute(con, paste0('SET search_path TO "', creds$postgre_SCHEMA, '"'))
+getRefDataTT <- function(creds, con = NULL) {
+  if (is.null(con)) { con <- .make_con_postgres(creds); on.exit(DBI::dbDisconnect(con), add = TRUE) }
+  DBI::dbExecute(con, paste0('SET search_path TO ', DBI::dbQuoteIdentifier(con, creds$postgre_SCHEMA)))
 
   maxtime_rates <- DBI::dbGetQuery(con, 'select max("Timestamp") from "Rates"')
   symbolsPrices <- DBI::dbGetQuery(con, paste0('select * from "Rates" where "Timestamp" = ', DBI::dbQuoteLiteral(con, maxtime_rates[[1]])))
@@ -120,10 +125,9 @@ getRefDataTT <- function(creds) {
   return(list(rate2usd = rate2usd, symbolsPrices = symbolsPrices))
 }
 
-getAllSymbolsTT <- function(creds) {
-  con <- .make_con_postgres(creds)
-  on.exit(DBI::dbDisconnect(con), add = TRUE)
-  DBI::dbExecute(con, paste0('SET search_path TO "', creds$postgre_SCHEMA, '"'))
+getAllSymbolsTT <- function(creds, con = NULL) {
+  if (is.null(con)) { con <- .make_con_postgres(creds); on.exit(DBI::dbDisconnect(con), add = TRUE) }
+  DBI::dbExecute(con, paste0('SET search_path TO ', DBI::dbQuoteIdentifier(con, creds$postgre_SCHEMA)))
   sql <- 'select s."Name" as symbol_name,
       s."Precision", s."Description", s."ContractSize", s."MarginMode",
       sec."Name" as security,
@@ -140,10 +144,9 @@ getAllSymbolsTT <- function(creds) {
   return(res)
 }
 
-getAllSymbolsPricesTT <- function(creds) {
-  con <- .make_con_postgres(creds)
-  on.exit(DBI::dbDisconnect(con), add = TRUE)
-  DBI::dbExecute(con, paste0('SET search_path TO "', creds$postgre_SCHEMA, '"'))
+getAllSymbolsPricesTT <- function(creds, con = NULL) {
+  if (is.null(con)) { con <- .make_con_postgres(creds); on.exit(DBI::dbDisconnect(con), add = TRUE) }
+  DBI::dbExecute(con, paste0('SET search_path TO ', DBI::dbQuoteIdentifier(con, creds$postgre_SCHEMA)))
   maxtime <- DBI::dbGetQuery(con, 'select max("Timestamp") from "Rates"')
   res <- DBI::dbGetQuery(con, paste0('select * from "Rates" where "Timestamp" = ', DBI::dbQuoteLiteral(con, maxtime[[1]])))
   res <- as.data.table(res)
@@ -151,10 +154,9 @@ getAllSymbolsPricesTT <- function(creds) {
   return(res)
 }
 
-getAllRates2USDTT <- function(creds) {
-  con <- .make_con_postgres(creds)
-  on.exit(DBI::dbDisconnect(con), add = TRUE)
-  DBI::dbExecute(con, paste0('SET search_path TO "', creds$postgre_SCHEMA, '"'))
+getAllRates2USDTT <- function(creds, con = NULL) {
+  if (is.null(con)) { con <- .make_con_postgres(creds); on.exit(DBI::dbDisconnect(con), add = TRUE) }
+  DBI::dbExecute(con, paste0('SET search_path TO ', DBI::dbQuoteIdentifier(con, creds$postgre_SCHEMA)))
   maxtime <- DBI::dbGetQuery(con, 'select max("Timestamp") from "CurrencyConversion"')
   res <- DBI::dbGetQuery(con, paste0('select * from "CurrencyConversion" where "Timestamp" = ', DBI::dbQuoteLiteral(con, maxtime[[1]])))
   res <- as.data.table(res)
@@ -162,10 +164,9 @@ getAllRates2USDTT <- function(creds) {
   return(res)
 }
 
-getAllPositionsTT <- function(creds) {
-  con <- .make_con_postgres(creds)
-  on.exit(DBI::dbDisconnect(con), add = TRUE)
-  DBI::dbExecute(con, paste0('SET search_path TO "', creds$postgre_SCHEMA, '"'))
+getAllPositionsTT <- function(creds, con = NULL) {
+  if (is.null(con)) { con <- .make_con_postgres(creds); on.exit(DBI::dbDisconnect(con), add = TRUE) }
+  DBI::dbExecute(con, paste0('SET search_path TO ', DBI::dbQuoteIdentifier(con, creds$postgre_SCHEMA)))
   sql <- paste('select a."Id" as "Login",
     case when a."Type" = 0 then \'Gross\' when a."Type" = 1 then \'Net\' end as "AccType",
     p.*, s."ContractSize"
@@ -178,12 +179,12 @@ getAllPositionsTT <- function(creds) {
   return(res)
 }
 
-getTradeReportPeriod <- function(creds, UserLogin, From, To) {
-  con <- .make_con_postgres(creds)
-  on.exit(DBI::dbDisconnect(con), add = TRUE)
-  DBI::dbExecute(con, paste0('SET search_path TO "', creds$postgre_SCHEMA, '"'))
+getTradeReportPeriod <- function(creds, UserLogin, From, To, con = NULL) {
+  if (is.null(con)) { con <- .make_con_postgres(creds); on.exit(DBI::dbDisconnect(con), add = TRUE) }
+  DBI::dbExecute(con, paste0('SET search_path TO ', DBI::dbQuoteIdentifier(con, creds$postgre_SCHEMA)))
 
-  querry <- paste('select tr."TrTime",
+  querry <- DBI::sqlInterpolate(con,
+    'select tr."TrTime",
        tr."AccountFk" as "Login",
 		   d."Name" as "Domain",
 		   a."Type",
@@ -242,8 +243,9 @@ getTradeReportPeriod <- function(creds, UserLogin, From, To) {
 	left join "Symbols" as s on tr."Symbol" = s."Name"
 	left join "Groups" as g on a."GroupFk" = g."Id"
 	left join "Domains" as d on g."DomainFk" = d."Id"
-	where "TrTime" >= \'', From,'\' and "TrTime" < \'', To,'\' and tr."TrType" in(3,4,5) and tr."AccountFk" = ', UserLogin,'
-	order by "TrTime" ASC')
+	where "TrTime" >= ?From and "TrTime" < ?To and tr."TrType" in(3,4,5) and tr."AccountFk" = ?UserLogin
+		order by "TrTime" ASC',
+    From = From, To = To, UserLogin = UserLogin)
 
   trades <- DBI::dbGetQuery(con, querry)
   trades <- as.data.table(trades)
@@ -256,7 +258,8 @@ getTradeReportPeriod <- function(creds, UserLogin, From, To) {
 getMT4userOpenPositions <- function(dbCreds, UserLogin) {
   con <- .make_con_mysql(dbCreds)
   on.exit(DBI::dbDisconnect(con), add = TRUE)
-  sql <- sprintf("SELECT u.`GROUP` AS `Group`,
+  sql <- DBI::sqlInterpolate(con,
+    "SELECT u.`GROUP` AS `Group`,
                          t.LOGIN AS Login,
                          u.`NAME` AS Name,
                          u.CURRENCY AS BalanceCurrency,
@@ -264,11 +267,12 @@ getMT4userOpenPositions <- function(dbCreds, UserLogin) {
                          SUM(t.SWAPS) AS SwapOpen
                   FROM mt4_trades t
                   JOIN mt4_users u ON u.LOGIN = t.LOGIN
-                  WHERE t.LOGIN = %s
+                  WHERE t.LOGIN = ?UserLogin
                     AND t.CLOSE_TIME = '1970-01-01 00:00:00'
                     AND t.SWAPS <> 0
                     AND t.CMD NOT IN (6,7)
-                  GROUP BY u.`GROUP`, t.LOGIN, u.`NAME`, u.CURRENCY, t.SYMBOL", UserLogin)
+                  GROUP BY u.`GROUP`, t.LOGIN, u.`NAME`, u.CURRENCY, t.SYMBOL",
+    UserLogin = UserLogin)
   res <- DBI::dbGetQuery(con, sql)
   res <- as.data.table(res)
   return(res)
@@ -277,7 +281,8 @@ getMT4userOpenPositions <- function(dbCreds, UserLogin) {
 getMT5userOpenPositions <- function(dbCreds, UserLogin) {
   con <- .make_con_mysql(dbCreds)
   on.exit(DBI::dbDisconnect(con), add = TRUE)
-  sql <- sprintf("SELECT u.`Group`,
+  sql <- DBI::sqlInterpolate(con,
+    "SELECT u.`Group`,
                          p.Login,
                          u.`Name`,
                          g.Currency AS BalanceCurrency,
@@ -286,19 +291,20 @@ getMT5userOpenPositions <- function(dbCreds, UserLogin) {
                   FROM mt5_positions p
                   JOIN mt5_users u ON u.Login = p.Login
                   JOIN mt5_groups g ON g.`Group` = u.`Group`
-                  WHERE p.Login = %s
+                  WHERE p.Login = ?UserLogin
                     AND p.Storage <> 0
-                  GROUP BY u.`Group`, p.Login, u.`Name`, g.Currency, p.Symbol", UserLogin)
+                  GROUP BY u.`Group`, p.Login, u.`Name`, g.Currency, p.Symbol",
+    UserLogin = UserLogin)
   res <- DBI::dbGetQuery(con, sql)
   res <- as.data.table(res)
   return(res)
 }
 
-getTTuserOpenPositions <- function(creds, UserLogin) {
-  con <- .make_con_postgres(creds)
-  on.exit(DBI::dbDisconnect(con), add = TRUE)
-  DBI::dbExecute(con, paste0('SET search_path TO "', creds$postgre_SCHEMA, '"'))
-  sql <- sprintf('SELECT a."Group",
+getTTuserOpenPositions <- function(creds, UserLogin, con = NULL) {
+  if (is.null(con)) { con <- .make_con_postgres(creds); on.exit(DBI::dbDisconnect(con), add = TRUE) }
+  DBI::dbExecute(con, paste0('SET search_path TO ', DBI::dbQuoteIdentifier(con, creds$postgre_SCHEMA)))
+  sql <- DBI::sqlInterpolate(con,
+    'SELECT a."Group",
                          a."Id" AS "Login",
                          a."Name",
                          a."Currency" AS "BalanceCurrency",
@@ -306,9 +312,10 @@ getTTuserOpenPositions <- function(creds, UserLogin) {
                          SUM(p."Swap") AS "SwapOpen"
                   FROM "Positions" p
                   JOIN "Accounts" a ON a."Id" = p."AccountFk"
-                  WHERE a."Id" = %s
+                  WHERE a."Id" = ?UserLogin
                     AND p."Swap" <> 0
-                  GROUP BY a."Group", a."Id", a."Name", a."Currency", p."Symbol"', UserLogin)
+                  GROUP BY a."Group", a."Id", a."Name", a."Currency", p."Symbol"',
+    UserLogin = UserLogin)
   res <- DBI::dbGetQuery(con, sql)
   res <- as.data.table(res)
   return(res)

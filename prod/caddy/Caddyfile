@@ -79,6 +79,7 @@ import users.caddyfile
     handle /user-data/* {
         basic_auth {
             import admin_creads
+            import user-data-users
         }
         uri strip_prefix /user-data
         reverse_proxy user-data-app:3838

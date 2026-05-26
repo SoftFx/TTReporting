@@ -11,7 +11,7 @@ library(shinycssloaders)
 library(lubridate)
 source('helpFunc.R')
 
-#setwd("C:/Users/oksana.hilevich/Desktop/RTools/RShiny/UserAnalytics")
+
 options(digits.secs = 10)
 options(scipen=999)
 Sys.setenv("TZ" = "UTC")
@@ -88,7 +88,6 @@ ui <- fluidPage(useShinyjs(), use_bs_tooltip(),use_bs_popover(),
                                         fluidRow(
                                           column(4, numericInput("price_markup", "Price mkp %:", value = 0.0009, step = 0.0001, min = 0, max = 100)),
                                           column(4, numericInput("swap_markup", "Swap mkp %:", value = 20, step = 1, min = 0, max = 99)),
-                                          #column(4, numericInput("index_coeff", "Index coeff %:", value = 10, step = 1, min = 0, max = 99)),
                                           column(4, numericInput("lp_commis", "LP commis $/M:", value = 8, step = 1, min = 0))
                                         )
                                       )
@@ -123,26 +122,33 @@ server <- function(input, output, session) {
 
   #### Get data
   getData <- eventReactive(input$getData, {
-    
+
     Platform <- input$platform_input #"TT"
-    UserLogin <- as.numeric(input$login_input) #24003459 uk
+    UserLogin <- suppressWarnings(as.numeric(input$login_input))
+    if (is.na(UserLogin)) {
+      showNotification("Login must be a number", type = "error")
+      return(list(results = data.table(), summary = data.table(), by_symb = data.table(), From = NULL, To = NULL, by_date = data.table()))
+    }
     From <- input$dateRange_trading[1] # To-days(6)
     To <- input$dateRange_trading[2] #today() #
- 
-   
-    refData <- getRefDataTT(cfg[["TT"]]$servers[["ttlive"]])
+
+    tt_creds <- cfg[["TT"]]$servers[["ttlive"]]
+    tt_con <- .make_con_postgres(tt_creds)
+    on.exit(DBI::dbDisconnect(tt_con), add = TRUE)
+
+    refData <- getRefDataTT(tt_creds, con = tt_con)
     rate2usd <- refData$rate2usd
     symbolsPrices <- refData$symbolsPrices
-    tt_symbols <- getAllSymbolsTT(cfg[["TT"]]$servers[["ttlive"]])
+    tt_symbols <- getAllSymbolsTT(tt_creds, con = tt_con)
 
     all_results <- list()
-    
+
     # --- Fetch & normalize per platform ---
     if (Platform == "TT") {
       for (db in names(cfg[[Platform]]$servers)) {
         tryCatch({
-          res <- getTradeReportPeriod(cfg[[Platform]]$servers[[db]], UserLogin, From, To)
-          print(paste(db, nrow(res)))
+          res <- getTradeReportPeriod(cfg[[Platform]]$servers[[db]], UserLogin, From, To, con = tt_con)
+
           if (nrow(res) > 0) {
             setnames(res, c("Ntrades", "TVinLot"), c("DEAL_COUNT", "VOLUMElot"))
             res[, Date := as.Date(TrTime)]
@@ -155,7 +161,7 @@ server <- function(input, output, session) {
       for (db in names(cfg[[Platform]]$servers)) {
         tryCatch({
           res <- getMT4userTradesPeriod(cfg[[Platform]]$servers[[db]], UserLogin, From, To, TimeOffset)
-          print(paste(db, nrow(res)))
+
           if (nrow(res) > 0) {
             setnames(res, c("LOGIN","NAME","GROUP","SYMBOL","CURRENCY","PROFIT","COMMISSION","SWAPS"),
                           c("Login","Name","Group","Symbol","BalanceCurrency","Profit","Commission","Swap"))
@@ -173,7 +179,7 @@ server <- function(input, output, session) {
       for (db in names(cfg[[Platform]]$servers)) {
         tryCatch({
           res <- getMT5userdealsPeriod(cfg[[Platform]]$servers[[db]], UserLogin, From, To, TimeOffset)
-          print(paste(db, nrow(res)))
+
           if (nrow(res) > 0) {
             setnames(res, "Currency", "BalanceCurrency")
             res[grepl("Dividend", Comment), Dividend := round(Profit, 2)]
@@ -189,7 +195,7 @@ server <- function(input, output, session) {
     results <- rbindlist(all_results, fill = TRUE)
 
     if (nrow(results) == 0) {
-      return(list(data.table(), data.table(), data.table(), From, To, data.table()))
+      return(list(results = data.table(), summary = data.table(), by_symb = data.table(), From = From, To = To, by_date = data.table()))
     }
 
     # --- Mark closed/open ---
@@ -199,6 +205,9 @@ server <- function(input, output, session) {
     }
     # Zero out swap for open positions (swap open fetched separately)
     results[is_closed == FALSE, Swap := 0]
+    for (col in c("Dividend", "Deposit")) {
+      if (!col %in% names(results)) results[, (col) := 0]
+    }
 
     # --- Common: join tt_symbols ---
     results[tt_symbols, c("MarginCurrency","ProfitCurrency","ContractSize","CalcMode","Precision","security") :=
@@ -238,11 +247,6 @@ server <- function(input, output, session) {
 
     # --- Swap markup ---
     swap_mkp <- input$swap_markup / 100
-    # idx_coeff <- input$index_coeff / 100
-    # results[, effective_mkp := fcase(
-    #   !is.na(security) & grepl("Index", security), idx_coeff,
-    #   default = swap_mkp
-    # )]
     results[, swap_markup_profit := fcase(
       is_closed == TRUE & Swap < 0, round((Swap / (1 + swap_mkp)) - Swap, 2),
       is_closed == TRUE & Swap > 0, round((Swap / (1 - swap_mkp)) - Swap, 2),
@@ -286,15 +290,15 @@ server <- function(input, output, session) {
       Profit = round(sum(Profit, na.rm = T), 2)
     ), by = .(Date, Symbol)][order(Date, Symbol)]
 
-    print(by_symb)
-    print(by_date)
+
+
 
     # --- Open positions ---
     open_results <- list()
     if (Platform == "TT") {
       for (db in names(cfg[[Platform]]$servers)) {
         tryCatch({
-          res <- getTTuserOpenPositions(cfg[[Platform]]$servers[[db]], UserLogin)
+          res <- getTTuserOpenPositions(cfg[[Platform]]$servers[[db]], UserLogin, con = tt_con)
           open_results[[db]] <- res
         }, error = function(e) print(e))
       }
@@ -353,7 +357,7 @@ server <- function(input, output, session) {
     setcolorder(summary, c("Group","Login","Name","TVbalcur","TVusd","calcPMusd","calcSwapMusd","calcSwapMusdOpen","Commiss","SwapClosed","SwapOpen","Dividend","Profit","NetDeposit","TradesCount"))
     setcolorder(by_symb, c("Group","Login","Symbol","TVbalcur","TVusd","calcPMusd","calcSwapMusd","calcSwapMusdOpen","Markup","TVmarcur","TVlot","Commiss","SwapClosed","SwapOpen","Dividend","Profit","TradesCount"))
 
-    return(list(results, summary, by_symb, From, To, by_date))
+    return(list(results = results, summary = summary, by_symb = by_symb, From = From, To = To, by_date = by_date))
   })
   
   ################################################################################# 
@@ -363,10 +367,11 @@ server <- function(input, output, session) {
   
   output$resUI_user_summary <-  renderUI({
 
-    results <- getData()[[1]]
-    summary <- getData()[[2]]
-    by_symb <- getData()[[3]]
-    by_date <- getData()[[6]]
+    d <- getData()
+    results <- d$results
+    summary <- d$summary
+    by_symb <- d$by_symb
+    by_date <- d$by_date
     
     my_set1 <- RColorBrewer::brewer.pal(9, "Set1")
     if(ncol(results) > 0 & nrow(results) > 0 ){
