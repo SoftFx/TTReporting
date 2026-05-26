@@ -93,8 +93,8 @@ ui <- fluidPage(useShinyjs(), use_bs_tooltip(),use_bs_popover(),
                                         )
                                       )
                                     ),
-                                    column(3,
-                                      actionButton("getData", "Get Data", style = "color: black; background-color: #3d7194; width: 100%; margin-top: 25px")
+                                    column(2,
+                                      actionButton("getData", "Get Data", style = "color: black; background-color: #3d7194; width: 100%; margin-top: 30px")
                                     )
                                   )
                                 ),
