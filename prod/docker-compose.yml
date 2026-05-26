@@ -58,6 +58,31 @@ services:
           memory: 2G
           cpus: "1.0"
 
+  user-data-app:
+    image: softfx/tt-reporting:latest-user-data-app
+    pull_policy: always
+    volumes:
+      - ./user-data-app/configDocker:/app/configDocker:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3838"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - tt-internal
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "1.0"
+
   # ── Future web apps ────────────────────────
   # product-two:
   #   image: softfx/tt-reporting:latest-product-two
