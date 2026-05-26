@@ -11,3 +11,10 @@
     Common statistics by liquidity providers: transactions, traded volume, slippage analysis.
   category: Aggregator
   # image: static/image/aggr-data.png
+
+- slug: user-data
+  name: User Analytics
+  description: |
+    Trading account analytics (TT, MT4, MT5).
+    Login-based summary: traded volume, swap markup, commission breakdown.
+  category: Analytics
