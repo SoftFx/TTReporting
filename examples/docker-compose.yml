@@ -55,7 +55,7 @@ services:
     ports:
       - "3839:3838"
     volumes:
-      - ./user-data-app/configDocker:/app/configDocker:ro
+      - ./user-data/configDocker:/app/configDocker:ro
     restart: unless-stopped
 
 
