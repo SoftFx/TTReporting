@@ -19,7 +19,7 @@ RUN set -eux; \
     libpng-dev \
     libtiff-dev \
     libjpeg-dev \
-    default-libmysqlclient-dev \
+    libmariadb-dev-compat \
     ca-certificates curl git; \
   rm -rf /var/lib/apt/lists/*
 
@@ -55,7 +55,6 @@ RUN set -eux; \
     libjpeg8 \
     libharfbuzz0b \
     libfribidi0 \
-    default-mysql-client \
     libmariadb3; \
   rm -rf /var/lib/apt/lists/*
 
