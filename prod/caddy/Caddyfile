@@ -18,7 +18,7 @@ import users.caddyfile
         X-Frame-Options "SAMEORIGIN"
         X-Content-Type-Options "nosniff"
         Referrer-Policy "strict-origin-when-cross-origin"
-        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'unsafe-inline' 'self';"
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline' 'self';"
     }
 
     # ── Rate limiting (requires caddy-ratelimit plugin) ──
