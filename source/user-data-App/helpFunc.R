@@ -2,6 +2,31 @@ library(data.table)
 library(DBI)
 library(RPostgres)
 
+# --- Config loader: reads YAML, substitutes ${VAR} from .env / env vars ---
+load_config <- function(yaml_path, env_path = NULL) {
+  # Parse .env → env vars (skip comments/empty, don't overwrite existing)
+  env_path <- env_path %||% file.path(dirname(yaml_path), "..", ".env")
+  if (file.exists(env_path)) {
+    for (line in readLines(env_path, warn = FALSE)) {
+      if (grepl("^\\s*#", line) || !nzchar(trimws(line))) next
+      key <- trimws(sub("=.*", "", line))
+      val <- trimws(sub("^[^=]+=", "", line))
+      if (Sys.getenv(key) == "") do.call(Sys.setenv, setNames(list(val), key))
+    }
+  }
+  # Load YAML and recursively replace ${VAR} in all string values
+  cfg <- yaml::yaml.load_file(yaml_path)
+  subst <- function(s) {
+    while (grepl("\\$\\{\\w+\\}", s)) {
+      var <- sub(".*\\$\\{(\\w+)\\}.*", "\\1", s)
+      s <- sub(paste0("\\$\\{", var, "\\}"), Sys.getenv(var, ""), s)
+    }
+    s
+  }
+  resolve <- function(x) if (is.character(x)) subst(x) else if (is.list(x)) lapply(x, resolve) else x
+  resolve(cfg)
+}
+
 # --- Connection helpers ---
 .make_con_postgres <- function(creds) {
   DBI::dbConnect(RPostgres::Postgres(),
@@ -51,7 +76,16 @@ getMT4userTradesPeriod <- function(dbCreds, UserLogin, From, To, TimeOffset) {
   data <- DBI::dbGetQuery(con, sql)
   data <- as.data.table(data)
   data[!CMD%in%c(6,7) & grepl("cancelled", COMMENT)==F, VOLUMElot := VOLUME/100]
-  data[!CMD%in%c(6,7) & grepl("cancelled", COMMENT)==F, DEAL_COUNT := ifelse(OPEN_TIME < From | CLOSE_TIME== "1970-01-01 00:00:00", 1, 2)]
+  # trade_status: relation of open/close to selected period
+  data[!CMD %in% c(6,7) & !grepl("cancelled", COMMENT), trade_status := fcase(
+    OPEN_TIME >= From & CLOSE_TIME < To & CLOSE_TIME != "1970-01-01 00:00:00", "open_close",
+    OPEN_TIME >= From & (CLOSE_TIME >= To | CLOSE_TIME == "1970-01-01 00:00:00"), "open",
+    OPEN_TIME < From, "close",
+    default = NA_character_
+  )]
+  # DEAL_COUNT: 2 only if full cycle (open+close) in period, else 1
+  data[!CMD %in% c(6,7) & !grepl("cancelled", COMMENT) & trade_status == "open_close", DEAL_COUNT := 2]
+  data[!CMD %in% c(6,7) & !grepl("cancelled", COMMENT) & trade_status %in% c("open", "close"), DEAL_COUNT := 1]
   data[, DB := dbCreds$dbname]
   return(data)
 }
@@ -128,7 +162,7 @@ getRefDataTT <- function(creds, con = NULL) {
 getAllSymbolsTT <- function(creds, con = NULL) {
   if (is.null(con)) { con <- .make_con_postgres(creds); on.exit(DBI::dbDisconnect(con), add = TRUE) }
   DBI::dbExecute(con, paste0('SET search_path TO ', DBI::dbQuoteIdentifier(con, creds$postgre_SCHEMA)))
-  sql <- 'select s."Name" as symbol_name,
+  sql <- 'select s."Name" as symbol_name, s."SymbolId" as symbol_id,
       s."Precision", s."Description", s."ContractSize", s."MarginMode",
       sec."Name" as security,
       cura."Name" as "MarginCurrency",
