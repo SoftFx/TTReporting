@@ -88,6 +88,8 @@ import users.caddyfile
         }
         uri strip_prefix /tt-api-lab
         reverse_proxy tt-api-lab-app:8765
+    }
+
     # ── User Analytics ─────────────────────────
     handle /user-data/* {
         basic_auth {
