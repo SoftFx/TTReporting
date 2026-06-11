@@ -18,7 +18,7 @@ import users.caddyfile
         X-Frame-Options "SAMEORIGIN"
         X-Content-Type-Options "nosniff"
         Referrer-Policy "strict-origin-when-cross-origin"
-        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'unsafe-inline' 'self';"
+        Content-Security-Policy "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline' 'self'; connect-src 'self' wss: ws:; font-src 'self' data:; img-src 'self' data: blob:;"
     }
 
     # ── Rate limiting (requires caddy-ratelimit plugin) ──
@@ -88,6 +88,14 @@ import users.caddyfile
         }
         uri strip_prefix /tt-api-lab
         reverse_proxy tt-api-lab-app:8765
+    # ── User Analytics ─────────────────────────
+    handle /user-data/* {
+        basic_auth {
+            import admin_creads
+            import user-data-users
+        }
+        uri strip_prefix /user-data
+        reverse_proxy user-data-app:3838
     }
 
     # ── Catch-all: deny unmatched paths ──────────

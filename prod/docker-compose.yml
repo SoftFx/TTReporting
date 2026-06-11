@@ -65,6 +65,18 @@ services:
       - ./tt-api-lab-app/configDocker:/app/configDocker:ro
       - ./tt-api-lab-app/downloads:/app/downloads
     restart: unless-stopped
+  user-data-app:
+    image: softfx/tt-reporting:latest-user-data-app
+    pull_policy: always
+    volumes:
+      - ./user-data-app/configDocker:/app/configDocker:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3838"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - tt-internal
     logging:
@@ -77,6 +89,16 @@ services:
         limits:
           memory: 2G
           cpus: "1.0"
+
+  # ── Future web apps ────────────────────────
+  # product-two:
+  #   image: softfx/tt-reporting:latest-product-two
+  #   pull_policy: always
+  #   volumes:
+  #     - ./product-two/configDocker:/app/configDocker:ro
+  #   restart: unless-stopped
+  #   networks:
+  #     - tt-internal
 
   # ────────────────────────────────────────────
   # Batch jobs (run via: docker compose run --rm <name>)

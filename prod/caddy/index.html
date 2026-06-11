@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TT Reporting</title>
-    <link rel="icon" href="data:,">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -119,34 +118,6 @@
     </main>
 
     <script src="/static/js-yaml.min.js"></script>
-    <script>
-        function esc(s) {
-            var d = document.createElement('div');
-            d.textContent = s;
-            return d.innerHTML;
-        }
-
-        fetch('products.yaml')
-            .then(r => r.text())
-            .then(text => jsyaml.load(text))
-            .then(products => {
-                var container = document.getElementById('cards');
-                container.innerHTML = products.map(function(p) {
-                    var slug = esc(p.slug).replace(/[^a-z0-9-]/gi, '');
-                    return '<div class="card">' +
-                        '<div class="card-header">' +
-                            '<h3>' + esc(p.name) + '</h3>' +
-                            (p.category ? '<span class="category">' + esc(p.category) + '</span>' : '') +
-                        '</div>' +
-                        '<p>' + esc(p.description) + '</p>' +
-                        '<a href="/' + slug + '/">Open</a>' +
-                    '</div>';
-                }).join('');
-            })
-            .catch(function(err) {
-                document.getElementById('cards').innerHTML =
-                    '<p class="error">Failed to load products: ' + esc(err.message) + '</p>';
-            });
-    </script>
+    <script src="/static/products.js"></script>
 </body>
 </html>

@@ -57,6 +57,13 @@ services:
     volumes:
       - ./tt-api-lab/configDocker:/app/configDocker:ro
       - ./tt-api-lab/downloads:/app/downloads
+  user-data-app:
+    image: softfx/tt-reporting:latest-user-data-app
+    pull_policy: always
+    ports:
+      - "3839:3838"
+    volumes:
+      - ./user-data/configDocker:/app/configDocker:ro
     restart: unless-stopped
 
 

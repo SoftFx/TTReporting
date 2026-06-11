@@ -185,7 +185,14 @@ docker compose up -d my-product
 docker exec caddy caddy reload --config /etc/caddy/Caddyfile
 ```
 
-Or from Windows: `prod\reload-caddy.bat`
+Or from Windows:
+
+```bat
+prod\deploy-product.bat my-product
+```
+
+This pulls the service image, starts the service, validates the Caddy config, and reloads Caddy.
+Use `prod\reload-caddy.bat` when only Caddy files changed and the product container is already running.
 
 ### Summary: files to edit
 

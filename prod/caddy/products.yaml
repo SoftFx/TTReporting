@@ -19,3 +19,9 @@
     Build requests, view responses, and experiment with API parameters.
   category: Tools
   # image: static/image/tt-api-lab.png
+- slug: user-data
+  name: User Analytics
+  description: |
+    Trading account analytics (TT, MT4, MT5).
+    Login-based summary: traded volume, swap markup, commission breakdown.
+  category: Analytics

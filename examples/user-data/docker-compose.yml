@@ -1,0 +1,8 @@
+services:
+  user-data-local:
+    image: user-data-app
+    ports:
+      - "3839:3838"
+    volumes:
+      - ../../source/user-data-App/configDocker:/app/configDocker:ro
+    restart: unless-stopped
