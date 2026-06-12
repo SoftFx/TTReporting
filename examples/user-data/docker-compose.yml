@@ -1,6 +1,7 @@
 services:
   user-data-local:
     image: user-data-app
+    env_file: .env
     ports:
       - "3839:3838"
     volumes:

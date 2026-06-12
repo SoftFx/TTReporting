@@ -52,6 +52,7 @@ services:
   user-data-app:
     image: softfx/tt-reporting:latest-user-data-app
     pull_policy: always
+    env_file: .env
     ports:
       - "3839:3838"
     volumes:
