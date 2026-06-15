@@ -1,7 +1,10 @@
 services:
   user-data-local:
     image: user-data-app
-    env_file: .env
+    environment:
+      MT4_PASSWORD: ${MT4_PASSWORD}
+      MT5_PASSWORD: ${MT5_PASSWORD}
+      PG_PASSWORD: ${PG_PASSWORD}
     ports:
       - "3839:3838"
     volumes:

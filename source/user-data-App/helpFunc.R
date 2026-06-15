@@ -4,7 +4,7 @@ library(RPostgres)
 
 # --- Config loader: reads YAML, substitutes ${VAR} from .env / env vars ---
 load_config <- function(yaml_path, env_path = NULL) {
-  # Parse .env → env vars (skip comments/empty, don't overwrite existing)
+  # Parse .env → env vars (skip comments/empty, don't overwrite existing) — local use only (Docker gets vars from environment)
   env_path <- env_path %||% file.path(dirname(yaml_path), "..", ".env")
   if (file.exists(env_path)) {
     for (line in readLines(env_path, warn = FALSE)) {
@@ -14,7 +14,7 @@ load_config <- function(yaml_path, env_path = NULL) {
       if (Sys.getenv(key) == "") do.call(Sys.setenv, setNames(list(val), key))
     }
   }
-  # Load YAML and recursively replace ${VAR} in all string values
+  # Load YAML and recursively replace ${VAR} in all string values — substitutes env var values into the config
   cfg <- yaml::yaml.load_file(yaml_path)
   subst <- function(s) {
     while (grepl("\\$\\{\\w+\\}", s)) {

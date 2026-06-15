@@ -61,7 +61,10 @@ services:
   user-data-app:
     image: softfx/tt-reporting:latest-user-data-app
     pull_policy: always
-    env_file: .env
+    environment:
+      MT4_PASSWORD: ${MT4_PASSWORD}
+      MT5_PASSWORD: ${MT5_PASSWORD}
+      PG_PASSWORD: ${PG_PASSWORD}
     volumes:
       - ./user-data-app/configDocker:/app/configDocker:ro
     restart: unless-stopped
