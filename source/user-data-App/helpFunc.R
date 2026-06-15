@@ -11,6 +11,8 @@ load_config <- function(yaml_path, env_path = NULL) {
       if (grepl("^\\s*#", line) || !nzchar(trimws(line))) next
       key <- trimws(sub("=.*", "", line))
       val <- trimws(sub("^[^=]+=", "", line))
+      val <- sub('^"(.*)"$', '\\1', val)   # strip surrounding double quotes (allows special chars like # in passwords)
+      val <- sub("^'(.*)'$", "\\1", val)   # strip surrounding single quotes
       if (Sys.getenv(key) == "") do.call(Sys.setenv, setNames(list(val), key))
     }
   }
