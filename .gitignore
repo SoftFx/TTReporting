@@ -6,7 +6,10 @@ configDocker
 /run/count-trades/customcommand_output.log
 /run/big-trades/customcommand_output.log
 /examples/big-trades/customcommand_output.log
-/prod/.env
+# Secrets / environment files — never commit (.env matches in any directory)
+.env
+.env.*
+!.env.example
 /prod/caddy/users.caddyfile
 /prod/caddy/server.crt
 /prod/caddy/server.key

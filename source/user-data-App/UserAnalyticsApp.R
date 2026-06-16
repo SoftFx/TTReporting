@@ -66,7 +66,7 @@ ptable <- function(...) tagList(
   )
 )
 
-cfg <- yaml.load_file('configDocker/dbCon_config.yaml')
+cfg <- load_config('configDocker/dbCon_config.yaml')
 
 ui <- fluidPage(useShinyjs(), use_bs_tooltip(),use_bs_popover(),
             navbarPage(id = "TABS", 
@@ -141,6 +141,26 @@ server <- function(input, output, session) {
     symbolsPrices <- refData$symbolsPrices
     tt_symbols <- getAllSymbolsTT(tt_creds, con = tt_con)
 
+    # --- Symbol aliases: handle renamed symbols + GOLD/SILVER for MT4/MT5 ---
+    # Renamed: if symbol was renamed in TT, old name is in symbol_id
+    # Duplicate those rows so trades with old names still match the join
+    renamed <- tt_symbols[!is.na(symbol_id) & symbol_id != symbol_name]
+    if (nrow(renamed) > 0) {
+      renamed[, symbol_name := symbol_id]
+      tt_symbols <- rbind(tt_symbols, renamed)
+      rm(renamed)
+    }
+    # GOLD/SILVER aliases (MT4/MT5 use these names, TT has XAUUSD/XAGUSD)
+    alias_map <- c("GOLD" = "XAUUSD", "SILVER" = "XAGUSD")
+    for (alias in names(alias_map)) {
+      src <- tt_symbols[symbol_name == alias_map[alias]]
+      if (nrow(src) > 0) {
+        src[, symbol_name := alias]
+        tt_symbols <- rbind(tt_symbols, src)
+      }
+      rm(src)
+    }
+
     all_results <- list()
 
     # --- Fetch & normalize per platform ---
@@ -154,7 +174,7 @@ server <- function(input, output, session) {
             res[, Date := as.Date(TrTime)]
             all_results[[db]] <- res
           }
-        }, error = function(e) print(e))
+        }, error = function(e) message("TT server '", db, "' (schema: ", cfg[[Platform]]$servers[[db]]$postgre_SCHEMA, "): ", conditionMessage(e)))
       }
     } else if (Platform == "MT4") {
       TimeOffset <- META5Timeoffset(cfg[["MT5"]]$servers[["mt5_live"]])
@@ -214,11 +234,27 @@ server <- function(input, output, session) {
       .(i.MarginCurrency, i.ProfitCurrency, i.ContractSize, i.MarginMode, i.Precision, i.security),
       on = .(Symbol = symbol_name)]
 
+    # --- Detect symbols missing from TT reference ---
+    missing_symbols <- unique(results[is.na(ContractSize) & Symbol != "", Symbol])
+
     # --- Platform-specific TV calculations (after tt_symbols join) ---
     if (Platform == "MT4") {
-      results[!CMD %in% c(6,7), TVbalcur := round(ifelse(CalcMode==0,
-        VOLUMElot*ContractSize*(CONV_RATE1+CONV_RATE2),
-        VOLUMElot*ContractSize*(OPEN_PRICE*CONV_RATE1+CLOSE_PRICE*CONV_RATE2)), 2)]
+      # TVbalcur: depends on trade_status (which side of the trade is in period)
+      results[!CMD %in% c(6,7), TVbalcur := round(fcase(
+        trade_status == "open_close" & CalcMode == 0,
+          VOLUMElot * ContractSize * (CONV_RATE1 + CONV_RATE2),
+        trade_status == "open_close" & CalcMode != 0,
+          VOLUMElot * ContractSize * (OPEN_PRICE*CONV_RATE1 + CLOSE_PRICE*CONV_RATE2),
+        trade_status == "open" & CalcMode == 0,
+          VOLUMElot * ContractSize * CONV_RATE1,
+        trade_status == "open" & CalcMode != 0,
+          VOLUMElot * ContractSize * OPEN_PRICE * CONV_RATE1,
+        trade_status == "close" & CalcMode == 0,
+          VOLUMElot * ContractSize * CONV_RATE2,
+        trade_status == "close" & CalcMode != 0,
+          VOLUMElot * ContractSize * CLOSE_PRICE * CONV_RATE2,
+        default = NA_real_
+      ), 2)]
       results[, TVmargincurr := round(DEAL_COUNT * VOLUMElot * ContractSize, 2)]
       results[, TVlot_ := VOLUMElot * DEAL_COUNT]
     } else if (Platform == "MT5") {
@@ -300,7 +336,7 @@ server <- function(input, output, session) {
         tryCatch({
           res <- getTTuserOpenPositions(cfg[[Platform]]$servers[[db]], UserLogin, con = tt_con)
           open_results[[db]] <- res
-        }, error = function(e) print(e))
+        }, error = function(e) message("TT open positions, server '", db, "' (schema: ", cfg[[Platform]]$servers[[db]]$postgre_SCHEMA, "): ", conditionMessage(e)))
       }
     } else if (Platform == "MT4") {
       for (db in names(cfg[[Platform]]$servers)) {
@@ -357,7 +393,7 @@ server <- function(input, output, session) {
     setcolorder(summary, c("Group","Login","Name","TVbalcur","TVusd","calcPMusd","calcSwapMusd","calcSwapMusdOpen","Commiss","SwapClosed","SwapOpen","Dividend","Profit","NetDeposit","TradesCount"))
     setcolorder(by_symb, c("Group","Login","Symbol","TVbalcur","TVusd","calcPMusd","calcSwapMusd","calcSwapMusdOpen","Markup","TVmarcur","TVlot","Commiss","SwapClosed","SwapOpen","Dividend","Profit","TradesCount"))
 
-    return(list(results = results, summary = summary, by_symb = by_symb, From = From, To = To, by_date = by_date))
+    return(list(results = results, summary = summary, by_symb = by_symb, From = From, To = To, by_date = by_date, missing_symbols = missing_symbols))
   })
   
   ################################################################################# 
@@ -372,11 +408,17 @@ server <- function(input, output, session) {
     summary <- d$summary
     by_symb <- d$by_symb
     by_date <- d$by_date
-    
+    missing_symbols <- d$missing_symbols
+
     my_set1 <- RColorBrewer::brewer.pal(9, "Set1")
     if(ncol(results) > 0 & nrow(results) > 0 ){
       tagList(
         h4(paste0("Group: ", summary$Group[1], " | Login: ", summary$Login[1], " | Name: ", summary$Name[1])),
+        if (length(missing_symbols) > 0) {
+          div(style = "color: #cc6600; font-weight: 600; margin-bottom: 6px;",
+            paste0("WARNING! Symbols not in TT reference: ", paste(missing_symbols, collapse = ", "))
+          )
+        },
         hr(style = "border-top: 5px solid #828181;"),
         fluidRow(
           column(5,
