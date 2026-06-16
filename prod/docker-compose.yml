@@ -58,6 +58,13 @@ services:
           memory: 2G
           cpus: "1.0"
 
+  tt-api-lab-app:
+    image: softfx/tt-reporting:latest-tt-api-lab-app
+    pull_policy: always
+    volumes:
+      - ./tt-api-lab-app/configDocker:/app/configDocker:ro
+      - ./tt-api-lab-app/downloads:/app/downloads
+    restart: unless-stopped
   user-data-app:
     image: softfx/tt-reporting:latest-user-data-app
     pull_policy: always

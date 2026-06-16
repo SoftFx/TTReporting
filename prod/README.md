@@ -16,8 +16,11 @@ prod/
 │   ├── static/          # Vendored JS libraries
 │   ├── index.html       # Home page (reads products.yaml dynamically)
 │   └── products.yaml    # Product registry (names, descriptions, categories)
-└── aggr-data-app/
-    └── configDocker/    # App config (gitignored)
+├── aggr-data-app/
+│   └── configDocker/    # App config (gitignored)
+└── tt-api-lab-app/
+    ├── configDocker/    # App config (gitignored)
+    └── downloads/       # Downloaded files (gitignored)
 ```
 
 ## First-time setup
@@ -63,7 +66,7 @@ mkdir -p aggr-data-app/configDocker
 
 ```bash
 cd prod
-docker compose up -d caddy aggr-data-app
+docker compose up -d caddy aggr-data-app tt-api-lab-app
 ```
 
 Available at `https://<server-ip>/`
