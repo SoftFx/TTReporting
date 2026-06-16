@@ -19,9 +19,13 @@ load_config <- function(yaml_path, env_path = NULL) {
   # Load YAML and recursively replace ${VAR} in all string values — substitutes env var values into the config
   cfg <- yaml::yaml.load_file(yaml_path)
   subst <- function(s) {
-    while (grepl("\\$\\{\\w+\\}", s)) {
-      var <- sub(".*\\$\\{(\\w+)\\}.*", "\\1", s)
-      s <- sub(paste0("\\$\\{", var, "\\}"), Sys.getenv(var, ""), s)
+    # collect distinct var names from the ORIGINAL string; replace each once so
+    # substituted values are never re-scanned (no mangle, always terminates)
+    vars <- regmatches(s, gregexpr("\\$\\{\\w+\\}", s))[[1]]
+    if (!length(vars)) return(s)
+    vars <- unique(sub("^\\$\\{(\\w+)\\}$", "\\1", vars))
+    for (v in vars) {
+      s <- gsub(paste0("${", v, "}"), Sys.getenv(v, ""), s, fixed = TRUE)
     }
     s
   }
