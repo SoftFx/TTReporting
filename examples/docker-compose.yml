@@ -44,6 +44,8 @@ services:
   aggr-data-app:
     image: softfx/tt-reporting:latest-aggr-data-app
     pull_policy: always
+    environment:
+      PG_PASSWORD: ${PG_PASSWORD}
     ports:
       - "3838:3838"
     volumes:

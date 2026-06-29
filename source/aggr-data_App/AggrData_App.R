@@ -19,7 +19,7 @@ options(scipen=999)
 Sys.setenv("TZ" = "UTC")
 
 RatesServerName <- "ttlive"
-cfg <- yaml.load_file('./configDocker/dbCon_config.yaml')
+cfg <- load_config('configDocker/dbCon_config.yaml')
 OrderTypesMap <- fread("./configDocker/orderTypes.csv")
 CommandNamesMap <- fread("./configDocker/commands.csv")
 

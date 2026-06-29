@@ -1,6 +1,8 @@
 services:
   aggr-data-local:
     image: aggr-data-app
+    environment:
+      PG_PASSWORD: ${PG_PASSWORD}
     ports:
       - "3838:3838"
     volumes:
