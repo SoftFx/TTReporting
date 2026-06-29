@@ -36,6 +36,8 @@ services:
   aggr-data-app:
     image: softfx/tt-reporting:latest-aggr-data-app
     pull_policy: always
+    environment:
+      PG_PASSWORD: ${PG_PASSWORD}
     volumes:
       - ./aggr-data-app/configDocker:/app/configDocker:ro
     restart: unless-stopped

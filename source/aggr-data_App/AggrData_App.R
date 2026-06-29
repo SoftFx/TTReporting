@@ -19,7 +19,7 @@ options(scipen=999)
 Sys.setenv("TZ" = "UTC")
 
 RatesServerName <- "ttlive"
-cfg <- yaml.load_file('./configDocker/dbCon_config.yaml')
+cfg <- load_config('configDocker/dbCon_config.yaml')
 OrderTypesMap <- fread("./configDocker/orderTypes.csv")
 CommandNamesMap <- fread("./configDocker/commands.csv")
 
@@ -183,6 +183,8 @@ server <- function(input, output, session) {
     lpexec[rate2usd, c("PCtoUSD") := .(i.Value), on = .(ProfitCurr = FromCurrencyName)][ProfitCurr=="USD", PCtoUSD := 1]
     lpexec[, TradedVolumeUSD := filled_volume * MCtoUSD]
     lpexec[, LpSlippageUSD := lp_execution_slippage * filled_volume * PCtoUSD]
+    # --- Symbols whose currency has no USD rate in CurrencyConversion (would silently become NA) ---
+    missing_conv <- unique(lpexec[is.na(MCtoUSD) | is.na(PCtoUSD), symbol])
     #lpexec[, `lp_exec_slipp_%` := round((execution_price/lp_best_price)*100 - 100, 2)]  #ExecPrice/lpBestPrice
     lpexec[, `lp_exec_slipp_%` := round((lp_execution_slippage/lp_best_price)*100, 2)]  #same value,  lp_execution_slippagee=execution_price-lp_best_price
     lpexec[, SlippageType := c("negative", "exact", "positive")[sign(lp_execution_slippage)+2 ]]  #sing() return -1 0 +1, when +2 we get 1,2,3 (indices for vector)
@@ -196,8 +198,8 @@ server <- function(input, output, session) {
     lpexecErr[, ErrorDescription := gsub("\\d+", "X", desc)]
     
     #SUMMARY by LP
-    summaryLP <- lpexec[, .("VolumeUSD" = round(sum(TradedVolumeUSD),2),
-                            "TotalSlippageUSD" = round(sum(LpSlippageUSD),2), 
+    summaryLP <- lpexec[, .("VolumeUSD" = round(sum(TradedVolumeUSD, na.rm=T),2),
+                            "TotalSlippageUSD" = round(sum(LpSlippageUSD, na.rm=T),2), 
                             "SlippageUSD(+/-)" = paste(round(sum(pmax(LpSlippageUSD, 0), na.rm = TRUE),2), "/", round(sum(pmin(LpSlippageUSD, 0), na.rm = TRUE),2) ),
                             "ApprovedCount" = .N), by = .(LP)]
     failedLP <- lpexecErr[, .("FailedCount" = .N), by = .(LP)]
@@ -207,7 +209,7 @@ server <- function(input, output, session) {
     summaryLP[, `Volume%` := round(VolumeUSD/sum(VolumeUSD, na.rm = T)*100,2)]
     
     # by LP & SYMBOL
-    LPsymbol <- lpexec[, .("VolumeUSD" = round(sum(TradedVolumeUSD),2), 
+    LPsymbol <- lpexec[, .("VolumeUSD" = round(sum(TradedVolumeUSD, na.rm=T),2),
                            "VolumeMargin" = round(sum(filled_volume),2), 
                            "ApprovedCount" = .N), by = .(LP, symbol)]
     LPsymbolsunb <- as.sunburstDF(LPsymbol[, .(LP, symbol, VolumeUSD)], value_column = "VolumeUSD", add_root = TRUE)
@@ -255,8 +257,9 @@ server <- function(input, output, session) {
     INFO <- paste("Aggr: ", selectedAggr, 'from', From, 'to',  To, "(loaded", nrow(lpexec)+nrow(lpexecErr), "rows from db)")
     
     
-    return(list(INFO=INFO, 
-                summaryLP=summaryLP, 
+    return(list(INFO=INFO,
+                missing_conv=missing_conv,
+                summaryLP=summaryLP,
                 LPsymbol=LPsymbol, 
                 LPsymbolsunb=LPsymbolsunb, 
                 lpExecQuality1=lpExecQuality1, 
@@ -330,6 +333,8 @@ server <- function(input, output, session) {
     userexec[rate2usd, c("MCtoUSD") := .(i.Value), on = .(MarginCurr = FromCurrencyName)][MarginCurr=="USD", MCtoUSD := 1]
     userexec[rate2usd, c("PCtoUSD") := .(i.Value), on = .(ProfitCurr = FromCurrencyName)][ProfitCurr=="USD", PCtoUSD := 1]
     userexec[, TradedVolumeUSD := filled_volume * MCtoUSD]
+    # --- Symbols whose currency has no USD rate in CurrencyConversion (would silently become NA) ---
+    missing_conv <- unique(userexec[is.na(MCtoUSD) | is.na(PCtoUSD), symbol])
     userexec[OrderTypesMap, c("OrderType") := .(i.OrderType), on = .(order_type = order_type)]
     userexec[CommandNamesMap, c("Command") := .(i.commandName), on = .(command_name = commandId)]
     
@@ -385,8 +390,9 @@ server <- function(input, output, session) {
     INFO <- paste("Aggr: ", selectedAggr, 'from', From, 'to',  To, "(loaded", nrow(userexec)+nrow(userexecErr), "rows from db)")
     
     
-    return(list(INFO=INFO, 
-                summaryLogin= summaryLogin, 
+    return(list(INFO=INFO,
+                missing_conv=missing_conv,
+                summaryLogin= summaryLogin,
                 Loginsymbol=Loginsymbol, 
                 Loginsymbolsunb=Loginsymbolsunb, 
                 slippageType=slippageType, 
@@ -403,6 +409,12 @@ server <- function(input, output, session) {
     if (nrow(LPresult$summaryLP) > 0) {
       tagList(
         h4(strong(LPresult$INFO)),
+        if (length(LPresult$missing_conv) > 0) {
+          div(style = "color: #cc6600; font-weight: 600; margin-bottom: 6px;",
+              paste0("WARNING! Symbols not converted to USD (no rate in CurrencyConversion): ",
+                     paste(LPresult$missing_conv, collapse = ", "))
+          )
+        },
         h3(strong('Common statistics by LP')),
         #summary dt by LP,
         DT::renderDT({
@@ -668,6 +680,12 @@ server <- function(input, output, session) {
     if (nrow(USERresult$summaryLogin) > 0) {
       tagList(
         h4(strong(USERresult$INFO)),
+        if (length(USERresult$missing_conv) > 0) {
+          div(style = "color: #cc6600; font-weight: 600; margin-bottom: 6px;",
+              paste0("WARNING! Symbols not converted to USD (no rate in CurrencyConversion): ",
+                     paste(USERresult$missing_conv, collapse = ", "))
+          )
+        },
         h3(strong('Common statistics by LOGIN')),
         #summary dt by Login,
         DT::renderDT({
