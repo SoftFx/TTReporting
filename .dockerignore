@@ -41,3 +41,7 @@ secrets/
 configDocker/
 dataDocker/
 
+# --- Local .env (secrets come via compose environment, never baked into image) ---
+.env
+**/.env
+

@@ -9,6 +9,10 @@ services:
   negative-equity:
     image: softfx/tt-reporting:latest-negative-equity
     pull_policy: always
+    environment:
+      MT4_PASSWORD: ${MT4_PASSWORD}
+      MT5_PASSWORD: ${MT5_PASSWORD}
+      PG_PASSWORD: ${PG_PASSWORD}
     volumes:
       - ./negative-equity/configDocker:/app/configDocker:ro
       - ./negative-equity/dataDocker:/app/dataDocker:rw

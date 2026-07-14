@@ -6,6 +6,7 @@ suppressPackageStartupMessages({
   library(yaml)
   library(jsonlite)
 })
+source('../common/helpFunctions.R') #load_config: read YAML + substitute ${VAR} from .env / env
 source('task_Negative_Equity.R')
 cfg_path   <- "./configDocker/config.yaml"  # read-only bind mount
 state_path <- "./dataDocker/state.json"     # read-write bind mount
@@ -28,7 +29,7 @@ t_start <- Sys.time()
 # 1) Read config and print (pretty JSON for readability)
 if (!file.exists(cfg_path)) stop("Config not found at: ", cfg_path)
 #cfg <- yaml::read_yaml(cfg_path)
-cfg <- yaml.load_file(cfg_path)
+cfg <- load_config(cfg_path)
 cat("=== CONFIG ===\n", toJSON(cfg, auto_unbox = TRUE, pretty = TRUE), "\n", sep = "")
 
 res <- execute_task_negative_equity(config = cfg, last_run_path, task_exec_log_path)
