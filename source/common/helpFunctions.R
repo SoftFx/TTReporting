@@ -31,3 +31,21 @@ load_config <- function(yaml_path, env_path = NULL) {
   resolve <- function(x) if (is.character(x)) subst(x) else if (is.list(x)) lapply(x, resolve) else x
   resolve(cfg)
 }
+
+# --- Redact secret fields (by key name) before printing/logging a config ---
+# Recursively walks a parsed config list; any leaf whose KEY name looks secret-like
+# (password / postgre_PASSWORD / productKey / secret / token, case-insensitive) is
+# replaced with a sentinel ("***"). Structure is preserved, only matching leaves
+# change. Pair with load_config():  cat(toJSON(redact_secrets(cfg), ...)).
+redact_secrets <- function(x, sentinel = "***") {
+  if (!is.list(x)) return(x)                  # atomic/vector leaf (no key) -> as-is
+  for (i in seq_along(x)) {
+    nm <- names(x)[i]                         # NA / "" for unnamed elements
+    v  <- x[[i]]
+    x[[i]] <- if (is.list(v)) redact_secrets(v, sentinel)
+              else if (!is.na(nm) && nzchar(nm) &&
+                       grepl("password|secret|token|productkey", nm, ignore.case = TRUE)) sentinel
+              else v
+  }
+  x
+}

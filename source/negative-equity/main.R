@@ -30,7 +30,7 @@ t_start <- Sys.time()
 if (!file.exists(cfg_path)) stop("Config not found at: ", cfg_path)
 #cfg <- yaml::read_yaml(cfg_path)
 cfg <- load_config(cfg_path)
-cat("=== CONFIG ===\n", toJSON(cfg, auto_unbox = TRUE, pretty = TRUE), "\n", sep = "")
+cat("=== CONFIG ===\n", toJSON(redact_secrets(cfg), auto_unbox = TRUE, pretty = TRUE), "\n", sep = "")
 
 res <- execute_task_negative_equity(config = cfg, last_run_path, task_exec_log_path)
 res
