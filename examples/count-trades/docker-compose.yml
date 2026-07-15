@@ -1,6 +1,10 @@
 services:
   count-trades-local:
     image: count-trades
+    environment:
+      MT4_PASSWORD: ${MT4_PASSWORD}
+      MT5_PASSWORD: ${MT5_PASSWORD}
+      PG_PASSWORD: ${PG_PASSWORD}
     volumes:
       - ../../source/count-trades/configDocker:/app/configDocker:ro
       - ../../source/count-trades/dataDocker:/app/dataDocker:rw

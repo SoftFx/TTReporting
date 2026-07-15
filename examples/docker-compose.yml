@@ -34,6 +34,10 @@ services:
   count-trades:
     image: softfx/tt-reporting:latest-count-trades
     pull_policy: always
+    environment:
+      MT4_PASSWORD: ${MT4_PASSWORD}
+      MT5_PASSWORD: ${MT5_PASSWORD}
+      PG_PASSWORD: ${PG_PASSWORD}
     volumes:
       - ./count-trades/configDocker:/app/configDocker:ro
       - ./count-trades/dataDocker:/app/dataDocker:rw
