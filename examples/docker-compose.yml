@@ -27,6 +27,10 @@ services:
   big-trades:
     image: softfx/tt-reporting:latest-big-trades
     pull_policy: always
+    environment:
+      MT4_PASSWORD: ${MT4_PASSWORD}
+      MT5_PASSWORD: ${MT5_PASSWORD}
+      PG_PASSWORD: ${PG_PASSWORD}
     volumes:
       - ./big-trades/configDocker:/app/configDocker:ro
       - ./big-trades/dataDocker:/app/dataDocker:rw
