@@ -55,6 +55,14 @@ services:
     volumes:
       - ./aggr-data/configDocker:/app/configDocker:ro
     restart: unless-stopped
+  tt-api-lab-app:
+    image: softfx/tt-reporting:latest-tt-api-lab-app
+    pull_policy: always
+    ports:
+      - "127.0.0.1:8765:8765"
+    volumes:
+      - ./tt-api-lab/configDocker:/app/configDocker:ro
+      - ./tt-api-lab/downloads:/app/downloads
   user-data-app:
     image: softfx/tt-reporting:latest-user-data-app
     pull_policy: always
