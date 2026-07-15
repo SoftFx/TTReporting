@@ -49,6 +49,8 @@ services:
   diff-prices:
     image: softfx/tt-reporting:latest-diff-prices
     pull_policy: always
+    environment:
+      PG_PASSWORD: ${PG_PASSWORD}
     volumes:
       - ./diff-prices/configDocker:/app/configDocker:ro
       - ./diff-prices/dataDocker:/app/dataDocker:rw

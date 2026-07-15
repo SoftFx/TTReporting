@@ -1,6 +1,8 @@
 services:
   diff-prices-local:
     image: diff-prices
+    environment:
+      PG_PASSWORD: ${PG_PASSWORD}
     volumes:
       - ../../source/diff-prices/configDocker:/app/configDocker:ro
       - ../../source/diff-prices/dataDocker:/app/dataDocker:rw
