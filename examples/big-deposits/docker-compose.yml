@@ -1,6 +1,10 @@
 services:
   big-deposits-local:
     image: big-deposits
+    environment:
+      MT4_PASSWORD: ${MT4_PASSWORD}
+      MT5_PASSWORD: ${MT5_PASSWORD}
+      PG_PASSWORD: ${PG_PASSWORD}
     volumes:
       - ../../source/big-deposits/configDocker:/app/configDocker:ro
       - ../../source/big-deposits/dataDocker:/app/dataDocker:rw

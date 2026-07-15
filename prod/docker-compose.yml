@@ -128,6 +128,10 @@ services:
     profiles: ["jobs"]
     image: softfx/tt-reporting:latest-big-deposits
     pull_policy: always
+    environment:
+      MT4_PASSWORD: ${MT4_PASSWORD}
+      MT5_PASSWORD: ${MT5_PASSWORD}
+      PG_PASSWORD: ${PG_PASSWORD}
     volumes:
       - ./big-deposits/configDocker:/app/configDocker:ro
       - ./big-deposits/dataDocker:/app/dataDocker:rw
