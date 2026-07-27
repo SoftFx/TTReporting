@@ -5,6 +5,7 @@ services:
       MT4_PASSWORD: ${MT4_PASSWORD}
       MT5_PASSWORD: ${MT5_PASSWORD}
       PG_PASSWORD: ${PG_PASSWORD}
+      HSM_PRODUCT_KEY: ${HSM_PRODUCT_KEY}
     volumes:
       - ../../source/big-deposits/configDocker:/app/configDocker:ro
       - ../../source/big-deposits/dataDocker:/app/dataDocker:rw
