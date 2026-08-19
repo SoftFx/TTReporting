@@ -6,6 +6,7 @@ configDocker
 /run/count-trades/customcommand_output.log
 /run/big-trades/customcommand_output.log
 /examples/big-trades/customcommand_output.log
+/examples/tt-statements/customcommand_output.log
 # Secrets / environment files — never commit (.env matches in any directory)
 .env
 .env.*

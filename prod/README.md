@@ -80,6 +80,69 @@ docker compose run --rm diff-prices
 # etc.
 ```
 
+### Required environment variables
+
+Batch jobs read secrets from the environment. On the server, create a `.env` file in `/opt/automation/jobs/` (next to `docker-compose.yml`) holding the real secrets — `docker compose` reads it automatically and injects the variables into each container via the `environment:` block defined in `docker-compose.yml`:
+
+```dotenv
+MT4_PASSWORD=...
+MT5_PASSWORD=...
+PG_PASSWORD=...
+HSM_PRODUCT_KEY=81851f0c-...
+```
+
+> **Two different `.env` files — don't confuse them.** This repo contains **`prod/.env`**, but it holds **only SSH parameters for the deploy `.bat` scripts** (`SERVER`, `CADDY_CONTAINER`, `REMOTE_PROD_DIR`) — **no passwords**. The secrets above live in a **separate** `.env` on the server at `/opt/automation/jobs/.env`, which is not part of this repo.
+
+| Variable | Used by |
+|---|---|
+| `MT4_PASSWORD`, `MT5_PASSWORD` | `big-trades`, `count-trades`, `big-deposits`, `negative-equity` (MariaDB) |
+| `PG_PASSWORD` | all 5 batch jobs (PostgreSQL) |
+| `HSM_PRODUCT_KEY` | all 5 batch jobs — soft-fx Health Status Monitor product key (`productKey` in `config.yaml`) |
+
+Each job's `configDocker/config.yaml` references these as `${VAR}` placeholders. The config file itself is gitignored (real hosts/users), so when it changes you must **copy the updated `config.yaml` to the server manually** — it does not arrive via `git pull`. See the root [`README.md`](../README.md#secrets--environment-variables-batch-r-projects) for the full secrets/env pattern.
+
+> **Apply config/env changes with a recreate, not a restart.** `docker compose restart` does **not** re-read the `environment:` block or `.env` for container variables — the new `HSM_PRODUCT_KEY` only takes effect when the container is recreated (`docker compose up -d <job>` or `deploy_product.bat`).
+
+## Updating an existing project
+
+What you do depends on **what changed**. The decision tree below covers the three common cases. Server files live under `/opt/automation/jobs/` (= `REMOTE_PROD_DIR` in `prod/.env`).
+
+### What changed → which steps
+
+| What changed | Rebuild image? | Copy files to server? | Deploy command |
+|---|---|---|---|
+| **R/Python code** (`source/**`, `sourcePython/**`, Dockerfile) | ✅ yes | only if `config.yaml` also changed | `deploy_product.bat` |
+| **`config.yaml` only** (`configDocker/config.yaml`) | ❌ no | ✅ yes — `config.yaml` is gitignored, must be copied manually | `restart_product.bat` |
+| **`.env` / `docker-compose.yml`** (env vars, e.g. `HSM_PRODUCT_KEY`) | ❌ no | ✅ yes — update server `.env` / `docker-compose.yml` manually | `deploy_product.bat` (needs recreate, see note below) |
+| **Caddy files only** (`Caddyfile`, `users.caddyfile`, `products.yaml`) | ❌ no | ✅ yes | `reload-caddy.bat` |
+
+> `config.yaml`, `.env`, and `docker-compose.yml` are **not pushed to the server by `git pull`** — the first two are gitignored, and compose is applied by you, not git. Whenever any of them changes, copy the updated file to the server manually.
+
+### Deploy helper scripts (`prod/*.bat`)
+
+All of them SSH into the server using `SERVER` / `CADDY_CONTAINER` / `REMOTE_PROD_DIR` from `prod/.env`.
+
+| Script | Invocation | What it does |
+|---|---|---|
+| `deploy_product.bat` | double-click → type service name | `docker compose pull` + recreate container + validate/reload Caddy. **Full deploy** — use when the image or env changed. |
+| `restart_product.bat` | double-click → type service name | `docker compose restart` only — re-reads the mounted `configDocker/`, **no** pull, **no** recreate, **no** Caddy reload. Use when **only** `config.yaml` changed and is already on the server. |
+| `deploy-product.bat` | CLI: `deploy-product.bat <service>` | Same as `deploy_product.bat` but takes the service name as an argument (no double-click prompt). |
+| `reload-caddy.bat` | double-click | Validate + reload Caddy only. Use when **only** Caddy files changed and the container is already running. |
+
+### Full procedure: code changed
+
+1. **Commit & push** to `main`.
+2. **Build the image** on GitHub: trigger `release-dockerhub` (workflow_dispatch, variant = `<project>`) and **wait for the green build** → new `softfx/tt-reporting:latest-<project>` on Docker Hub.
+3. **Copy changed files to the server** if any (gitignored `config.yaml`, or updated `.env` / `docker-compose.yml`).
+4. **Deploy**: double-click `deploy_product.bat` → type the service name. It pulls the new image, recreates the container, and reloads Caddy.
+
+### Full procedure: config only changed
+
+1. **Copy** the updated `configDocker/config.yaml` to the server (`/opt/automation/jobs/<project>/configDocker/config.yaml`).
+2. **Restart**: double-click `restart_product.bat` → type the service name. (No build, no pull — the running image just re-reads its mounted config.)
+
+> ⚠️ **`restart_product.bat` is NOT enough for `.env` / `docker-compose.yml` changes.** `docker compose restart` does not re-read the `environment:` block or `.env` for container variables. A new env var (like `HSM_PRODUCT_KEY`) only takes effect when the container is **recreated** — use `deploy_product.bat` for those.
+
 ## Adding a new product
 
 ### 1. Add product entry to `caddy/products.yaml`

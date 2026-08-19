@@ -179,6 +179,31 @@ services:
       - ./diff-prices/dataDocker:/app/dataDocker:rw
     restart: "no"
 
+  tt-statements-daily:
+    profiles: ["jobs"]
+    image: softfx/tt-reporting:latest-tt-statements
+    pull_policy: always
+    environment:
+      PG_PASSWORD: ${PG_PASSWORD}
+      HSM_PRODUCT_KEY: ${HSM_PRODUCT_KEY}
+    volumes:
+      - ./tt-statements/configDocker:/app/configDocker:ro
+      - ./tt-statements/dataDocker:/app/dataDocker:rw
+    restart: "no"
+
+  tt-statements-monthly:
+    profiles: ["jobs"]
+    image: softfx/tt-reporting:latest-tt-statements
+    pull_policy: always
+    command: ["/app/main_month.R"]
+    environment:
+      PG_PASSWORD: ${PG_PASSWORD}
+      HSM_PRODUCT_KEY: ${HSM_PRODUCT_KEY}
+    volumes:
+      - ./tt-statements/configDocker:/app/configDocker:ro
+      - ./tt-statements/dataDocker:/app/dataDocker:rw
+    restart: "no"
+
 networks:
   tt-internal:
     driver: bridge

@@ -102,6 +102,43 @@ dataDocker/
 
 ---
 
+## Secrets & environment variables (batch R projects)
+
+Secrets (DB passwords, the HSM monitoring product key) are **never hardcoded** in `config.yaml` and **never baked into the image**. They live in the environment and are substituted into the config at runtime.
+
+**How it works:**
+
+- `configDocker/config.yaml` stores `${VAR}` placeholders, e.g. `password: ${MT4_PASSWORD}`, `productKey: ${HSM_PRODUCT_KEY}`.
+- `main.R` loads the config via `load_config(cfg_path)` (from `source/common/helpFunctions.R`), which:
+  1. parses the local `.env` next to the project root → `Sys.setenv()` (local runs only),
+  2. loads the YAML,
+  3. substitutes every `${VAR}` from the environment.
+- Inside Docker the `.env` is absent; secrets arrive via the compose `environment:` block, so `load_config()` reads them straight from the container environment.
+- The full config is printed to the job log as `cat(toJSON(redact_secrets(cfg), ...))` — every key named `password` / `secret` / `token` / `productKey` (case-insensitive) is masked as `***`, so secrets never leak into logs.
+
+**Variables per project:**
+
+| Project | Env vars in compose `environment:` |
+|---|---|
+| `big-trades`, `count-trades`, `big-deposits`, `negative-equity` | `MT4_PASSWORD`, `MT5_PASSWORD`, `PG_PASSWORD`, `HSM_PRODUCT_KEY` |
+| `diff-prices` (PostgreSQL only, no MariaDB) | `PG_PASSWORD`, `HSM_PRODUCT_KEY` |
+
+Where each value lives:
+
+| Location | Holds | In git? |
+|---|---|---|
+| `source/<project>/.env` | real values for **local** runs | no (`.gitignore`) |
+| `.env` next to `docker-compose.yml` (server: `/opt/automation/jobs/.env`) | real values for **Docker** runs | no (server only, not in repo) |
+| `examples/.env.example` | empty template | yes |
+
+> Note: `prod/.env` is a **different** file — it stores only SSH parameters for the deploy `.bat` scripts (`SERVER`, `CADDY_CONTAINER`, `REMOTE_PROD_DIR`), **not** DB passwords or `HSM_PRODUCT_KEY`. Don't look for secrets there.
+
+**`HSM_PRODUCT_KEY`** is the product key for the soft-fx Health Status Monitor (`monitoring.connection.productKey` in `config.yaml`). It is the **same value across all 5 batch jobs**, so a single variable name is used everywhere.
+
+Because `configDocker/config.yaml` is gitignored (real hosts/users), deploying a config change means **copying the updated `config.yaml` to the server manually** — it does not arrive via `git pull`. See [`prod/README.md`](prod/README.md) for the deploy flow.
+
+---
+
 ## Shared code
 
 R projects share helpers from `source/common/`. These are copied into the image at `/common/` during the build and sourced at runtime:
@@ -201,6 +238,21 @@ run_docker_local.bat
 ```bat
 docker compose run --rm --entrypoint sh big-trades-local -lc "R -q -e 'installed.packages()'"
 ```
+
+### Updating an existing project
+
+What you do depends on **what changed** (full procedure and helper scripts in [`prod/README.md`](prod/README.md#updating-an-existing-project)):
+
+| What changed | Build image? | Copy to server? | Then |
+|---|---|---|---|
+| **Code** (`source/**`, Dockerfile) | ✅ yes (push → `release-dockerhub` → wait for green build) | only if `config.yaml` also changed | `deploy_product.bat` (pull + recreate) |
+| **`config.yaml` only** | ❌ no | ✅ yes (gitignored — not in `git pull`) | `restart_product.bat` (re-reads mounted config) |
+| **`.env` / `docker-compose.yml`** | ❌ no | ✅ yes | `deploy_product.bat` (needs **recreate**, not restart) |
+| **Caddy files only** | ❌ no | ✅ yes | `reload-caddy.bat` |
+
+Key points:
+- **`config.yaml`, `.env`, and `docker-compose.yml` are not pushed to the server by `git pull`** — copy them manually.
+- `restart_product.bat` only re-reads mounted `configDocker/`; it does **not** pick up new env vars. For `.env`/compose changes, use `deploy_product.bat` (recreates the container).
 
 ---
 
