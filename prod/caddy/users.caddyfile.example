@@ -23,6 +23,11 @@
     user2 $2a$10$REPLACE_WITH_BCRYPT_HASH
 }
 
+(statements-users) {
+    user1 $2a$10$REPLACE_WITH_BCRYPT_HASH
+    user2 $2a$10$REPLACE_WITH_BCRYPT_HASH
+}
+
 (userobserver-users) {
     user1 $2a$10$REPLACE_WITH_BCRYPT_HASH
     user2 $2a$10$REPLACE_WITH_BCRYPT_HASH

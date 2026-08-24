@@ -4,6 +4,7 @@ source('../common/PostgresHost.R')
 source('Functions.R')
 source('Stats.R')
 source('Render.R')
+source('SeaweedClient.R')
 source('../common/RMonitoringClient.R')
 options(warn = -1)
 Sys.setenv("TZ" = "UTC")
@@ -14,9 +15,26 @@ Sys.setenv("TZ" = "UTC")
 # handle both shapes: for Gross rows every field is already populated so the fallback is a no-op.
 `%||%` <- function(a, b) if (is.null(a) || is.na(a)) b else a
 
+# Writes one statement's HTML to the configured storage backend. Same contract on both
+# branches: returns TRUE on success, THROWS on failure -- callers rely on their own
+# tryCatch(..., error = function(e) FALSE) to turn that into FALSE, unchanged either way.
+write_statement_html <- function(html, domain, period_folder, login, storage_root, config) {
+  backend <- config$storage$backend %||% "disk"
+  if (backend == "seaweed") {
+    write_statement_to_seaweed(html, domain = domain, period_folder = period_folder, login = login,
+                                filer_url = config$storage$seaweed_filer_url)
+  } else {
+    out_dir <- file.path(storage_root, domain, period_folder)
+    dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+    writeLines(html, file.path(out_dir, paste0(login, "_mail.html")), useBytes = TRUE)
+    TRUE
+  }
+}
+
 # Build & write the statement HTML for a single account. Returns TRUE/FALSE (written or skipped/error).
 build_and_write_account_statement <- function(login, accRow, snapRow, openSnapRow, posSnapDT, ordSnapDT, tradesDT,
-                                               day_label, out_dir, period_type = "Daily", summary_layout = "cards"){
+                                               day_label, storage_root, domain, period_folder, config,
+                                               period_type = "Daily", summary_layout = "cards"){
   day_trades <- tradesDT[Login == login]
   day_trades5 <- day_trades[TrType == 5] # Balance: deposit/withdrawal/dividend/fee
   trade_type <- if (accRow$AccType == "Gross") 4L else 3L
@@ -165,8 +183,8 @@ build_and_write_account_statement <- function(login, accRow, snapRow, openSnapRo
                             summary = summary, stats = stats, period_type = period_type,
                             summary_layout = summary_layout)
 
-  writeLines(html, file.path(out_dir, paste0(login, "_mail.html")), useBytes = TRUE)
-  TRUE
+  write_statement_html(html, domain = domain, period_folder = period_folder, login = login,
+                        storage_root = storage_root, config = config)
 }
 
 execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storage_root, period_folder, task_exec_log_path,
@@ -220,9 +238,6 @@ execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storag
           ordSnaps <- getDayOrderSnapshotsTT(Credstt, snapFrom, snapTo)
           trades   <- getDayTradeReportsTT(Credstt, dayFrom, dayTo)
 
-          out_dir <- file.path(storage_root, db, period_folder)
-          dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
-
           # NB: bigint columns come back from RPostgres as integer64 (bit64 package).
           # base::intersect() silently returns empty when comparing integer64 to a plain
           # numeric vector -- bit64 overrides `%in%` (and `==`) correctly, so use that instead.
@@ -241,7 +256,8 @@ execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storag
                 snapRow = snaps[Login == login][1],
                 openSnapRow = openSnaps[Login == login][1],
                 posSnapDT = posSnaps, ordSnapDT = ordSnaps, tradesDT = trades,
-                day_label = day_label, out_dir = out_dir, period_type = period_type,
+                day_label = day_label, storage_root = storage_root, domain = db,
+                period_folder = period_folder, config = config, period_type = period_type,
                 summary_layout = summary_layout)
             }, error = function(e) { print(e); acc_errors <<- c(acc_errors, paste(login, substr(e$message, 1, 60))); FALSE })
             if (isTRUE(res)) written <- written + 1L

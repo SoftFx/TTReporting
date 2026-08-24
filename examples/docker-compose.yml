@@ -64,6 +64,27 @@ services:
       - ./diff-prices/configDocker:/app/configDocker:ro
       - ./diff-prices/dataDocker:/app/dataDocker:rw
     restart: "no"
+  tt-statements-daily:
+    image: softfx/tt-reporting:latest-tt-statements
+    pull_policy: always
+    environment:
+      PG_PASSWORD: ${PG_PASSWORD}
+      HSM_PRODUCT_KEY: ${HSM_PRODUCT_KEY}
+    volumes:
+      - ./tt-statements/configDocker:/app/configDocker:ro
+      - ./tt-statements/dataDocker:/app/dataDocker:rw
+    restart: "no"
+  tt-statements-monthly:
+    image: softfx/tt-reporting:latest-tt-statements
+    pull_policy: always
+    command: ["/app/main_month.R"]
+    environment:
+      PG_PASSWORD: ${PG_PASSWORD}
+      HSM_PRODUCT_KEY: ${HSM_PRODUCT_KEY}
+    volumes:
+      - ./tt-statements/configDocker:/app/configDocker:ro
+      - ./tt-statements/dataDocker:/app/dataDocker:rw
+    restart: "no"
   aggr-data-app:
     image: softfx/tt-reporting:latest-aggr-data-app
     pull_policy: always

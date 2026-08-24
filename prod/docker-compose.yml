@@ -100,6 +100,31 @@ services:
   #     - tt-internal
 
   # ────────────────────────────────────────────
+  # Storage backend for tt-statements (always-on)
+  # ────────────────────────────────────────────
+  seaweedfs:
+    image: chrislusf/seaweedfs
+    pull_policy: always
+    command: ["server", "-dir=/data", "-filer", "-ip=0.0.0.0"]
+    volumes:
+      - ./seaweedfs/data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - tt-internal
+      - default
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ────────────────────────────────────────────
   # Batch jobs (run via: docker compose run --rm <name>)
   # ────────────────────────────────────────────
   swap-updater:
@@ -186,9 +211,13 @@ services:
     environment:
       PG_PASSWORD: ${PG_PASSWORD}
       HSM_PRODUCT_KEY: ${HSM_PRODUCT_KEY}
+      SEAWEED_FILER_URL: http://seaweedfs:8888
     volumes:
       - ./tt-statements/configDocker:/app/configDocker:ro
       - ./tt-statements/dataDocker:/app/dataDocker:rw
+    depends_on:
+      seaweedfs:
+        condition: service_healthy
     restart: "no"
 
   tt-statements-monthly:
@@ -199,9 +228,13 @@ services:
     environment:
       PG_PASSWORD: ${PG_PASSWORD}
       HSM_PRODUCT_KEY: ${HSM_PRODUCT_KEY}
+      SEAWEED_FILER_URL: http://seaweedfs:8888
     volumes:
       - ./tt-statements/configDocker:/app/configDocker:ro
       - ./tt-statements/dataDocker:/app/dataDocker:rw
+    depends_on:
+      seaweedfs:
+        condition: service_healthy
     restart: "no"
 
 networks:

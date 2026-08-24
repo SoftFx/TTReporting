@@ -85,6 +85,27 @@ import users.caddyfile
         reverse_proxy user-data-app:3838
     }
 
+    # ── Statements (SeaweedFS) — read-only, GET/HEAD only ──
+    handle /statements/* {
+        @notget {
+            not method GET HEAD
+        }
+        respond @notget 405
+
+        basic_auth {
+            import admin_creads
+            import statements-users
+        }
+        reverse_proxy seaweedfs:8888
+    }
+
+    # ── SeaweedFS filer's own static assets (CSS/logo for its folder-browser UI) ──
+    # Not sensitive (just Bootstrap CSS + a logo image), so no auth needed -- this only fixes
+    # the cosmetic styling of the folder listing, the actual statement files never depend on it.
+    handle /seaweedfsstatic/* {
+        reverse_proxy seaweedfs:8888
+    }
+
     # ── Catch-all: deny unmatched paths ──────────
     handle {
         respond 403

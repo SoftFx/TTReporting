@@ -129,6 +129,8 @@ All of them SSH into the server using `SERVER` / `CADDY_CONTAINER` / `REMOTE_PRO
 | `deploy-product.bat` | CLI: `deploy-product.bat <service>` | Same as `deploy_product.bat` but takes the service name as an argument (no double-click prompt). |
 | `reload-caddy.bat` | double-click | Validate + reload Caddy only. Use when **only** Caddy files changed and the container is already running. |
 
+> ⚠️ **For one-shot batch jobs (`restart: "no"`), `docker compose up -d <service>` doesn't just recreate the container — it actually RUNS the job to completion** (executes its default `CMD`), same as a real scheduled/cron trigger would. So deploying a batch job (e.g. `deploy_product.bat` → `tt-statements-monthly`) causes one real production execution as a side effect of the deploy itself, writing real output — not a no-op recreate. Confirmed 2026-08-19: deploying `tt-statements-monthly` generated real `.monthly` statement files at deploy time, before the Cronicle schedule ever fired. Don't mistake this output for a Cronicle-triggered run when checking timestamps/logs.
+
 ### Full procedure: code changed
 
 1. **Commit & push** to `main`.
@@ -262,6 +264,38 @@ Use `prod\reload-caddy.bat` when only Caddy files changed and the product contai
 | `caddy/users.caddyfile` | Add `<slug>-users` group + update `all-users` |
 | `caddy/Caddyfile` | Add `handle` block with auth + proxy |
 | `docker-compose.yml` | Add service container |
+
+## Storage backend: SeaweedFS (tt-statements)
+
+`tt-statements` writes its generated HTML statements to SeaweedFS instead of local disk.
+SeaweedFS is treated as **infrastructure, like Caddy** — not a product: it's the official
+`chrislusf/seaweedfs` image, no custom code, no `products.yaml` card.
+
+Changes made to the shared prod files for this:
+
+- **`docker-compose.yml`** — new `seaweedfs` service (`server -dir=/data -filer -ip=0.0.0.0`,
+  data volume `./seaweedfs/data:/data`, healthcheck on port 8888). It sits on **both**
+  `tt-internal` and `default` networks, because the always-on services live on `tt-internal`
+  while the batch jobs (no explicit `networks:` key) live on the implicit `default` network —
+  it needs to be reachable from both. `tt-statements-daily`/`tt-statements-monthly` gained
+  `SEAWEED_FILER_URL: http://seaweedfs:8888` (Docker-internal DNS name — **not a secret**,
+  hardcoded directly here, not routed through `.env`) and `depends_on: seaweedfs: condition:
+  service_healthy`.
+- **`caddy/Caddyfile`** — new `handle /statements/*` route: `basic_auth` (`admin_creads` +
+  `statements-users`), `reverse_proxy seaweedfs:8888`, restricted to **GET/HEAD only** (a
+  `@notget` matcher responds `405` to anything else) — writes must stay unreachable from
+  outside; only the batch job, over the internal Docker network, can PUT. A second,
+  **unauthenticated** route `handle /seaweedfsstatic/*` proxies the filer's own CSS/logo
+  assets (its folder-browser UI loads them from an absolute path outside `/statements/*`) —
+  cosmetic only, doesn't affect the statement files themselves.
+- **`caddy/users.caddyfile.example`** — new `(statements-users)` group, same placeholder
+  pattern as the other per-product groups. On the **real** `caddy/users.caddyfile` (gitignored,
+  server-only), keep this group **empty** if all current users are already admins — Caddy
+  rejects `basic_auth` with a username duplicated across imported snippets
+  (`username is not unique`), so don't also list an `admin_creads` user here.
+
+Full deployment story (server steps, verification, bugs hit) is in
+`source/tt-statements/seaweed-test-docker/NOTES.md`.
 
 ## Adding a new user
 
