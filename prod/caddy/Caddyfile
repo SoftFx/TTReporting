@@ -102,7 +102,7 @@ import users.caddyfile
     # Data actually lives under /buckets/statements/... in the filer now (moved there so the
     # S3 gateway's fixed /buckets/<name> convention recognizes "statements" as a bucket -- this
     # version of SeaweedFS has no config option to relocate that root). External URL is
-    # unchanged (still /statements/...); these two uri lines just remap it internally.
+    # unchanged (still /statements/...); this uri line just remaps it internally.
     handle /statements/* {
         @notget {
             not method GET HEAD
@@ -113,8 +113,7 @@ import users.caddyfile
             import admin_creads
             import statements-users
         }
-        uri strip_prefix /statements
-        uri add_prefix /buckets/statements
+        uri replace /statements /buckets/statements 1
         reverse_proxy seaweedfs:8888
     }
 
