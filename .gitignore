@@ -16,3 +16,5 @@ configDocker
 /prod/caddy/server.key
 /prod/caddy/root-ca.crt
 /prod/caddy/root-ca.key
+/prod/seaweedfs/s3.json
+/source/tt-statements/seaweed-s3-gateway/seaweedfs/s3.json

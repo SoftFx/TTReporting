@@ -1,0 +1,17 @@
+{
+  "identities": [
+    {
+      "name": "statements-download",
+      "credentials": [
+        {
+          "accessKey": "REPLACE_WITH_ACCESS_KEY",
+          "secretKey": "REPLACE_WITH_SECRET_KEY"
+        }
+      ],
+      "actions": [
+        "Read:statements",
+        "List:statements"
+      ]
+    }
+  ]
+}

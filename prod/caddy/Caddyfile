@@ -9,6 +9,19 @@ import users.caddyfile
     redir https://{host}{uri} permanent
 }
 
+# ── Statements (SeaweedFS S3 gateway) — key-based download access ──
+# Own port, not a path under :443 -- S3 SigV4 signs the full request path,
+# so nesting this under e.g. /s3/* on :443 would make Caddy's uri strip_prefix
+# desync the path the client signed from the path SeaweedFS verifies, and
+# every request would fail with SignatureDoesNotMatch regardless of correct
+# keys (confirmed by testing). No basic_auth here on purpose: auth is the S3
+# access/secret key itself, verified by SeaweedFS's own S3 gateway
+# (seaweedfs/s3.json). Caddy just terminates TLS and proxies as-is.
+:8333 {
+    tls /srv/certs/server.crt /srv/certs/server.key
+    reverse_proxy seaweedfs:8333
+}
+
 :443 {
     tls /srv/certs/server.crt /srv/certs/server.key
 
@@ -86,6 +99,10 @@ import users.caddyfile
     }
 
     # ── Statements (SeaweedFS) — read-only, GET/HEAD only ──
+    # Data actually lives under /buckets/statements/... in the filer now (moved there so the
+    # S3 gateway's fixed /buckets/<name> convention recognizes "statements" as a bucket -- this
+    # version of SeaweedFS has no config option to relocate that root). External URL is
+    # unchanged (still /statements/...); these two uri lines just remap it internally.
     handle /statements/* {
         @notget {
             not method GET HEAD
@@ -96,6 +113,8 @@ import users.caddyfile
             import admin_creads
             import statements-users
         }
+        uri strip_prefix /statements
+        uri add_prefix /buckets/statements
         reverse_proxy seaweedfs:8888
     }
 

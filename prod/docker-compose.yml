@@ -9,6 +9,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "8333:8333"
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./caddy/users.caddyfile:/etc/caddy/users.caddyfile:ro
@@ -105,9 +106,10 @@ services:
   seaweedfs:
     image: chrislusf/seaweedfs
     pull_policy: always
-    command: ["server", "-dir=/data", "-filer", "-ip=0.0.0.0"]
+    command: ["server", "-dir=/data", "-filer", "-ip=0.0.0.0", "-s3", "-s3.config=/etc/seaweedfs/s3.json"]
     volumes:
       - ./seaweedfs/data:/data
+      - ./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888"]
