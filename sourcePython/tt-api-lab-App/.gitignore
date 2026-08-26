@@ -1,0 +1,9 @@
+.env
+config.yaml
+configDocker/config.yaml
+__pycache__/
+*.py[cod]
+downloads/
+fix-logs/
+gui-server*.log
+node_modules/
