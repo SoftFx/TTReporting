@@ -109,6 +109,25 @@ build_and_write_account_statement <- function(login, accRow, snapRow, openSnapRo
 
   dividend_and_fee <- sum(day_trades5[TrReason == 11, BalanceMovement], na.rm = TRUE)
   overnight <- sum(day_trades5[TrReason == 13, BalanceMovement], na.rm = TRUE)
+  # "Investment account" -- Groups.TradingMode=1 AND Groups.StopOutMode=0 AND Accounts.Leverage=1
+  # (the actual business definition, found 2026-08-26 -- broader than Groups.PerformOvernight,
+  # which only flags the subset currently enrolled in Overnight, a separate/test feature for
+  # investment accounts, see is_investment_account's narrower cousin below). isTRUE() around each
+  # comparison makes this NA-safe: a GroupFk that doesn't match any Groups row leaves
+  # TradingMode/StopOutMode NA, which isTRUE() turns into FALSE rather than propagating NA
+  # through &&. Drives Leverage (hidden in the header) and the Swap column (hidden in Trade
+  # Symbol Summary, both in Render.R) -- their per-trade Swap is ~always 0 across the whole
+  # class regardless of Overnight enrolment, confirmed on real data 2026-08-26.
+  is_investment_account <- isTRUE(accRow$TradingMode == 1) && isTRUE(accRow$StopOutMode == 0) && isTRUE(accRow$Leverage == 1)
+  # Overnight itself is a separate, still-test feature scoped to investment accounts
+  # (Groups.PerformOvernight) -- NOT the same thing as "is this an investment account" (learned
+  # 2026-08-26, after briefly conflating the two). Drives the merged Swap/Overnight Summary line
+  # and the separate Overnight table's visibility (Render.R) -- gated on is_investment_account
+  # (the feature only ever applies there) with a data-loss safety net on top: the flag being
+  # FALSE hides Overnight UNLESS this period actually has real Overnight rows (e.g. the flag got
+  # toggled off on an account that still carries real Overnight history) -- never silently drop
+  # real data from the report just because the flag says "off" today.
+  show_overnight <- is_investment_account && (isTRUE(accRow$PerformOvernight %||% FALSE) || nrow(cash_rows[RowType == "overnight"]) > 0)
   starting_balance <- snapRow$Balance - sum(trade_results$Result) - deposit_withdrawal - dividend_and_fee - overnight
   stats <- compute_trade_stats(trade_results[IsClose == TRUE], starting_balance = starting_balance)
 
@@ -142,6 +161,26 @@ build_and_write_account_statement <- function(login, accRow, snapRow, openSnapRo
     negative_swap = sum(raw_trades$Swap[raw_trades$Swap < 0], na.rm = TRUE),
     dividends = dividend_and_fee,
     overnight = overnight,
+    # Merged line picks Overnight only when show_overnight says so (flag on, or real data this
+    # period despite the flag) -- everyone else (non-investment accounts, and investment accounts
+    # not currently enrolled with no Overnight history) gets the plain Swap line as always.
+    # total_swap/overnight are kept as-is: still needed for starting_balance, the Close Swap
+    # detail card, and the Balance->Total P/L identity in VALIDATION.md.
+    is_investment_account = is_investment_account,
+    # Precomputed once here (not left as `!isTRUE(summary$is_investment_account)` re-derived
+    # independently at each of Render.R's two Leverage call sites, "cards" and "single_column") --
+    # code review 2026-08-26 flagged the two-copies version as a drift risk (same class of bug as
+    # this project's earlier Gross/Net OpenPrice bug: a future change to the condition only
+    # touching one of the two spots). Both now just read this one value.
+    show_leverage = !is_investment_account,
+    show_overnight = show_overnight,
+    # Whether the merged Swap/Overnight line appears in Summary at all -- TRUE unconditionally
+    # for non-investment accounts (always "Swap"); for investment accounts, only when
+    # show_overnight is TRUE (Render.R drops the row entirely otherwise, per the "investment
+    # accounts never show Swap" rule -- no Swap fallback for them, unlike everyone else).
+    show_swap_or_overnight_row = !is_investment_account || show_overnight,
+    swap_or_overnight_label = if (show_overnight) "Overnight" else "Swap",
+    swap_or_overnight = if (show_overnight) overnight else sum(raw_trades$Swap, na.rm = TRUE),
     # Pure trading P/L -- SUM(Profit) only (no Commission/Swap/Taxes), over CLOSED trades only
     # (Net's opening/adding fills always carry Profit=0, so scoping to closed doesn't change the
     # number in practice, but keeps this conceptually "realized trading result", matching

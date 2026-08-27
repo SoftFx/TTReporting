@@ -3,7 +3,14 @@ library(data.table)
 library(lubridate)
 source('../common/PostgresHost.R') #ConnectToDB/GetDataFromDB/setPathToSchema helpers
 
-# Accounts: Id/Name/Country/Currency/Group/Leverage + AccType (Gross=Type0, Net=Type1)
+# Accounts: Id/Name/Country/Currency/Group/Leverage + AccType (Gross=Type0, Net=Type1) +
+# TradingMode/StopOutMode (from Groups, via GroupFk -- not the Group name, which can be
+# reused/renamed): together with Accounts.Leverage=1, TradingMode=1 AND StopOutMode=0 identifies
+# an "investment account" -- the actual business definition (found 2026-08-26), broader than the
+# initially-assumed Groups.PerformOvernight (which only flags the subset of investment accounts
+# whose swap-equivalent happens to post as separate Overnight balance rows instead of a
+# per-trade Swap that's ~always 0 for them anyway -- kept here too since it's still the right
+# signal for THAT specific mechanism, just not for "is this an investment account").
 getAccountsTT <- function(Credstt){
   setPathToSchema(Credstt$postgre_SCHEMA)
   querry <- paste('select a."Id" as "Login",
@@ -15,8 +22,12 @@ getAccountsTT <- function(Credstt){
       case
         when a."Type" = 0 then \'Gross\'
         when a."Type" = 1 then \'Net\'
-      end as "AccType"
+      end as "AccType",
+      g."PerformOvernight",
+      g."TradingMode",
+      g."StopOutMode"
     from "Accounts" as a
+    left join "Groups" as g on a."GroupFk" = g."Id"
     where not a."Archived" and not a."Deleted"')
   res <- GetDataFromDB(DBCON, querry)
   setDefaultSchema()

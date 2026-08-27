@@ -20,6 +20,14 @@ fmt_money_or_blank <- function(x){
   ifelse(is.na(x), "", fmt_money(x))
 }
 
+# "20 000.00 / -5 000.00" -- deposits and withdrawals shown side by side instead of netted into
+# one figure, for the Summary card's "Deposit/Withdrawal" line only (the separate
+# Deposit/Withdrawal table under Trades keeps its own net Total: row, untouched). withdrawals is
+# already <= 0 (it's the sum of negative BalanceMovement), so its own sign carries through.
+fmt_deposit_withdrawal <- function(deposits, withdrawals){
+  sprintf("%s / %s", fmt_money(deposits), fmt_money(withdrawals))
+}
+
 fmt_pct <- function(x){
   x <- ifelse(is.na(x), 0, x)
   sprintf("%.2f%%", x)
@@ -144,7 +152,12 @@ cash_table_block <- function(title, rows, trade_cols, show_taxes = TRUE, show_co
 # Added 2026-08-17. Groups exactly trade_rows (what's actually shown in Trades/Closed Trades
 # above), same source the "Closed Total P/L:" footer sums over -- so this section's own Total
 # row reconciles with that footer (Commission+Swap+Profit, no Taxes -- always 0 for real trades).
-symbol_summary_block <- function(trade_rows, trade_cols){
+# show_swap = FALSE for Overnight-provisioned accounts -- per-trade Swap is always 0 for them
+# (their swap-equivalent is the separate Overnight balance rows, not this column), so the column
+# is dropped rather than shown as an always-zero line, same treatment as Leverage in the header.
+# Swap still enters the Total P/L math either way -- only the column's DISPLAY is conditional, so
+# the number stays correct even for the one grandfathered account with both (see [[project_tt_statements]]).
+symbol_summary_block <- function(trade_rows, trade_cols, show_swap = TRUE){
   grouped <- if (is.null(trade_rows) || nrow(trade_rows) == 0){
     data.table(Item = character(0), Commission = numeric(0), Swap = numeric(0), Profit = numeric(0))
   } else {
@@ -157,23 +170,27 @@ symbol_summary_block <- function(trade_rows, trade_cols){
     setorder(g, -TotalPL)
     g
   }
-  header <- '<tr align="center" class="colhead big-label"><td>Symbol</td><td>Commission</td><td>Swap</td><td>Profit</td><td>Total P/L</td></tr>\n'
+  ncols <- if (show_swap) 5L else 4L
+  swap_th <- if (show_swap) '<td>Swap</td>' else ''
+  header <- sprintf('<tr align="center" class="colhead big-label"><td>Symbol</td><td>Commission</td>%s<td>Profit</td><td>Total P/L</td></tr>\n', swap_th)
   body_rows <- if (nrow(grouped) == 0){
     # "No data", not "No transactions" -- this table is aggregated Commission/Swap/Profit per
     # symbol, not a list of individual transactions, so the empty-state wording should match.
-    '<tr class="empty-row" align="center"><td colspan="5">No data</td></tr>'
+    sprintf('<tr class="empty-row" align="center"><td colspan="%d">No data</td></tr>', ncols)
   } else {
     paste(vapply(seq_len(nrow(grouped)), function(i){
       r <- grouped[i]
       row_class <- if (i %% 2L == 1L) "rowA" else "rowB"
-      sprintf('<tr align="right" class="%s"><td align="left"><b>%s</b></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>',
-              row_class, html_escape(r$Item), fmt_money(r$Commission), fmt_money(r$Swap), fmt_money(r$Profit),
+      swap_td <- if (show_swap) sprintf('<td>%s</td>', fmt_money(r$Swap)) else ''
+      sprintf('<tr align="right" class="%s"><td align="left"><b>%s</b></td><td>%s</td>%s<td>%s</td><td>%s</td></tr>',
+              row_class, html_escape(r$Item), fmt_money(r$Commission), swap_td, fmt_money(r$Profit),
               fmt_money(r$Commission + r$Swap + r$Profit))
     }, character(1)), collapse = "\n")
   }
+  swap_total_td <- if (show_swap) sprintf('<td><b>%s</b></td>', fmt_money(sum(grouped$Swap))) else ''
   total_row <- sprintf(
-    '<tr align="right" class="total-row"><td align="left"><b>Total:</b></td><td><b>%s</b></td><td><b>%s</b></td><td><b>%s</b></td><td><b>%s</b></td></tr>\n',
-    fmt_money(sum(grouped$Commission)), fmt_money(sum(grouped$Swap)), fmt_money(sum(grouped$Profit)),
+    '<tr align="right" class="total-row"><td align="left"><b>Total:</b></td><td><b>%s</b></td>%s<td><b>%s</b></td><td><b>%s</b></td></tr>\n',
+    fmt_money(sum(grouped$Commission)), swap_total_td, fmt_money(sum(grouped$Profit)),
     fmt_money(sum(grouped$Commission) + sum(grouped$Swap) + sum(grouped$Profit)))
   # Title bar inside the same card table as its first row (see cash_table_block for why).
   paste0(
@@ -183,7 +200,7 @@ symbol_summary_block <- function(trade_rows, trade_cols){
     # cards looked misaligned/wider against what were then unwrapped rows; every section uses
     # this same wrapping now so it just needs to stay consistent across all of them.
     '<tr><td colspan="', trade_cols, '" style="padding:0"><table cellspacing="0" cellpadding="4" border="0" width="100%" class="card vgrid">',
-    '<tr align="left" class="stripe"><td colspan="5"><b>Trade Symbol Summary:</b></td></tr>\n',
+    '<tr align="left" class="stripe"><td colspan="', ncols, '"><b>Trade Symbol Summary:</b></td></tr>\n',
     header, body_rows, '\n', total_row,
     '</table></td></tr>\n',
     # Same spacer as every other section (2026-08-17 -- was a bigger one-off 20px gap, unified
@@ -264,9 +281,13 @@ page_head <- function(title){
     '<style type="text/css">\n',
     'td,th { font: 8pt "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }\n',
     '.num { text-align:right; }\n',
-    # Section/card title bar -- solid orange, small rounded top corners (matching the reference
-    # PDF's subtle radius, not a pill shape -- corrected from 10px to 4px 2026-08-17).
-    '.stripe { background:#FF6A00; color:#ffffff; border-radius:4px 4px 0 0; font-size:16px; }\n',
+    # Section/card title bar -- gray, small rounded top corners (matching the reference
+    # PDF's subtle radius, not a pill shape -- corrected from 10px to 4px 2026-08-17). #999999
+    # is deliberately darker than .colhead's #D0D0D0 below (table column headers) so the two
+    # grays stay visually distinct instead of blending together.
+    # color:#222222 (not white) -- white-on-#999999 has poor contrast; #222222 matches .colhead's
+    # own text color below, which uses the same light-gray-background/dark-text pairing.
+    '.stripe { background:#999999; color:#222222; border-radius:4px 4px 0 0; font-size:16px; }\n',
     # .stripe is applied to the <tr>, but td,th{font:8pt...} above is a DIRECT match on every
     # <td> (including the ones inside a .stripe row) -- a direct match always wins over
     # inheritance from the parent <tr>, so the 16px on .stripe alone never actually reached the
@@ -303,18 +324,21 @@ page_tail <- '</div></body></html>'
 
 # Fields stacked one per line (Statement Date / Generated At / Account Name / ... style),
 # matching the reference PDF layout instead of the old single-row-of-columns layout.
-account_header_block <- function(login, name, currency, leverage, acc_type, day_label, trade_cols, period_type){
+# show_leverage = FALSE for investment accounts -- their Leverage is always 1 by definition (part
+# of how they're identified, see is_investment_account in task_TT_Statements.R) but isn't
+# meaningful for this account type and shouldn't be shown as "1:1".
+account_header_block <- function(login, name, currency, leverage, acc_type, day_label, trade_cols, period_type, show_leverage = TRUE){
   field_row <- function(label, value){
     sprintf('<tr align="left"><td colspan="%d"><b>%s:</b> %s</td></tr>\n', trade_cols, label, value)
   }
   paste0(
-    '<div style="font: 20pt \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif; color:#FF6A00"><b>Account Statement</b></div><br>\n',
+    '<div style="font: 20pt \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif; color:#999999"><b>Account Statement</b></div><br>\n',
     '<table cellspacing="1" cellpadding="3" border="0" style="width:60%; max-width:60%; margin:0 auto;">\n',
     field_row(paste0(period_type, " Statement for"), day_label),
     field_row("Account", login),
     field_row("Name", html_escape(name)),
     field_row("Currency", currency),
-    field_row("Leverage", paste0("1:", leverage)),
+    if (show_leverage) field_row("Leverage", paste0("1:", leverage)) else '',
     field_row("Account Type", acc_type))
 }
 
@@ -480,13 +504,17 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
       c("Equity", fmt_money_or_blank(summary$opening_equity)),
       c("Balance", fmt_money_or_blank(summary$opening_balance))),
       bold_last = FALSE, width = "25%"),
-    detail_card("Cash Movement", list(
-      c("Deposit/Withdrawal", fmt_money(summary$deposit_withdrawal)),
+    detail_card("Cash Movement", Filter(Negate(is.null), list(
+      c("Deposit/Withdrawal", fmt_deposit_withdrawal(summary$deposits, summary$withdrawals)),
       c("Commission", fmt_money(summary$total_commission)),
-      c("Swap", fmt_money(summary$total_swap)),
+      # Investment accounts never show a "Swap" line here (their per-trade Swap isn't
+      # meaningful) -- only "Overnight", and only when show_overnight says so; when an
+      # investment account has neither the flag nor real data this period, the row is
+      # dropped entirely rather than falling back to Swap. Non-investment accounts are
+      # unaffected -- show_swap_or_overnight_row is always TRUE for them.
+      if (summary$show_swap_or_overnight_row) c(summary$swap_or_overnight_label, fmt_money(summary$swap_or_overnight)) else NULL,
       c("Dividends", fmt_money(summary$dividends)),
-      c("Overnight", fmt_money(summary$overnight)),
-      c("Trading P/L", fmt_money(summary$trading_pl))),
+      c("Trading P/L", fmt_money(summary$trading_pl)))),
       bold_last = FALSE, width = "25%"),
     detail_card("Close State", list(
       c("Equity", fmt_money(summary$equity)),
@@ -509,21 +537,22 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
   # is narrow/unstretched so label and value stay close together instead of spanning full width.
   # 3rd element ("gap") marks a row that gets extra breathing room below it -- between the two
   # opening figures and between Close Balance/Unrealised P/L, by request.
-  single_column_rows <- list(
+  single_column_rows <- Filter(Negate(is.null), list(
     c("Open Equity", fmt_money_or_blank(summary$opening_equity), "gap"),
     c("Open Balance", fmt_money_or_blank(summary$opening_balance)),
     c("Realised P/L", fmt_money(summary$balance_total_pl)),
     c("Commission", fmt_money(summary$total_commission)),
-    c("Swap", fmt_money(summary$total_swap)),
+    # See the "Cash Movement" card's equivalent line for why this can be dropped entirely
+    # (investment account, Overnight not currently applicable) instead of falling back to Swap.
+    if (summary$show_swap_or_overnight_row) c(summary$swap_or_overnight_label, fmt_money(summary$swap_or_overnight)) else NULL,
     c("Dividends", fmt_money(summary$dividends)),
-    c("Overnight", fmt_money(summary$overnight)),
-    c("Deposit/Withdrawal", fmt_money(summary$deposit_withdrawal)),
+    c("Deposit/Withdrawal", fmt_deposit_withdrawal(summary$deposits, summary$withdrawals)),
     c("Close Balance", fmt_money(summary$balance), "gap"),
     c("Unrealised P/L (Floating)", fmt_money(summary$floating_pl)),
     c("Used Margin", fmt_money(summary$margin)),
     c("Free Margin", fmt_money(summary$free_margin)),
     c("Close Equity", fmt_money(summary$equity))
-  )
+  ))
   single_column_html <- paste(vapply(single_column_rows, function(r){
     row_html <- sprintf('<tr><td class="big-label"><b>%s</b></td><td class="num">%s</td></tr>', r[1], r[2])
     if (length(r) > 2 && r[3] == "gap") {
@@ -542,7 +571,9 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
       sprintf('<tr align="left"><td style="font-size:14pt"><b>Account:</b> %s</td></tr>\n', login),
       sprintf('<tr align="left"><td style="font-size:14pt"><b>Name:</b> %s</td></tr>\n', html_escape(name)),
       sprintf('<tr align="left"><td style="font-size:14pt"><b>Currency:</b> %s</td></tr>\n', currency),
-      sprintf('<tr align="left"><td style="font-size:14pt"><b>Leverage:</b> 1:%s</td></tr>\n', leverage),
+      # summary$show_leverage is the single source of truth (task_TT_Statements.R) -- account_header_block's
+      # show_leverage param (the "cards" layout's equivalent, below) reads the same value.
+      if (isTRUE(summary$show_leverage)) sprintf('<tr align="left"><td style="font-size:14pt"><b>Leverage:</b> 1:%s</td></tr>\n', leverage) else '',
       sprintf('<tr align="left"><td style="font-size:14pt"><b>Account Type:</b> %s</td></tr>\n', acc_type)
     )
     # Wrapped in a SINGLE <td colspan="trade_cols"> (same safe pattern summary_block_cards/
@@ -552,7 +583,7 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
     # browser has enough info to size all 3 columns proportionally instead of just shrink-wrapping
     # the ones without a width.
     header_block <- paste0(
-      '<div style="font: 20pt \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif; color:#FF6A00"><b>Account Statement</b></div><br>\n',
+      '<div style="font: 20pt \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif; color:#999999"><b>Account Statement</b></div><br>\n',
       '<table cellspacing="1" cellpadding="3" border="0" style="width:60%; max-width:60%; margin:0 auto;"><tr><td colspan="', trade_cols, '">',
       '<table cellspacing="1" cellpadding="3" border="0" width="100%"><tr valign="top">',
       '<td width="10%" valign="top">&nbsp;</td>',
@@ -571,7 +602,8 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
       '<tr><td colspan="', trade_cols, '"><br></td></tr>\n'
     )
   } else {
-    header_block <- account_header_block(login, name, currency, leverage, acc_type, day_label, trade_cols, period_type)
+    header_block <- account_header_block(login, name, currency, leverage, acc_type, day_label, trade_cols, period_type,
+                                          show_leverage = isTRUE(summary$show_leverage))
   }
 
   # Details section removed from output 2026-08-17 on request -- code kept (not deleted) in case
@@ -621,7 +653,7 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
   body <- paste0(
     if (is_single_column) '' else summary_block_cards,
 
-    symbol_summary_block(trade_rows, trade_cols),
+    symbol_summary_block(trade_rows, trade_cols, show_swap = !isTRUE(summary$is_investment_account)),
 
     # Order requested 2026-08-18: Trades/Open Positions/Orders come right after Trade Symbol
     # Summary; Dividends, Overnight, Deposit/Withdrawal follow, in that order (Deposit/Withdrawal
@@ -635,7 +667,12 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
     card_grid_wrap("Orders", order_header, order_html, '', order_ncols),
 
     cash_table_block("Dividends", cash_rows[RowType == "dividend"], trade_cols, show_taxes = TRUE, show_comment = FALSE, show_commission = TRUE, show_symbol = TRUE, date_width = "200", total = summary$dividends),
-    if (nrow(cash_rows[RowType == "overnight"]) > 0) cash_table_block("Overnight", cash_rows[RowType == "overnight"], trade_cols, show_taxes = FALSE, show_comment = FALSE, show_commission = FALSE, show_symbol = FALSE, total = summary$overnight) else '',
+    # Visibility keyed off summary$show_overnight -- TRUE when the account's group has Overnight
+    # enabled (Groups.PerformOvernight, a still-test feature scoped to investment accounts) OR
+    # this period has real Overnight rows regardless of the flag (safety net so toggling the
+    # feature off never silently drops existing data from the report). An enrolled account with a
+    # quiet period still shows an empty "Overnight: No transactions" card instead of vanishing.
+    if (isTRUE(summary$show_overnight)) cash_table_block("Overnight", cash_rows[RowType == "overnight"], trade_cols, show_taxes = FALSE, show_comment = FALSE, show_commission = FALSE, show_symbol = FALSE, total = summary$overnight) else '',
     cash_table_block("Deposit/Withdrawal", cash_rows[RowType == "balance"], trade_cols, show_taxes = FALSE, show_comment = TRUE, show_commission = FALSE, show_symbol = FALSE, date_width = "200", total = summary$deposit_withdrawal),
 
     if (show_details) details_block else '',
