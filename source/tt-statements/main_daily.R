@@ -21,8 +21,10 @@ res <- NULL
 # `Rscript main_daily.R 1533790,17012781` (Docker/CLI use).
 only_logins <- NULL   # e.g. only_logins <- c(22030134, 23007510, 24003980, 25000785, 36000004, 22702989)
 
-# Generate for a specific UTC calendar day instead of "yesterday": edit this line, then run.
-# NULL uses yesterday (the normal daily-cron behavior).
+# Generate for a specific UTC calendar day instead of "yesterday". Leave NULL here and drive
+# it from outside (precedence note at step 2): CLI `--date=2026-08-01`, env TT_TARGET_DATE,
+# or config `backfill.target_date`. Editing this line still works and wins over all of them.
+# NULL everywhere = yesterday (the normal daily-cron behavior).
 target_date <- NULL   # e.g. target_date <- "2026-08-01"
 ########################################################################
 
@@ -39,10 +41,29 @@ if (!file.exists(cfg_path)) stop("Config not found at: ", cfg_path)
 cfg <- load_config(cfg_path)
 cat("=== CONFIG ===\n", toJSON(redact_secrets(cfg), auto_unbox = TRUE, pretty = TRUE), "\n", sep = "")
 
-# 2) Target UTC calendar day: [dayFrom, dayTo) -- yesterday by default, or `target_date` if set
-if (!is.null(target_date)) {
+# 2) Target UTC calendar day: [dayFrom, dayTo). Default = yesterday. To backfill a past day,
+#    set ONE of these -- precedence high -> low:
+#      hardcoded `target_date` above  >  CLI `--date=YYYY-MM-DD`  >  env TT_TARGET_DATE  >
+#      config `backfill.target_date`
+#    CLI/env are per-invocation (safe). The config key is STICKY -- clear it after the backfill
+#    or every scheduled run keeps regenerating that day.
+cli_args  <- commandArgs(trailingOnly = TRUE)
+cli_flags <- grep("^--", cli_args, value = TRUE)
+cli_pos   <- grep("^--", cli_args, value = TRUE, invert = TRUE)   # positional arg = only_logins list
+cli_date  <- sub("^--date=", "", grep("^--date=", cli_flags, value = TRUE))
+env_date  <- Sys.getenv("TT_TARGET_DATE")
+
+if (is.null(target_date)) {
+  target_date <- if (length(cli_date) == 1 && nzchar(cli_date)) cli_date
+                 else if (nzchar(env_date))                     env_date
+                 else                                           cfg$backfill$target_date  # NULL if absent
+}
+
+if (!is.null(target_date) && nzchar(target_date)) {
   dayFrom <- as.POSIXct(target_date, tz = "UTC")
+  if (is.na(dayFrom)) stop("invalid target_date (expected YYYY-MM-DD): ", target_date)
   dayTo   <- dayFrom + days(1)
+  cat("Backfill: target day set to", format(dayFrom, "%Y-%m-%d"), "\n")
 } else {
   dayTo   <- floor_date(with_tz(Sys.time(), "UTC"), "day")
   dayFrom <- dayTo - days(1)
@@ -52,10 +73,9 @@ day_label <- format(dayFrom, "%Y-%m-%d")
 storage_root <- "./dataDocker/storage"
 period_folder <- paste0(format(dayFrom, "%Y%m%d"), ".daily")
 
-# CLI override (Docker/batch use only -- commandArgs() is empty when run interactively line-by-line)
-cli_args <- commandArgs(trailingOnly = TRUE)
-if (length(cli_args) > 0 && nzchar(cli_args[1])) {
-  only_logins <- as.numeric(trimws(strsplit(cli_args[1], ",")[[1]]))
+# only_logins from the positional CLI arg (Docker/batch use only -- empty when run interactively)
+if (length(cli_pos) > 0 && nzchar(cli_pos[1])) {
+  only_logins <- as.numeric(trimws(strsplit(cli_pos[1], ",")[[1]]))
 }
 if (!is.null(only_logins)) cat("Restricting run to logins:", paste(only_logins, collapse = ", "), "\n")
 

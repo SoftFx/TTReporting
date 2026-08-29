@@ -4,6 +4,7 @@ source('../common/PostgresHost.R')
 source('Functions.R')
 source('Stats.R')
 source('Render.R')
+source('Serializers.R')   # statement_to_json / statement_to_csv (+ STATEMENT_CONTENT_TYPES)
 source('SeaweedClient.R')
 source('../common/RMonitoringClient.R')
 options(warn = -1)
@@ -15,26 +16,38 @@ Sys.setenv("TZ" = "UTC")
 # handle both shapes: for Gross rows every field is already populated so the fallback is a no-op.
 `%||%` <- function(a, b) if (is.null(a) || is.na(a)) b else a
 
-# Writes one statement's HTML to the configured storage backend. Same contract on both
-# branches: returns TRUE on success, THROWS on failure -- callers rely on their own
-# tryCatch(..., error = function(e) FALSE) to turn that into FALSE, unchanged either way.
-write_statement_html <- function(html, domain, period_folder, login, storage_root, config) {
-  backend <- config$storage$backend %||% "disk"
-  if (backend == "seaweed") {
-    write_statement_to_seaweed(html, domain = domain, period_folder = period_folder, login = login,
-                                filer_url = config$storage$seaweed_filer_url)
-  } else {
-    out_dir <- file.path(storage_root, domain, period_folder)
-    dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
-    writeLines(html, file.path(out_dir, paste0(login, "_mail.html")), useBytes = TRUE)
-    TRUE
+# Writes one rendered statement file (suffix = "_mail.html" / ".csv" / ".json") to every
+# configured storage backend. config$storage$backend may be a single value ("disk" /
+# "seaweed") OR a vector of both. Same contract as before: returns TRUE on success, THROWS
+# on failure -- callers rely on their own tryCatch(..., error = function(e) FALSE).
+write_statement_file <- function(content, domain, period_folder, login, suffix, storage_root, config) {
+  backends <- config$storage$backend
+  if (is.null(backends) || length(backends) == 0) backends <- "disk"
+  ext <- sub("^.*(\\.[a-z]+)$", "\\1", suffix)                 # "_mail.html" -> ".html"
+  ctype <- STATEMENT_CONTENT_TYPES[[ext]]
+  if (is.null(ctype)) ctype <- "application/octet-stream"
+
+  for (backend in backends) {
+    if (backend == "seaweed") {
+      put_statement_object(content, domain = domain, period_folder = period_folder, login = login,
+                           suffix = suffix, content_type = ctype,
+                           filer_url = config$storage$seaweed_filer_url)
+    } else if (backend == "disk") {
+      out_dir <- file.path(storage_root, domain, period_folder)
+      dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+      writeLines(content, file.path(out_dir, paste0(login, suffix)), useBytes = TRUE)
+    } else {
+      stop("unknown storage.backend value: ", backend)
+    }
   }
+  TRUE
 }
 
 # Build & write the statement HTML for a single account. Returns TRUE/FALSE (written or skipped/error).
 build_and_write_account_statement <- function(login, accRow, snapRow, openSnapRow, posSnapDT, ordSnapDT, tradesDT,
                                                day_label, storage_root, domain, period_folder, config,
-                                               period_type = "Daily", summary_layout = "cards"){
+                                               period_type = "Daily", summary_layout = "cards",
+                                               dayFrom = NULL, dayTo = NULL){
   day_trades <- tradesDT[Login == login]
   day_trades5 <- day_trades[TrType == 5] # Balance: deposit/withdrawal/dividend/fee
   trade_type <- if (accRow$AccType == "Gross") 4L else 3L
@@ -215,15 +228,39 @@ build_and_write_account_statement <- function(login, accRow, snapRow, openSnapRo
     balance_curve = bal_curve
   )
 
-  html <- render_statement(login = login, name = accRow$Name, currency = accRow$Currency,
-                            leverage = accRow$Leverage, day_label = day_label,
-                            acc_type = accRow$AccType, trade_table_label = trade_table_label,
-                            trade_rows = trade_rows, cash_rows = cash_rows, open_rows = open_rows, order_rows = order_rows,
-                            summary = summary, stats = stats, period_type = period_type,
-                            summary_layout = summary_layout)
+  # Structured model every non-HTML serializer projects from (Serializers.R). HTML keeps its
+  # own direct render_statement() call below -- byte-identical to before.
+  model <- list(
+    meta = list(login = login, name = accRow$Name, currency = accRow$Currency, leverage = accRow$Leverage,
+                acc_type = accRow$AccType, period_type = period_type, day_label = day_label,
+                period_from = dayFrom, period_to = dayTo, domain = domain, period_folder = period_folder,
+                summary_layout = summary_layout, trade_table_label = trade_table_label),
+    summary = summary, stats = stats,
+    tables = list(trades = trade_rows, cash = cash_rows, open_positions = open_rows, orders = order_rows)
+  )
 
-  write_statement_html(html, domain = domain, period_folder = period_folder, login = login,
-                        storage_root = storage_root, config = config)
+  # Which formats to write, from config. NOT via `%||%` -- that operator errors on a vector.
+  formats <- config$storage$formats
+  if (is.null(formats) || length(formats) == 0) formats <- "html"
+
+  for (fmt in formats) {
+    outputs <- switch(as.character(fmt),
+      html = list("_mail.html" = render_statement(
+                    login = login, name = accRow$Name, currency = accRow$Currency,
+                    leverage = accRow$Leverage, day_label = day_label,
+                    acc_type = accRow$AccType, trade_table_label = trade_table_label,
+                    trade_rows = trade_rows, cash_rows = cash_rows, open_rows = open_rows, order_rows = order_rows,
+                    summary = summary, stats = stats, period_type = period_type,
+                    summary_layout = summary_layout)),
+      json = statement_to_json(model),
+      csv  = statement_to_csv(model),
+      stop("unknown storage.formats value: ", fmt))
+    for (sfx in names(outputs)) {
+      write_statement_file(outputs[[sfx]], domain = domain, period_folder = period_folder,
+                           login = login, suffix = sfx, storage_root = storage_root, config = config)
+    }
+  }
+  TRUE
 }
 
 execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storage_root, period_folder, task_exec_log_path,
@@ -297,7 +334,7 @@ execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storag
                 posSnapDT = posSnaps, ordSnapDT = ordSnaps, tradesDT = trades,
                 day_label = day_label, storage_root = storage_root, domain = db,
                 period_folder = period_folder, config = config, period_type = period_type,
-                summary_layout = summary_layout)
+                summary_layout = summary_layout, dayFrom = dayFrom, dayTo = dayTo)
             }, error = function(e) { print(e); acc_errors <<- c(acc_errors, paste(login, substr(e$message, 1, 60))); FALSE })
             if (isTRUE(res)) written <- written + 1L
           }

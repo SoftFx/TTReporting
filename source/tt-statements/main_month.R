@@ -22,9 +22,10 @@ res <- NULL
 # `Rscript main_month.R 1533790,17012781` (Docker/CLI use).
 only_logins <- NULL   # e.g. only_logins <- c(22030134, 23007510, 24003980, 25000785, 36000004, 22702989)
 
-# Generate for a specific UTC calendar month instead of "previous month": edit this line
-# (first day of the target month), then run. NULL uses the previous month (the normal
-# monthly-cron behavior).
+# Generate for a specific UTC calendar month instead of "previous month". Leave NULL here and
+# drive it from outside (precedence note at step 2): CLI `--month=2026-07-01`, env
+# TT_TARGET_MONTH, or config `backfill.target_month` (first day of the target month). Editing
+# this line still works and wins. NULL everywhere = previous month (the normal monthly-cron).
 target_month <- NULL   # e.g. target_month <- "2026-07-01"
 ########################################################################
 
@@ -41,10 +42,30 @@ if (!file.exists(cfg_path)) stop("Config not found at: ", cfg_path)
 cfg <- load_config(cfg_path)
 cat("=== CONFIG ===\n", toJSON(redact_secrets(cfg), auto_unbox = TRUE, pretty = TRUE), "\n", sep = "")
 
-# 2) Target UTC calendar month: [dayFrom, dayTo) -- previous month by default, or `target_month` if set
-if (!is.null(target_month)) {
+# 2) Target UTC calendar month: [dayFrom, dayTo). Default = previous month. To backfill a past
+#    month, set ONE of these -- precedence high -> low:
+#      hardcoded `target_month` above  >  CLI `--month=YYYY-MM-01`  >  env TT_TARGET_MONTH  >
+#      config `backfill.target_month`
+#    CLI/env are per-invocation (safe). The config key is STICKY -- clear it after the backfill
+#    or every scheduled run keeps regenerating that month.
+cli_args  <- commandArgs(trailingOnly = TRUE)
+cli_flags <- grep("^--", cli_args, value = TRUE)
+cli_pos   <- grep("^--", cli_args, value = TRUE, invert = TRUE)   # positional arg = only_logins list
+cli_month <- sub("^--month=", "", grep("^--month=", cli_flags, value = TRUE))
+env_month <- Sys.getenv("TT_TARGET_MONTH")
+
+if (is.null(target_month)) {
+  target_month <- if (length(cli_month) == 1 && nzchar(cli_month)) cli_month
+                  else if (nzchar(env_month))                      env_month
+                  else                                            cfg$backfill$target_month  # NULL if absent
+}
+
+if (!is.null(target_month) && nzchar(target_month)) {
   dayFrom <- as.POSIXct(target_month, tz = "UTC")
+  if (is.na(dayFrom)) stop("invalid target_month (expected YYYY-MM-01): ", target_month)
+  dayFrom <- floor_date(dayFrom, "month")   # tolerate any day in the month, snap to the 1st
   dayTo   <- dayFrom + months(1)
+  cat("Backfill: target month set to", format(dayFrom, "%Y-%m"), "\n")
 } else {
   dayTo   <- floor_date(with_tz(Sys.time(), "UTC"), "month")
   dayFrom <- dayTo - months(1)
@@ -54,10 +75,9 @@ day_label <- format(dayFrom, "%Y-%m")
 storage_root <- "./dataDocker/storage"
 period_folder <- paste0(format(dayTo - days(1), "%Y%m%d"), ".monthly")
 
-# CLI override (Docker/batch use only -- commandArgs() is empty when run interactively line-by-line)
-cli_args <- commandArgs(trailingOnly = TRUE)
-if (length(cli_args) > 0 && nzchar(cli_args[1])) {
-  only_logins <- as.numeric(trimws(strsplit(cli_args[1], ",")[[1]]))
+# only_logins from the positional CLI arg (Docker/batch use only -- empty when run interactively)
+if (length(cli_pos) > 0 && nzchar(cli_pos[1])) {
+  only_logins <- as.numeric(trimws(strsplit(cli_pos[1], ",")[[1]]))
 }
 if (!is.null(only_logins)) cat("Restricting run to logins:", paste(only_logins, collapse = ", "), "\n")
 
