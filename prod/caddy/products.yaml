@@ -18,3 +18,10 @@
     Trading account analytics (TT, MT4, MT5).
     Login-based summary: traded volume, swap markup, commission breakdown.
   category: Analytics
+
+- slug: statements
+  name: Account Statements
+  description: |
+    Daily and monthly user account statements.
+    Browse and download generated statement files by trade account.
+  category: Reports
