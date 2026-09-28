@@ -24,4 +24,5 @@
   description: |
     Daily and monthly user account statements.
     Browse and download generated statement files by trade account.
+    Type the account number into the browser’s address bar to open file.
   category: Reports

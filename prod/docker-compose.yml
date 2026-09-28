@@ -129,14 +129,15 @@ services:
   # ────────────────────────────────────────────
   # Batch jobs (run via: docker compose run --rm <name>)
   # ────────────────────────────────────────────
-  swap-updater:
-    profiles: ["jobs"]
-    image: softfx/tt-reporting:latest-swap-updater
-    pull_policy: always
-    volumes:
-      - ./swap-updater/configDocker:/app/configDocker:ro
-      - ./swap-updater/dataDocker:/app/dataDocker:rw
-    restart: "no"
+  # swap-updater: not used anymore
+  # swap-updater:
+  #   profiles: ["jobs"]
+  #   image: softfx/tt-reporting:latest-swap-updater
+  #   pull_policy: always
+  #   volumes:
+  #     - ./swap-updater/configDocker:/app/configDocker:ro
+  #     - ./swap-updater/dataDocker:/app/dataDocker:rw
+  #   restart: "no"
 
   negative-equity:
     profiles: ["jobs"]

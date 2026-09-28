@@ -18,3 +18,13 @@ configDocker
 /prod/caddy/root-ca.key
 /prod/seaweedfs/s3.json
 /source/tt-statements/seaweed-s3-gateway/seaweedfs/s3.json
+/source/tt-statements/seaweed-s3-gateway/get_tt_statements/s3_download_statements.py
+/source/tt-statements/seaweed-s3-gateway/get_tt_statements/s3_list_statements.py
+/source/tt-statements/seaweed-s3-gateway/get_tt_statements/s3_download_bulk.py
+/source/tt-statements/seaweed-s3-gateway/get_tt_statements/downloaded/
+/source/tt-statements/seaweed-s3-gateway/get_tt_statements/*.html
+/source/tt-statements/seaweed-s3-gateway/get_tt_statements_artsiom/s3_download_statements.py
+/source/tt-statements/seaweed-s3-gateway/get_tt_statements_artsiom/s3_list_statements.py
+/source/tt-statements/seaweed-s3-gateway/get_tt_statements_artsiom/s3_download_bulk.py
+/source/tt-statements/seaweed-s3-gateway/get_tt_statements_artsiom/downloaded/
+/source/tt-statements/seaweed-s3-gateway/get_tt_statements_artsiom/*.html
