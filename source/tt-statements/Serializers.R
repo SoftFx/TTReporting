@@ -73,6 +73,18 @@ library(data.table)
   paste0(.side_json(side), ifelse(is.na(suf), "", suf))
 }
 
+# JSON numbers are rounded the same way the HTML report rounds them (Render.R fmt_money /
+# fmt_price / fmt_pct), once, on the final value -- sums are still computed on raw numbers.
+# Before 2026-10-07 JSON carried raw doubles (0.139999999999418, 69.2756520856592).
+# NA stays NA (-> null); a missing summary field (NULL) stays absent.
+.r2 <- function(x) if (is.null(x)) x else round(as.numeric(x), 2)          # money, percentages
+.rp <- function(x, p) {                                                     # price -> symbol precision
+  x <- suppressWarnings(as.numeric(x))
+  if (length(x) == 0) return(numeric(0))
+  p <- suppressWarnings(as.integer(p)); p[is.na(p)] <- 5L
+  round(x, p)
+}
+
 statement_to_json <- function(model) {
   m <- model$meta; S <- model$summary
   tr <- as.data.frame(model$tables$trades);         op <- as.data.frame(model$tables$open_positions)
@@ -88,8 +100,8 @@ statement_to_json <- function(model) {
     a <- aggregate(cbind(Commission, Swap, Profit) ~ Item, data = tr, FUN = function(z) sum(z, na.rm = TRUE))
     a$total_pl <- a$Commission + a$Swap + a$Profit
     a <- a[order(-a$total_pl), ]
-    data.frame(symbol = a$Item, commission = a$Commission, swap = a$Swap,
-               profit = a$Profit, total_pl = a$total_pl, stringsAsFactors = FALSE)
+    data.frame(symbol = a$Item, commission = .r2(a$Commission), swap = .r2(a$Swap),
+               profit = .r2(a$Profit), total_pl = .r2(a$total_pl), stringsAsFactors = FALSE)
   }
 
   doc <- list(
@@ -104,17 +116,17 @@ statement_to_json <- function(model) {
       from = .iso(m$period_from), to = .iso(m$period_to)
     ),
     summary = list(
-      opening_balance = S$opening_balance, opening_equity = S$opening_equity,
-      deposits = S$deposits, withdrawals = S$withdrawals, deposit_withdrawal = S$deposit_withdrawal,
-      commission = S$total_commission, swap = S$total_swap,
-      overnight = S$overnight, dividends = S$dividends,
-      trading_pl = S$trading_pl, closed_pl = S$closed_pl, floating_pl = S$floating_pl,
-      closing_balance = S$balance, closing_equity = S$equity,
-      margin = S$margin, free_margin = S$free_margin, margin_level = S$margin_level,
-      balance_total_pl = S$balance_total_pl, equity_total_pl = S$equity_total_pl,
+      opening_balance = .r2(S$opening_balance), opening_equity = .r2(S$opening_equity),
+      deposits = .r2(S$deposits), withdrawals = .r2(S$withdrawals), deposit_withdrawal = .r2(S$deposit_withdrawal),
+      commission = .r2(S$total_commission), swap = .r2(S$total_swap),
+      overnight = .r2(S$overnight), dividends = .r2(S$dividends),
+      trading_pl = .r2(S$trading_pl), closed_pl = .r2(S$closed_pl), floating_pl = .r2(S$floating_pl),
+      closing_balance = .r2(S$balance), closing_equity = .r2(S$equity),
+      margin = .r2(S$margin), free_margin = .r2(S$free_margin), margin_level = .r2(S$margin_level),
+      balance_total_pl = .r2(S$balance_total_pl), equity_total_pl = .r2(S$equity_total_pl),
       open_positions = list(
         total = S$open_total, long = S$open_long, short = S$open_short,
-        long_won_pct = S$open_long_won_pct, short_won_pct = S$open_short_won_pct
+        long_won_pct = .r2(S$open_long_won_pct), short_won_pct = .r2(S$open_short_won_pct)
       )
     ),
     trade_symbol_summary = tsum,
@@ -122,32 +134,34 @@ statement_to_json <- function(model) {
       order_id = as.character(tr$OrderId), position_id = as.character(tr$PosId),
       open_time = .iso(tr$OpenTime), close_time = .iso(tr$CloseTime),
       side = .side_json(tr$Side), volume_lots = tr$VolumeLot, symbol = tr$Item,
-      open_price = tr$OpenPrice, close_price = tr$ClosePrice, sl = tr$Sl, tp = tr$Tp,
-      commission = tr$Commission, swap = tr$Swap, profit = tr$Profit, comment = tr$Comment,
+      open_price = .rp(tr$OpenPrice, tr$Precision), close_price = .rp(tr$ClosePrice, tr$Precision),
+      sl = .rp(tr$Sl, tr$Precision), tp = .rp(tr$Tp, tr$Precision),
+      commission = .r2(tr$Commission), swap = .r2(tr$Swap), profit = .r2(tr$Profit), comment = tr$Comment,
       stringsAsFactors = FALSE
     ),
     open_positions = data.frame(
       position_id = as.character(op$Ticket), open_time = .iso(op$OpenTime),
       side = .side_json(op$Side), volume_lots = op$VolumeLot, symbol = op$Item,
-      open_price = op$OpenPrice, current_price = op$MarketPrice, sl = op$Sl, tp = op$Tp,
-      commission = op$Commission, swap = op$Swap, profit = op$Profit,
+      open_price = .rp(op$OpenPrice, op$Precision), current_price = .rp(op$MarketPrice, op$Precision),
+      sl = .rp(op$Sl, op$Precision), tp = .rp(op$Tp, op$Precision),
+      commission = .r2(op$Commission), swap = .r2(op$Swap), profit = .r2(op$Profit),
       stringsAsFactors = FALSE
     ),
     orders = data.frame(
       order_id = as.character(od$OrderId), created_time = .iso(od$Created),
       type = .order_label_json(od$Side, od$Type),
-      volume_lots = od$VolumeLot, symbol = od$Item, price = od$Price,
-      sl = od$Sl, tp = od$Tp, comment = od$Comment,
+      volume_lots = od$VolumeLot, symbol = od$Item, price = .rp(od$Price, od$Precision),
+      sl = .rp(od$Sl, od$Precision), tp = .rp(od$Tp, od$Precision), comment = od$Comment,
       stringsAsFactors = FALSE
     ),
     # cash split into report sections, in report order (Dividends -> Overnight -> Deposit/Withdrawal)
     dividends = local({ r <- ch[ch$RowType == "dividend", , drop = FALSE]
-      data.frame(time = .iso(r$OpenTime), symbol = r$Item, commission = r$Commission,
-                 taxes = r$Taxes, amount = r$Amount, stringsAsFactors = FALSE) }),
+      data.frame(time = .iso(r$OpenTime), symbol = r$Item, commission = .r2(r$Commission),
+                 taxes = .r2(r$Taxes), amount = .r2(r$Amount), stringsAsFactors = FALSE) }),
     overnight = local({ r <- ch[ch$RowType == "overnight", , drop = FALSE]
-      data.frame(time = .iso(r$OpenTime), amount = r$Amount, stringsAsFactors = FALSE) }),
+      data.frame(time = .iso(r$OpenTime), amount = .r2(r$Amount), stringsAsFactors = FALSE) }),
     deposits_withdrawals = local({ r <- ch[ch$RowType == "balance", , drop = FALSE]
-      data.frame(time = .iso(r$OpenTime), amount = r$Amount, comment = r$Comment, stringsAsFactors = FALSE) })
+      data.frame(time = .iso(r$OpenTime), amount = .r2(r$Amount), comment = r$Comment, stringsAsFactors = FALSE) })
   )
 
   json <- jsonlite::toJSON(doc, auto_unbox = TRUE, digits = NA, na = "null", pretty = TRUE)
@@ -171,6 +185,19 @@ statement_to_csv <- function(model) {
   ovn <- ch[ch$RowType == "overnight", , drop = FALSE]
   bal <- ch[ch$RowType == "balance",  , drop = FALSE]
 
+  # Investment-account wording (Asset / P&L / Locked cash / Available cash) -- same single source
+  # as the HTML: summary$labels from task_TT_Statements.R. Data frames below are built with the
+  # default names and renamed by relabel() just before output.
+  L <- modifyList(list(symbol = "Symbol", pl = "P/L", used_margin = "Used Margin", free_margin = "Free Margin"),
+                  .or(S$labels, list()))
+  kv1 <- function(field, value) data.frame(field = field, value = value, stringsAsFactors = FALSE)
+  relabel <- function(df) {
+    # Swap column dropped for investment accounts (Trade Symbol Summary, Trades, Open Positions)
+    if (identical(S$show_swap_column, FALSE)) df <- df[, names(df) != "Swap", drop = FALSE]
+    names(df) <- gsub("P/L", L$pl, sub("^Symbol$", L$symbol, names(df)), fixed = TRUE)
+    df
+  }
+
   # -- Account Statement: HTML account-info block rows --
   acc <- do.call(rbind, Filter(Negate(is.null), list(
     data.frame(field = paste0(m$period_type, " Statement for"), value = m$day_label, stringsAsFactors = FALSE),
@@ -178,7 +205,7 @@ statement_to_csv <- function(model) {
     data.frame(field = "Name",     value = m$name,     stringsAsFactors = FALSE),
     data.frame(field = "Currency", value = m$currency, stringsAsFactors = FALSE),
     if (isTRUE(S$show_leverage)) data.frame(field = "Leverage", value = paste0("1:", m$leverage), stringsAsFactors = FALSE),
-    data.frame(field = "Account Type", value = m$acc_type, stringsAsFactors = FALSE)
+    data.frame(field = "Account Type", value = .or(S$acc_type_label, m$acc_type), stringsAsFactors = FALSE)
   )))
 
   # -- Account Summary: HTML single_column_rows labels/values --
@@ -186,21 +213,21 @@ statement_to_csv <- function(model) {
   summ <- do.call(rbind, Filter(Negate(is.null), list(
     .kv("Open Equity" = .mny(S$opening_equity)),
     .kv("Open Balance" = .mny(S$opening_balance)),
-    .kv("Realised P/L" = .mny(S$balance_total_pl)),
+    kv1(paste("Realised", L$pl), .mny(S$balance_total_pl)),
     .kv("Commission" = .mny(S$total_commission)),
     if (isTRUE(S$show_swap_or_overnight_row))
       data.frame(field = .or(S$swap_or_overnight_label, "Swap"), value = .mny(S$swap_or_overnight), stringsAsFactors = FALSE),
     .kv("Dividends" = .mny(S$dividends)),
     .kv("Deposit/Withdrawal" = dep_wd),
     .kv("Close Balance" = .mny(S$balance)),
-    .kv("Unrealised P/L (Floating)" = .mny(S$floating_pl)),
-    .kv("Used Margin" = .mny(S$margin)),
-    .kv("Free Margin" = .mny(S$free_margin)),
+    kv1(paste("Unrealised", L$pl, "(Floating)"), .mny(S$floating_pl)),
+    kv1(L$used_margin, .mny(S$margin)),
+    kv1(L$free_margin, .mny(S$free_margin)),
     .kv("Close Equity" = .mny(S$equity))
   )))
 
   # -- Trade Symbol Summary: per-symbol aggregate + "Total:" row (Swap hidden for investment) --
-  show_swap <- !isTRUE(S$is_investment_account)
+  show_swap <- !identical(S$show_swap_column, FALSE)
   if (nrow(tr) == 0) {
     ssum <- if (show_swap) data.frame(Symbol = character(0), Commission = character(0), Swap = character(0), Profit = character(0), `Total P/L` = character(0), check.names = FALSE)
             else            data.frame(Symbol = character(0), Commission = character(0), Profit = character(0), `Total P/L` = character(0), check.names = FALSE)
@@ -240,7 +267,7 @@ statement_to_csv <- function(model) {
       Commission = .mny(tr$Commission), Swap = .mny(tr$Swap), Profit = .mny(tr$Profit),
       Comment = tr$Comment, check.names = FALSE, stringsAsFactors = FALSE)
   }
-  trd <- .foot(trd, `Order ID` = "Total P/L:", Profit = .mny(S$closed_pl))
+  trd <- .foot(trd, `Order ID` = paste0("Total ", L$pl, ":"), Profit = .mny(S$closed_pl))
 
   # -- Open Positions + "Floating P/L:" footer --
   if (is_net) {
@@ -259,7 +286,7 @@ statement_to_csv <- function(model) {
       Commission = .mny(op$Commission), Swap = .mny(op$Swap), Profit = .mny(op$Profit),
       check.names = FALSE, stringsAsFactors = FALSE)
   }
-  opn <- .foot(opn, ID = "Floating P/L:", Profit = .mny(S$floating_pl))
+  opn <- .foot(opn, ID = paste0("Floating ", L$pl, ":"), Profit = .mny(S$floating_pl))
 
   # -- Orders (no footer in HTML) --
   if (is_net) {
@@ -289,11 +316,11 @@ statement_to_csv <- function(model) {
   blocks <- c(
     .section("Account Statement",    acc),
     .section("Account Summary",      summ),
-    .section("Trade Symbol Summary", ssum),
-    .section(if (is_net) "Trades" else "Closed Trades", trd),
-    .section("Open Positions",       opn),
-    .section("Orders",               ord),
-    .section("Dividends",            divd),
+    .section(paste("Trade", L$symbol, "Summary"), relabel(ssum)),
+    .section(if (is_net) "Trades" else "Closed Trades", relabel(trd)),
+    .section("Open Positions",       relabel(opn)),
+    .section("Orders",               relabel(ord)),
+    .section("Dividends",            relabel(divd)),
     if (isTRUE(S$show_overnight))
       .section("Overnight", .foot(data.frame(Date = .csvdt(ovn$OpenTime), Amount = .mny(ovn$Amount),
                                              check.names = FALSE, stringsAsFactors = FALSE),

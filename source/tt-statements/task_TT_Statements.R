@@ -186,6 +186,24 @@ build_and_write_account_statement <- function(login, accRow, snapRow, openSnapRo
     # this project's earlier Gross/Net OpenPrice bug: a future change to the condition only
     # touching one of the two spots). Both now just read this one value.
     show_leverage = !is_investment_account,
+    # Display-only "Account Type" (HTML header/title + CSV): investment accounts show "Investment"
+    # instead of Net/Gross. accRow$AccType / meta$acc_type stay Net/Gross -- they drive the table
+    # shape (is_net) and the JSON `account.type` (stable schema; JSON has is_investment_account).
+    acc_type_label = if (is_investment_account) "Investment" else accRow$AccType,
+    # Display-only wording (HTML + CSV; JSON keys never change), requested 2026-10-07: investment
+    # accounts say Asset / P&L / Locked cash / Available cash where everyone else says
+    # Symbol / P/L / Used Margin / Free Margin. Chosen once here; Render.R and Serializers.R only
+    # read these, so the two outputs can't drift apart. Plain text -- Render.R html-escapes "&".
+    labels = if (is_investment_account) {
+      list(symbol = "Asset", pl = "P&L", used_margin = "Locked cash", free_margin = "Available cash")
+    } else {
+      list(symbol = "Symbol", pl = "P/L", used_margin = "Used Margin", free_margin = "Free Margin")
+    },
+    # Per-row Swap column (Trade Symbol Summary, Trades, Open Positions; HTML + CSV) -- hidden for
+    # investment accounts: they have no swaps. The only nonzero values are legacy history on the
+    # converted test group en-global22A-USD (VALIDATION.md 2026-08-26, step 5). Display only --
+    # Swap still enters every total (Total P&L / Floating P&L), so those stay correct.
+    show_swap_column = !is_investment_account,
     show_overnight = show_overnight,
     # Whether the merged Swap/Overnight line appears in Summary at all -- TRUE unconditionally
     # for non-investment accounts (always "Swap"); for investment accounts, only when

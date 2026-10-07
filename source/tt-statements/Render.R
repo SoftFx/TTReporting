@@ -92,15 +92,28 @@ detail_card <- function(title, rows, bold_last = TRUE, width = "20%"){
 # show_symbol: Symbol is always blank for TrReason=5/13 (0/13336, 0/240, 0/74, 0/4 and 0/1105 --
 # verified 2026-08-17) and always populated for Dividends (1345/1345, 400/400, it's the stock
 # that paid), so only Dividends is called with show_symbol = TRUE.
+# Footer row shared by every table that ends with a single total (Trades, Open Positions,
+# Dividends, Overnight, Deposit/Withdrawal): label and value together in ONE full-width cell,
+# pushed to the table's right edge (2026-10-07). One cell, so the gap between label and value
+# is always the same -- it can't depend on how wide the last columns happen to be, which is what
+# made the old per-column variants look detached (worst in Trades, whose last column is Comment).
+# `label` must already be html-escaped. Not used by Trade Symbol Summary: its Total: row is a
+# per-column totals row (one value under each column), a different thing.
+total_row_html <- function(label, value, ncols){
+  sprintf('<tr align="right" class="total-row"><td colspan="%d" align="right"><b>%s:</b>&nbsp;&nbsp;&nbsp;&nbsp;<b>%s</b></td></tr>\n',
+          ncols, label, fmt_money(value))
+}
+
 cash_table_block <- function(title, rows, trade_cols, show_taxes = TRUE, show_comment = TRUE,
-                              show_commission = TRUE, show_symbol = TRUE, date_width = NULL, total = NULL){
+                              show_commission = TRUE, show_symbol = TRUE, date_width = NULL, total = NULL,
+                              symbol_label = "Symbol"){
   # Amount is always the last column, and always the same fixed width -- so it lines up
   # vertically across Deposit/Withdrawal, Dividends and Overnight even though the tables have
   # different column counts (each is its own independent width="100%" table). date_width is the
   # same idea applied to Date, but only requested between Dividends and Deposit/Withdrawal
   # (2026-08-17) -- NULL (Overnight's default) leaves that column auto-width, as before.
   amount_width <- "90"
-  cols <- c("Date", if (show_symbol) "Symbol", if (show_commission) "Commission", if (show_taxes) "Taxes",
+  cols <- c("Date", if (show_symbol) symbol_label, if (show_commission) "Commission", if (show_taxes) "Taxes",
             if (show_comment) "Comment", "Amount")
   ncols <- length(cols)
   date_td <- if (is.null(date_width)) '<td>Date</td>' else sprintf('<td width="%s">Date</td>', date_width)
@@ -124,11 +137,7 @@ cash_table_block <- function(title, rows, trade_cols, show_taxes = TRUE, show_co
       sprintf('<tr align="right" class="%s">%s</tr>', row_class, paste(cells, collapse = ""))
     }, character(1)), collapse = "\n")
   }
-  # Same footer pattern as Trades' "Closed Total P/L:" / Open Positions' "Floating P/L:" --
-  # bold label spanning every column but the last, bold sum under Amount.
-  total_row <- if (is.null(total)) '' else sprintf(
-    '<tr align="right" class="total-row"><td colspan="%d" align="right"><b>Total:</b></td><td width="%s"><b>%s</b></td></tr>\n',
-    ncols - 1L, amount_width, fmt_money(total))
+  total_row <- if (is.null(total)) '' else total_row_html("Total", total, ncols)
   # Title bar lives INSIDE the same card table as its first row (not a separate outer-table row)
   # so the whole card -- title, column header, data, total -- reads as one seamless rounded box,
   # matching the reference PDF (rounded top on the title bar, rounded bottom on the last row).
@@ -157,7 +166,9 @@ cash_table_block <- function(title, rows, trade_cols, show_taxes = TRUE, show_co
 # is dropped rather than shown as an always-zero line, same treatment as Leverage in the header.
 # Swap still enters the Total P/L math either way -- only the column's DISPLAY is conditional, so
 # the number stays correct even for the one grandfathered account with both (see [[project_tt_statements]]).
-symbol_summary_block <- function(trade_rows, trade_cols, show_swap = TRUE){
+# symbol_label / pl_label: column + title wording ("Asset" / "P&amp;L" for investment accounts),
+# passed already html-escaped by render_statement.
+symbol_summary_block <- function(trade_rows, trade_cols, show_swap = TRUE, symbol_label = "Symbol", pl_label = "P/L"){
   grouped <- if (is.null(trade_rows) || nrow(trade_rows) == 0){
     data.table(Item = character(0), Commission = numeric(0), Swap = numeric(0), Profit = numeric(0))
   } else {
@@ -172,7 +183,7 @@ symbol_summary_block <- function(trade_rows, trade_cols, show_swap = TRUE){
   }
   ncols <- if (show_swap) 5L else 4L
   swap_th <- if (show_swap) '<td>Swap</td>' else ''
-  header <- sprintf('<tr align="center" class="colhead big-label"><td>Symbol</td><td>Commission</td>%s<td>Profit</td><td>Total P/L</td></tr>\n', swap_th)
+  header <- sprintf('<tr align="center" class="colhead big-label"><td>%s</td><td>Commission</td>%s<td>Profit</td><td>Total %s</td></tr>\n', symbol_label, swap_th, pl_label)
   body_rows <- if (nrow(grouped) == 0){
     # "No data", not "No transactions" -- this table is aggregated Commission/Swap/Profit per
     # symbol, not a list of individual transactions, so the empty-state wording should match.
@@ -200,7 +211,7 @@ symbol_summary_block <- function(trade_rows, trade_cols, show_swap = TRUE){
     # cards looked misaligned/wider against what were then unwrapped rows; every section uses
     # this same wrapping now so it just needs to stay consistent across all of them.
     '<tr><td colspan="', trade_cols, '" style="padding:0"><table cellspacing="0" cellpadding="4" border="0" width="100%" class="card vgrid">',
-    '<tr align="left" class="stripe"><td colspan="', ncols, '"><b>Trade Symbol Summary:</b></td></tr>\n',
+    '<tr align="left" class="stripe"><td colspan="', ncols, '"><b>Trade ', symbol_label, ' Summary:</b></td></tr>\n',
     header, body_rows, '\n', total_row,
     '</table></td></tr>\n',
     # Same spacer as every other section (2026-08-17 -- was a bigger one-off 20px gap, unified
@@ -357,6 +368,14 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
   # column (TrTime) instead of separate Open/Close Time -- one column narrower than Gross.
   # Each statement file covers exactly one account, so the two shapes never mix in one table.
   is_net <- identical(acc_type, "Net")
+  # What's printed as "Account Type" (and in the page title) -- "Investment" for investment
+  # accounts, else Net/Gross. Layout logic keeps using acc_type/is_net above.
+  acc_type_label <- if (is.null(summary$acc_type_label)) acc_type else summary$acc_type_label
+  # Wording that differs for investment accounts (Asset / P&L / Locked cash / Available cash) --
+  # decided once in task_TT_Statements.R (summary$labels); html-escaped here ("P&L" -> "P&amp;L").
+  lbl <- modifyList(list(symbol = "Symbol", pl = "P/L", used_margin = "Used Margin", free_margin = "Free Margin"),
+                    if (is.null(summary$labels)) list() else summary$labels)
+  lbl <- lapply(lbl, html_escape)
   # S/L and T/P are always 0.00 for Net (Trades/Open Positions/Orders alike -- verified
   # 2026-08-17 across all 4 domains, 0 nonzero out of thousands of rows) but real and nonzero
   # for Gross, so they're dropped from Net's column set only. trade_cols is Trades' own natural
@@ -367,48 +386,55 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
   # alignment bugs in this file's history, and dropping it doesn't cost anything: the report's
   # width was never actually driven by that alignment, verified against the pre-change version).
   trade_cols <- if (is_net) 12L else 15L
+  # Swap column of Trades / Open Positions / Trade Symbol Summary -- dropped for investment
+  # accounts (summary$show_swap_column, task_TT_Statements.R). swap_td()/swap_th render to '' then,
+  # and each table's own column count shrinks by one (trade_ncols / open_ncols below).
+  show_swap <- !identical(summary$show_swap_column, FALSE)
+  swap_th <- if (show_swap) '<td>Swap</td>' else ''
+  swap_td <- function(x) if (show_swap) sprintf('<td>%s</td>', fmt_money(x)) else ''
+  trade_ncols <- trade_cols - (if (show_swap) 0L else 1L)
 
   closed_html <- if (is.null(trade_rows) || nrow(trade_rows) == 0){
-    '<tr class="empty-row" align="right"><td colspan="12" align="center">No transactions</td></tr>'
+    # Spans the table's real column count (was a hardcoded 12 until 2026-10-07 -- right for Net,
+    # but left Gross' 15-column table with the text centred over only the first 12).
+    sprintf('<tr class="empty-row" align="right"><td colspan="%d" align="center">No transactions</td></tr>', trade_ncols)
   } else {
     paste(vapply(seq_len(nrow(trade_rows)), function(i){
       r <- trade_rows[i]
       if (is_net) {
         sprintf(paste0('<tr align="right"><td>%s</td><td>%s</td><td nowrap>%s</td><td>%s</td><td>%s</td><td>%s</td>',
                         '<td>%s</td><td>%s</td>',
-                        '<td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>'),
+                        '<td>%s</td>%s<td>%s</td><td>%s</td></tr>'),
                 fmt_id(r$OrderId), fmt_id(r$PosId), fmt_dt(r$OpenTime), side_label(r$Side),
                 fmt_money(r$VolumeLot), html_escape(r$Item),
                 fmt_price(r$OpenPrice, r$Precision),
                 fmt_price_or_blank(r$ClosePrice, r$Precision),
-                fmt_money(r$Commission), fmt_money(r$Swap), fmt_money(r$Profit),
+                fmt_money(r$Commission), swap_td(r$Swap), fmt_money(r$Profit),
                 html_escape(r$Comment))
       } else {
         sprintf(paste0('<tr align="right"><td>%s</td><td>%s</td><td nowrap>%s</td><td>%s</td><td>%s</td><td>%s</td>',
                         '<td>%s</td><td>%s</td><td>%s</td><td nowrap>%s</td><td>%s</td>',
-                        '<td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>'),
+                        '<td>%s</td>%s<td>%s</td><td>%s</td></tr>'),
                 fmt_id(r$OrderId), fmt_id(r$PosId), fmt_dt(r$OpenTime), side_label(r$Side),
                 fmt_money(r$VolumeLot), html_escape(r$Item),
                 fmt_price(r$OpenPrice, r$Precision), fmt_price(r$Sl, r$Precision), fmt_price(r$Tp, r$Precision),
                 fmt_dt(r$CloseTime), fmt_price_or_blank(r$ClosePrice, r$Precision),
-                fmt_money(r$Commission), fmt_money(r$Swap), fmt_money(r$Profit),
+                fmt_money(r$Commission), swap_td(r$Swap), fmt_money(r$Profit),
                 html_escape(r$Comment))
       }
     }, character(1)), collapse = "\n")
   }
 
   trade_header <- if (is_net) {
-    paste0('<tr align="center" class="colhead"><td>Order ID</td><td>Position ID</td><td nowrap>Trade Time</td><td>Type</td><td>Volume</td><td>Symbol</td>',
+    paste0('<tr align="center" class="colhead"><td>Order ID</td><td>Position ID</td><td nowrap>Trade Time</td><td>Type</td><td>Volume</td><td>', lbl$symbol, '</td>',
            '<td>Open Price</td><td>Close Price</td>',
-           '<td>Commission</td><td>Swap</td><td>Profit</td><td>Comment</td></tr>\n')
+           '<td>Commission</td>', swap_th, '<td>Profit</td><td>Comment</td></tr>\n')
   } else {
-    paste0('<tr align="center" class="colhead"><td>Order ID</td><td>Position ID</td><td nowrap>Open Time</td><td>Type</td><td>Volume</td><td>Symbol</td>',
+    paste0('<tr align="center" class="colhead"><td>Order ID</td><td>Position ID</td><td nowrap>Open Time</td><td>Type</td><td>Volume</td><td>', lbl$symbol, '</td>',
            '<td>Open Price</td><td>S / L</td><td>T / P</td><td nowrap>Close Time</td><td>Close Price</td>',
-           '<td>Commission</td><td>Swap</td><td>Profit</td><td>Comment</td></tr>\n')
+           '<td>Commission</td>', swap_th, '<td>Profit</td><td>Comment</td></tr>\n')
   }
-  trade_total_row <- sprintf(
-    '<tr align="right" class="total-row"><td colspan="%d" align="right"><b>Total P/L:</b></td><td colspan="2" align="right"><b>%s</b></td></tr>\n',
-    trade_cols - 2L, fmt_money(summary$closed_pl))
+  trade_total_row <- total_row_html(paste("Total", lbl$pl), summary$closed_pl, trade_ncols)
 
   # Open Positions -- own card, own natural column count (no more cross-alignment with Trades,
   # so the old colspan=2 ID/Profit merges and the Commission/S-L/T-P blank fillers are gone;
@@ -416,14 +442,14 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
   # Commission, which stays real for Net) is always 0.00 for Net -- verified 2026-08-17,
   # 0/10388+156+240 nonzero across 3 domains -- so it's dropped entirely for Net, kept for Gross
   # (97%/87% nonzero there). S/L/T/P: same story as Trades, Net always 0, Gross real.
-  open_ncols <- if (is_net) 9L else 12L
+  open_ncols <- (if (is_net) 9L else 12L) - (if (show_swap) 0L else 1L)
   open_positions_header <- if (is_net) {
-    paste0('<tr align="center" class="colhead"><td>ID</td><td nowrap>Open Time</td><td>Type</td><td>Volume</td><td>Symbol</td>',
-           '<td>Price</td><td nowrap>Current Price</td><td>Swap</td><td>Profit</td></tr>\n')
+    paste0('<tr align="center" class="colhead"><td>ID</td><td nowrap>Open Time</td><td>Type</td><td>Volume</td><td>', lbl$symbol, '</td>',
+           '<td>Price</td><td nowrap>Current Price</td>', swap_th, '<td>Profit</td></tr>\n')
   } else {
-    paste0('<tr align="center" class="colhead"><td>ID</td><td nowrap>Open Time</td><td>Type</td><td>Volume</td><td>Symbol</td>',
+    paste0('<tr align="center" class="colhead"><td>ID</td><td nowrap>Open Time</td><td>Type</td><td>Volume</td><td>', lbl$symbol, '</td>',
            '<td>Price</td><td>S / L</td><td>T / P</td><td nowrap>Current Price</td>',
-           '<td>Commission</td><td>Swap</td><td>Profit</td></tr>\n')
+           '<td>Commission</td>', swap_th, '<td>Profit</td></tr>\n')
   }
 
   open_html <- if (is.null(open_rows) || nrow(open_rows) == 0){
@@ -433,37 +459,35 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
       r <- open_rows[i]
       if (is_net) {
         sprintf(paste0('<tr align="right"><td>%s</td><td nowrap>%s</td><td>%s</td><td>%s</td><td>%s</td>',
-                        '<td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>'),
+                        '<td>%s</td><td>%s</td>%s<td>%s</td></tr>'),
                 r$Ticket, fmt_dt(r$OpenTime), side_label(r$Side),
                 fmt_money(r$VolumeLot), html_escape(r$Item),
                 fmt_price(r$OpenPrice, r$Precision),
                 fmt_price(r$MarketPrice, r$Precision),
-                fmt_money(r$Swap), fmt_money(r$Profit))
+                swap_td(r$Swap), fmt_money(r$Profit))
       } else {
         sprintf(paste0('<tr align="right"><td>%s</td><td nowrap>%s</td><td>%s</td><td>%s</td><td>%s</td>',
                         '<td>%s</td><td>%s</td><td>%s</td><td>%s</td>',
-                        '<td>%s</td><td>%s</td><td>%s</td></tr>'),
+                        '<td>%s</td>%s<td>%s</td></tr>'),
                 r$Ticket, fmt_dt(r$OpenTime), side_label(r$Side),
                 fmt_money(r$VolumeLot), html_escape(r$Item),
                 fmt_price(r$OpenPrice, r$Precision), fmt_price(r$Sl, r$Precision), fmt_price(r$Tp, r$Precision),
                 fmt_price(r$MarketPrice, r$Precision),
-                fmt_money(r$Commission), fmt_money(r$Swap), fmt_money(r$Profit))
+                fmt_money(r$Commission), swap_td(r$Swap), fmt_money(r$Profit))
       }
     }, character(1)), collapse = "\n")
   }
-  open_total_row <- sprintf(
-    '<tr align="right" class="total-row"><td colspan="%d" align="right"><b>Floating P/L:</b></td><td colspan="2" align="right"><b>%s</b></td></tr>\n',
-    open_ncols - 2L, fmt_money(summary$floating_pl))
+  open_total_row <- total_row_html(paste("Floating", lbl$pl), summary$floating_pl, open_ncols)
 
   # Orders -- own card, own natural column count. State column removed entirely (verified
   # 2026-08-17: always "filled" across all 4 domains, 30 days, 2308/2308 rows). S/L/T/P: Net
   # drops them (always 0), Gross keeps them (real). No footer row after Orders.
   order_ncols <- if (is_net) 7L else 9L
   order_header <- if (is_net) {
-    paste0('<tr align="center" class="colhead"><td>ID</td><td nowrap>Open Time</td><td>Type</td><td>Volume</td><td>Symbol</td>',
+    paste0('<tr align="center" class="colhead"><td>ID</td><td nowrap>Open Time</td><td>Type</td><td>Volume</td><td>', lbl$symbol, '</td>',
            '<td>Price</td><td align="left">Comment</td></tr>\n')
   } else {
-    paste0('<tr align="center" class="colhead"><td>ID</td><td nowrap>Open Time</td><td>Type</td><td>Volume</td><td>Symbol</td>',
+    paste0('<tr align="center" class="colhead"><td>ID</td><td nowrap>Open Time</td><td>Type</td><td>Volume</td><td>', lbl$symbol, '</td>',
            '<td>Price</td><td>S / L</td><td>T / P</td><td align="left">Comment</td></tr>\n')
   }
   order_html <- if (is.null(order_rows) || nrow(order_rows) == 0){
@@ -514,17 +538,17 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
       # unaffected -- show_swap_or_overnight_row is always TRUE for them.
       if (summary$show_swap_or_overnight_row) c(summary$swap_or_overnight_label, fmt_money(summary$swap_or_overnight)) else NULL,
       c("Dividends", fmt_money(summary$dividends)),
-      c("Trading P/L", fmt_money(summary$trading_pl)))),
+      c(paste("Trading", lbl$pl), fmt_money(summary$trading_pl)))),
       bold_last = FALSE, width = "25%"),
     detail_card("Close State", list(
       c("Equity", fmt_money(summary$equity)),
       c("Balance", fmt_money(summary$balance)),
-      c("Margin", fmt_money(summary$margin)),
-      c("Free Margin", fmt_money(summary$free_margin))),
+      c(if (isTRUE(summary$is_investment_account)) lbl$used_margin else "Margin", fmt_money(summary$margin)),
+      c(lbl$free_margin, fmt_money(summary$free_margin))),
       bold_last = FALSE, width = "25%"),
-    detail_card("P/L", list(
-      c("Equity Total P/L", fmt_money(summary$equity_total_pl)),
-      c("Closed Total P/L", fmt_money(summary$balance_total_pl)),
+    detail_card(lbl$pl, list(
+      c(paste("Equity Total", lbl$pl), fmt_money(summary$equity_total_pl)),
+      c(paste("Closed Total", lbl$pl), fmt_money(summary$balance_total_pl)),
       c("Floating", fmt_money(summary$floating_pl))),
       bold_last = FALSE, width = "25%"),
     '</tr></table></td></tr>\n',
@@ -540,7 +564,7 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
   single_column_rows <- Filter(Negate(is.null), list(
     c("Open Equity", fmt_money_or_blank(summary$opening_equity), "gap"),
     c("Open Balance", fmt_money_or_blank(summary$opening_balance)),
-    c("Realised P/L", fmt_money(summary$balance_total_pl)),
+    c(paste("Realised", lbl$pl), fmt_money(summary$balance_total_pl)),
     c("Commission", fmt_money(summary$total_commission)),
     # See the "Cash Movement" card's equivalent line for why this can be dropped entirely
     # (investment account, Overnight not currently applicable) instead of falling back to Swap.
@@ -548,9 +572,9 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
     c("Dividends", fmt_money(summary$dividends)),
     c("Deposit/Withdrawal", fmt_deposit_withdrawal(summary$deposits, summary$withdrawals)),
     c("Close Balance", fmt_money(summary$balance), "gap"),
-    c("Unrealised P/L (Floating)", fmt_money(summary$floating_pl)),
-    c("Used Margin", fmt_money(summary$margin)),
-    c("Free Margin", fmt_money(summary$free_margin)),
+    c(paste("Unrealised", lbl$pl, "(Floating)"), fmt_money(summary$floating_pl)),
+    c(lbl$used_margin, fmt_money(summary$margin)),
+    c(lbl$free_margin, fmt_money(summary$free_margin)),
     c("Close Equity", fmt_money(summary$equity))
   ))
   single_column_html <- paste(vapply(single_column_rows, function(r){
@@ -574,7 +598,7 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
       # summary$show_leverage is the single source of truth (task_TT_Statements.R) -- account_header_block's
       # show_leverage param (the "cards" layout's equivalent, below) reads the same value.
       if (isTRUE(summary$show_leverage)) sprintf('<tr align="left"><td style="font-size:14pt"><b>Leverage:</b> 1:%s</td></tr>\n', leverage) else '',
-      sprintf('<tr align="left"><td style="font-size:14pt"><b>Account Type:</b> %s</td></tr>\n', acc_type)
+      sprintf('<tr align="left"><td style="font-size:14pt"><b>Account Type:</b> %s</td></tr>\n', acc_type_label)
     )
     # Wrapped in a SINGLE <td colspan="trade_cols"> (same safe pattern summary_block_cards/
     # detail_card already use) so this row is opaque to the outer table's per-column width
@@ -602,7 +626,7 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
       '<tr><td colspan="', trade_cols, '"><br></td></tr>\n'
     )
   } else {
-    header_block <- account_header_block(login, name, currency, leverage, acc_type, day_label, trade_cols, period_type,
+    header_block <- account_header_block(login, name, currency, leverage, acc_type_label, day_label, trade_cols, period_type,
                                           show_leverage = isTRUE(summary$show_leverage))
   }
 
@@ -615,7 +639,7 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
     '<tr><td colspan="', trade_cols, '" style="font: 1pt arial">&nbsp;</td></tr>\n',
     '<tr align="left" class="stripe"><td colspan="', trade_cols, '"><b>Details:</b></td></tr>\n',
     '<tr><td colspan="', trade_cols, '"><table cellspacing="8" cellpadding="0" border="0" width="100%"><tr valign="top">',
-    detail_card("Trading P/L", list(
+    detail_card(paste("Trading", lbl$pl), list(
       c("Profit", fmt_money(summary$trading_profit)),
       c("Loss", fmt_money(summary$trading_loss)),
       c("Total", fmt_money(summary$trading_pl)))),
@@ -653,7 +677,8 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
   body <- paste0(
     if (is_single_column) '' else summary_block_cards,
 
-    symbol_summary_block(trade_rows, trade_cols, show_swap = !isTRUE(summary$is_investment_account)),
+    symbol_summary_block(trade_rows, trade_cols, show_swap = show_swap,
+                         symbol_label = lbl$symbol, pl_label = lbl$pl),
 
     # Order requested 2026-08-18: Trades/Open Positions/Orders come right after Trade Symbol
     # Summary; Dividends, Overnight, Deposit/Withdrawal follow, in that order (Deposit/Withdrawal
@@ -662,11 +687,11 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
     # (raw_trades -- both closed trades and, for Net, opening/adding fills) -- deliberately NOT
     # summary$balance_total_pl (which nets in Deposit/Withdrawal AND Dividends/Overnight, their
     # own cards with their own Total: rows below).
-    card_grid_wrap(trade_table_label, trade_header, closed_html, trade_total_row, trade_cols),
+    card_grid_wrap(trade_table_label, trade_header, closed_html, trade_total_row, trade_ncols),
     card_grid_wrap("Open Positions", open_positions_header, open_html, open_total_row, open_ncols),
     card_grid_wrap("Orders", order_header, order_html, '', order_ncols),
 
-    cash_table_block("Dividends", cash_rows[RowType == "dividend"], trade_cols, show_taxes = TRUE, show_comment = FALSE, show_commission = TRUE, show_symbol = TRUE, date_width = "200", total = summary$dividends),
+    cash_table_block("Dividends", cash_rows[RowType == "dividend"], trade_cols, show_taxes = TRUE, show_comment = FALSE, show_commission = TRUE, show_symbol = TRUE, date_width = "200", total = summary$dividends, symbol_label = lbl$symbol),
     # Visibility keyed off summary$show_overnight -- TRUE when the account's group has Overnight
     # enabled (Groups.PerformOvernight, a still-test feature scoped to investment accounts) OR
     # this period has real Overnight rows regardless of the flag (safety net so toggling the
@@ -679,7 +704,7 @@ render_statement <- function(login, name, currency, leverage, day_label, acc_typ
     '</table>\n'
   )
 
-  paste0(page_head(paste0("Statement: ", login, " - ", name, " (", acc_type, ")")),
+  paste0(page_head(paste0("Statement: ", login, " - ", name, " (", acc_type_label, ")")),
          header_block,
          body, page_tail)
 }
