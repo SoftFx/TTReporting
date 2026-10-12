@@ -29,7 +29,8 @@ write_statement_file <- function(content, domain, period_folder, login, suffix, 
 
   for (backend in backends) {
     if (backend == "seaweed") {
-      put_statement_object(content, domain = domain, period_folder = period_folder, login = login,
+      put_statement_object(content, bucket = seaweed_bucket_for_domain(domain, config),
+                           domain = domain, period_folder = period_folder, login = login,
                            suffix = suffix, content_type = ctype,
                            filer_url = config$storage$seaweed_filer_url)
     } else if (backend == "disk") {
@@ -295,6 +296,11 @@ execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storag
     for (db in names(config$database_connections[["tt"]])) {
       tryCatch({
         Credstt <- config$database_connections$tt[[db]]
+        # Resolve the domain's bucket up front: a domain missing from storage.seaweed_buckets
+        # fails here ONCE (one HSM error line, no DB queries) instead of once per account.
+        if ("seaweed" %in% config$storage$backend) {
+          print(paste(db, ": seaweed bucket =", seaweed_bucket_for_domain(db, config)))
+        }
         # Single connection reused for all 6 queries below (each getter used to open/close its
         # own -- 6 connect/disconnect round-trips per domain instead of 1).
         ConnectToDB(dbname = Credstt$postgre_DB, user = Credstt$postgre_USER, password = Credstt$postgre_PASSWORD, host = Credstt$postgre_HOST)

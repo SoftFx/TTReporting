@@ -99,23 +99,34 @@ import users.caddyfile
     }
 
     # ── Statements (SeaweedFS) — read-only, GET/HEAD only ──
-    # Data actually lives under /buckets/statements/... in the filer now (moved there so the
-    # S3 gateway's fixed /buckets/<name> convention recognizes "statements" as a bucket -- this
-    # version of SeaweedFS has no config option to relocate that root). We proxy the SAME path
-    # externally (no uri rewriting) because SeaweedFS's own folder-browser HTML generates links
-    # using its real internal path -- a rewritten external prefix would only fix the first
-    # request; every link the browser then clicks would go straight to /buckets/statements/...
-    # and miss this route entirely (confirmed by testing). Old /statements/* bookmarks just
-    # redirect to the new address below.
+    # Two buckets in the filer: /buckets/statements (ttlive, ttliveUK, ttliveEU) and
+    # /buckets/statements-prom (ttlivePROM -- separate product, separate S3 key; buckets must
+    # physically live under /buckets/<name>, this version of SeaweedFS has no option to relocate
+    # that root). We proxy the SAME paths externally (no uri rewriting) because SeaweedFS's own
+    # folder-browser HTML generates links using its real internal path -- a rewritten external
+    # prefix would only fix the first request; every link the browser then clicks would go
+    # straight to /buckets/... and miss the route entirely (confirmed by testing).
+    #
+    # /statements/ (the home-page card) opens /buckets/ -- the folder that shows both buckets.
+    # Older deep bookmarks /statements/<domain>/... still land in the first bucket.
     handle /statements/* {
         basic_auth {
             import admin_creads
             import statements-users
         }
-        redir * /buckets{uri} 302
+        handle /statements/ {
+            redir * /buckets/ 302
+        }
+        handle {
+            redir * /buckets{uri} 302
+        }
     }
 
-    handle /buckets/statements/* {
+    # Only the bucket list itself and these two buckets are reachable -- any other bucket
+    # created later shows up by name in the /buckets/ listing but is not served until it is
+    # added here on purpose.
+    @statement_buckets path /buckets/ /buckets/statements/* /buckets/statements-prom/*
+    handle @statement_buckets {
         @notget {
             not method GET HEAD
         }
