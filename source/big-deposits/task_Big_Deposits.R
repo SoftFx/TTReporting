@@ -129,8 +129,9 @@ Totalresults[, DEPOSIT_USD := DEPOSIT*ratetoUSD]
 # Apply filters from setups
 Totalresults <- Totalresults[!LOGIN %in% config$business_parameters$excluded_users]
 BigDepositsDT <- Totalresults[abs(DEPOSIT_USD)>=config$business_parameters$deposit_valueUSD_threshold, 
-                              .(DB, NAME, COUNTRY, LOGIN, ID, DEPOSIT, CURRENCY, TYPE, "DATE" = as.character(DATE_TIME))][order(DB, DATE)]
+                              .(DB, GROUP, NAME, COUNTRY, LOGIN, ID, DEPOSIT, CURRENCY, TYPE, "DATE" = as.character(DATE_TIME))][order(DB, DATE)]
 BigDepositsDT[, DataText := paste0("DBName: ", DB, " \n",
+                                 "Group: ", GROUP, " \n",
                                  "Name: ", NAME, " \n",
                                  "Country: ", COUNTRY, " \n",
                                  "Account: ", LOGIN, " \n",
@@ -150,11 +151,13 @@ print(statusError)
  if (nrow(BigDepositsDT)== 0) {
    task_res <- data.table(
      DB        = NA_character_,
+     GROUP     = NA_character_,
      NAME      = NA_character_,
      COUNTRY   = NA_character_,
-     LOGIN     = NA_integer_, 
+     LOGIN     = NA_integer_,
      ID        = NA_real_,
-     DEPOSIT   = NA_real_, 
+     DEPOSIT   = NA_real_,
+     CURRENCY  = NA_character_,
      TYPE      = NA_character_,
      DATE      = NA_character_,
      DataText  = NA_character_, 

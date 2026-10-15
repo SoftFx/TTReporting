@@ -59,6 +59,7 @@ getttdepositPeriod<- function(Credstt, From, To){
      tr."OrderId",
      tr."AccountFk" as "Login",
 	   a."Name",
+	   a."Group",
 	   a."Country",
 	   a."InternalComment",
 	   tr."BalanceCurrency",
@@ -73,7 +74,7 @@ order by "TrTime" DESC')
   
   deposits <- as.data.table(deposits)  
   TTdeposits <- deposits[, .("TICKET"= OrderId, "DATE_TIME" = TrTime, "LOGIN" = Login, "DEPOSIT" = BalanceMovement,  "CURRENCY"= BalanceCurrency,
-                          "NAME" = Name, "COUNTRY" = Country, "ID" = InternalComment)][order(DATE_TIME)]
+                          "NAME" = Name, "GROUP" = Group, "COUNTRY" = Country, "ID" = InternalComment)][order(DATE_TIME)]
   TTdeposits[, ID := as.numeric(ID)]
   TTdeposits[, TYPE := ifelse(DEPOSIT>0, "Deposit", "Withdraw")]
   TTdeposits[, DB := Credstt$postgre_SCHEMA]
@@ -87,7 +88,7 @@ getMT4depositPeriod <- function(dbCreds, From, To, TimeOffset){
   From <- as.character(From + minutes(TimeOffset))  
   To <- as.character(To + minutes(TimeOffset))
   query1 <- sprintf("SELECT mt4_trades.TICKET, mt4_trades.CLOSE_TIME as DATE_TIME, mt4_trades.LOGIN, mt4_trades.PROFIT as DEPOSIT,
-                            mt4_users.CURRENCY, mt4_users.`NAME`, mt4_users.COUNTRY, mt4_users.ID
+                            mt4_users.CURRENCY, mt4_users.`NAME`, mt4_users.`GROUP`, mt4_users.COUNTRY, mt4_users.ID
                    FROM mt4_trades
                    LEFT JOIN mt4_users
                    ON mt4_trades.LOGIN = mt4_users.LOGIN
@@ -112,7 +113,7 @@ getMT5depositPeriod <- function(dbCreds, From, To, TimeOffset){
   From <- as.character(From + minutes(TimeOffset))  
   To <- as.character(To + minutes(TimeOffset))
   query <- sprintf(paste("select mt5_deals.Deal as TICKET, mt5_deals.Time as DATE_TIME, mt5_deals.Login as LOGIN, mt5_deals.Profit as DEPOSIT, 
-                         mt5_groups.Currency as CURRENCY, mt5_users.`Name` as NAME, mt5_users.`Country` as COUNTRY, mt5_users.ID
+                         mt5_groups.Currency as CURRENCY, mt5_users.`Name` as NAME, mt5_users.`Group` as `GROUP`, mt5_users.`Country` as COUNTRY, mt5_users.ID
                          from mt5_deals
                          left join mt5_users
                          on mt5_deals.Login = mt5_users.Login
