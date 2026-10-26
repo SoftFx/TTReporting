@@ -299,6 +299,26 @@ Changes made to the shared prod files for this:
 Full deployment story (server steps, verification, bugs hit) is in
 `source/tt-statements/seaweed-test-docker/NOTES.md`.
 
+**Two buckets since 2026-10-12.** `ttlivePROM` is a separate product with its own S3 key, so it
+lives in its own bucket: `/buckets/statements` holds `ttlive` / `ttliveUK` / `ttliveEU`,
+`/buckets/statements-prom` holds `ttlivePROM`. What that changed in the shared prod files:
+
+- **`caddy/Caddyfile`** — `/statements/` (the home-page card) now redirects to `/buckets/`, the
+  level where both buckets are visible; deeper `/statements/<domain>/...` bookmarks still land in
+  the first bucket. One named matcher serves exactly `/buckets/`, `/buckets/statements/*` and
+  `/buckets/statements-prom/*` (GET/HEAD only, same auth) — a new bucket is not reachable until
+  it is added there on purpose.
+- **`seaweedfs/s3.json`** (gitignored, see `s3.json.example`) — one identity per key, rights are
+  per **bucket** (`Read:<bucket>` + `List:<bucket>`). Per-folder rights inside a bucket break
+  ordinary S3 clients (HeadBucket / GetBucketLocation need bucket-wide `Read`).
+- **`tt-statements/configDocker/config.yaml`** (gitignored) — `storage.seaweed_buckets` maps every
+  domain to its bucket; there is no default, a domain missing from the map fails that domain.
+- **Updating `caddy/Caddyfile` on the server:** overwrite it in place (`sudo cp new old`), do not
+  replace it with `mv`. It is bind-mounted as a single file and Caddy is only reloaded, so a
+  replaced file (new inode) stays invisible to the container until it is recreated.
+
+Details and the rollout steps: `source/tt-statements/SEAWEED_PROM_BUCKET.md`.
+
 ## Adding a new user
 
 ### Option A: from Windows (add-user.bat)

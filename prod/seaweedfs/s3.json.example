@@ -10,7 +10,35 @@
       ],
       "actions": [
         "Read:statements",
+        "List:statements",
+        "Read:statements-prom",
+        "List:statements-prom"
+      ]
+    },
+    {
+      "name": "statements-download-fxo",
+      "credentials": [
+        {
+          "accessKey": "REPLACE_WITH_ACCESS_KEY",
+          "secretKey": "REPLACE_WITH_SECRET_KEY"
+        }
+      ],
+      "actions": [
+        "Read:statements",
         "List:statements"
+      ]
+    },
+    {
+      "name": "statements-download-prom",
+      "credentials": [
+        {
+          "accessKey": "REPLACE_WITH_ACCESS_KEY",
+          "secretKey": "REPLACE_WITH_SECRET_KEY"
+        }
+      ],
+      "actions": [
+        "Read:statements-prom",
+        "List:statements-prom"
       ]
     }
   ]

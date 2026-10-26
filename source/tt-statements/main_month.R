@@ -85,8 +85,10 @@ res <- execute_task_tt_statements(config = cfg, dayFrom = dayFrom, dayTo = dayTo
                                    storage_root = storage_root, period_folder = period_folder,
                                    task_exec_log_path = task_exec_log_path, only_logins = only_logins,
                                    monitor_paths = cfg$monitoring$connection$paths[c(2, 3)],
-                                   period_type = "Monthly", summary_layout = "single_column")
-task_period <- paste("Month:", day_label, "Statements written:", res[[4]])
+                                   period_type = "Monthly", summary_layout = "single_column",
+                                   # config business_parameters.skip_empty_statements.monthly; absent = FALSE (generate all)
+                                   skip_empty = isTRUE(cfg$business_parameters$skip_empty_statements$monthly))
+task_period <- paste("Month:", day_label, "Statements written:", res[[4]], "Skipped empty:", res[[5]])
 cat(task_period, "\n")
 
 # 3) Load previous state (if any) and compute time since last run

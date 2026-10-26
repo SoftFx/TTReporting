@@ -284,7 +284,7 @@ build_and_write_account_statement <- function(login, accRow, snapRow, openSnapRo
 
 execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storage_root, period_folder, task_exec_log_path,
                                         only_logins = NULL, monitor_paths = NULL, period_type = "Daily",
-                                        summary_layout = "cards"){
+                                        summary_layout = "cards", skip_empty = FALSE){
   if (is.null(monitor_paths)) monitor_paths <- config$monitoring$connection$paths
   # Timestamp of this actual execution -- distinct from `day_label`/`period_folder` (the TARGET
   # period being processed) so re-runs of the same period are distinguishable in the log.
@@ -330,7 +330,7 @@ execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storag
           statusError <- c(statusError, paste0(db, ": ", msg))
           domain_summary <- rbind(domain_summary, data.table(
             run_at = run_at, period_folder = period_folder, DB = db, day = day_label,
-            accounts = 0L, written = 0L, errors = 1L))
+            accounts = 0L, written = 0L, skipped_empty = 0L, errors = 1L))
         } else {
           snaps    <- snaps[!Domain %in% config$business_parameters$excluded_domains]
           openSnaps <- getDayAccountSnapshotsTT(Credstt, openSnapFrom, openSnapTo)
@@ -343,6 +343,32 @@ execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storag
           # numeric vector -- bit64 overrides `%in%` (and `==`) correctly, so use that instead.
           logins <- accounts$Login[accounts$Login %in% snaps$Login]
           if (!is.null(only_logins)) logins <- logins[logins %in% only_logins]
+          n_accounts <- length(logins)
+
+          # Empty account = nothing to report for the period: zero Balance/Equity at both ends
+          # (opening snapshot missing counts as zero), no TradeReports rows (trades, deposits,
+          # dividends, overnight), no open positions or orders at the close. Checked in memory
+          # against the data already loaded above -- no extra DB queries. Anything with activity
+          # inside the period stays, even if it ends at zero (deposit+withdrawal mid-month etc.).
+          # NA Balance/Equity counts as non-empty (safe side). round(, 2) ignores float dust.
+          # `%in%`, not c()/union(): logins are integer64 (see the bit64 note above). But bit64's
+          # `%in%` itself errors ("missing value where TRUE/FALSE needed", bit64 4.6.0.1) when
+          # the table side is empty (a domain with no pending orders, no trades that day, no
+          # opening snapshot), and when x is empty while the table has >= ~43.7k rows (only_logins
+          # run: other domains end up with 0 logins vs a month of trades) -- log2(0) inside its
+          # hash-size heuristic becomes NA. Both are normal here, hence in_tbl().
+          skipped_empty <- 0L
+          if (isTRUE(skip_empty)) {
+            nz <- function(x) is.na(x) | round(x, 2) != 0
+            in_tbl <- function(x, tbl) if (length(x) == 0 || length(tbl) == 0) rep(FALSE, length(x)) else x %in% tbl
+            active <- in_tbl(logins, trades$Login) |
+                      in_tbl(logins, posSnaps$Login) |
+                      in_tbl(logins, ordSnaps$Login) |
+                      in_tbl(logins, snaps[nz(Balance) | nz(Equity), Login]) |
+                      in_tbl(logins, openSnaps[nz(Balance) | nz(Equity), Login])
+            skipped_empty <- sum(!active)
+            logins <- logins[active]
+          }
           written <- 0L
           acc_errors <- NULL
           # NB: `for (login in logins)` silently strips the integer64 class per-iteration
@@ -363,12 +389,15 @@ execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storag
             if (isTRUE(res)) written <- written + 1L
           }
 
-          print(paste(db, ": statements written =", written, "/ accounts =", length(logins)))
+          print(paste(db, ": statements written =", written, "/ accounts =", n_accounts,
+                      "/ skipped empty =", skipped_empty))
           if (length(acc_errors) > 0) statusError <- c(statusError, paste0(db, ": ", acc_errors))
 
+          # accounts = all candidates BEFORE the empty filter, so accounts = written + skipped_empty + errors
           domain_summary <- rbind(domain_summary, data.table(
             run_at = run_at, period_folder = period_folder, DB = db, day = day_label,
-            accounts = length(logins), written = written, errors = length(acc_errors)))
+            accounts = n_accounts, written = written, skipped_empty = skipped_empty,
+            errors = length(acc_errors)))
         }
       }, error = function(e) {
         print(e)
@@ -380,7 +409,7 @@ execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storag
   if (nrow(domain_summary) == 0) {
     domain_summary <- data.table(run_at = run_at, period_folder = period_folder, DB = NA_character_,
                                   day = day_label, accounts = NA_integer_, written = NA_integer_,
-                                  errors = NA_integer_)
+                                  skipped_empty = NA_integer_, errors = NA_integer_)
   }
   domain_summary[, err := paste(statusError, collapse = "; ")]
 
@@ -394,7 +423,13 @@ execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storag
       UpdateIntSensorValue(productKey = config$monitoring$connection$productKey, address = config$monitoring$connection$address,
                            port = config$monitoring$connection$port, path = monitor_paths[1],
                            value = sum(domain_summary$written, na.rm = TRUE), status = 1,
-                           comment = paste("Statements for", day_label, ":", paste(domain_summary$DB, domain_summary$written, sep = "=", collapse = ", ")))
+                           # Sensor value stays "written" (same meaning as before -- history/alerts
+                           # unchanged); the skip count goes into the comment, only when the filter
+                           # is on: "ttlive=1200 (skipped 3400), ttliveUK=..."
+                           comment = paste("Statements for", day_label, ":",
+                                           paste0(domain_summary$DB, "=", domain_summary$written,
+                                                  if (isTRUE(skip_empty)) paste0(" (skipped ", domain_summary$skipped_empty, ")") else "",
+                                                  collapse = ", ")))
     }, error = function(e){ print("HSMconnErr:"); print(e) })
   } else {
     cat("HSM monitoring disabled (config$monitoring$enabled: false) -- skipping notification.\n")
@@ -406,5 +441,5 @@ execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storag
     fwrite(domain_summary, task_exec_log_path)
   }
 
-  list(TRUE, dayFrom, dayTo, sum(domain_summary$written, na.rm = TRUE))
+  list(TRUE, dayFrom, dayTo, sum(domain_summary$written, na.rm = TRUE), sum(domain_summary$skipped_empty, na.rm = TRUE))
 }
