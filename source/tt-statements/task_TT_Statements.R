@@ -224,7 +224,11 @@ build_and_write_account_statement <- function(login, accRow, snapRow, openSnapRo
     trading_loss = sum(closed_raw_trades$Profit[closed_raw_trades$Profit < 0], na.rm = TRUE),
     trading_pl = sum(closed_raw_trades$Profit, na.rm = TRUE),
     closed_pl = sum(trade_results$Result),
-    floating_pl = snapRow$Equity - snapRow$Balance,
+    # Equity is stored with 2 decimals, Balance may carry more (deposits like 35312.025155), so with
+    # no open positions Equity - Balance leaves a sub-cent tail that rounds to +-0.01. Checked on all
+    # domains (2026-11-04): without positions the gap is always < 0.01 -> show 0, as the server does.
+    floating_pl = if (nrow(open_rows) == 0 && isTRUE(abs(snapRow$Equity - snapRow$Balance) < 0.01)) 0
+                  else snapRow$Equity - snapRow$Balance,
     # Period P/L net of deposit/withdrawal activity, from the balance side (realized only) and
     # from the equity side (realized + change in floating, since Equity already embeds floating).
     balance_total_pl = snapRow$Balance - (openSnapRow$Balance %||% 0) - deposit_withdrawal,
@@ -284,7 +288,7 @@ build_and_write_account_statement <- function(login, accRow, snapRow, openSnapRo
 
 execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storage_root, period_folder, task_exec_log_path,
                                         only_logins = NULL, monitor_paths = NULL, period_type = "Daily",
-                                        summary_layout = "cards", skip_empty = FALSE){
+                                        summary_layout = "cards", skip_inactive = FALSE){
   if (is.null(monitor_paths)) monitor_paths <- config$monitoring$connection$paths
   # Timestamp of this actual execution -- distinct from `day_label`/`period_folder` (the TARGET
   # period being processed) so re-runs of the same period are distinguishable in the log.
@@ -345,12 +349,26 @@ execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storag
           if (!is.null(only_logins)) logins <- logins[logins %in% only_logins]
           n_accounts <- length(logins)
 
-          # Empty account = nothing to report for the period: zero Balance/Equity at both ends
-          # (opening snapshot missing counts as zero), no TradeReports rows (trades, deposits,
-          # dividends, overnight), no open positions or orders at the close. Checked in memory
-          # against the data already loaded above -- no extra DB queries. Anything with activity
-          # inside the period stays, even if it ends at zero (deposit+withdrawal mid-month etc.).
-          # NA Balance/Equity counts as non-empty (safe side). round(, 2) ignores float dust.
+          # Inactive account = nothing happened during the period -> no statement
+          # (business_parameters.skip_inactive_statements). Active if ANY of:
+          #   1. trade: TradeReports TrType 3/4 (Net fills / Gross closes);
+          #   2. deposit/withdrawal: TrType 5 (also dividends/fees/overnight -- they move Equity anyway);
+          #   3. Equity changed: closing vs opening snapshot (missing opening = 0, NA = changed);
+          #   4. pending order placed in the period and still working at the close (Created in period);
+          #   5. pending order modified: same OrderId in the opening and closing order snapshots with a
+          #      different Price/StopPrice/Amount/TakeProfit/StopLoss;
+          #   6. position opened in the period and still open at the close (Created in period). Needed
+          #      for Gross: opening a position writes no TradeReports row (only TrType 4 on close). For
+          #      Net it's redundant (every such day also has a TrType 3 fill), so it changes nothing there.
+          #      Created is stable across snapshots for both (no reset on rollover/swap) -- checked on all
+          #      domains, 30 days to 2026-11-04. A few service accounts (e.g. 995) have Created = -infinity,
+          #      which RPostgres reads as a far-future date (3432-06-09) -- never inside the period.
+          # TradeReports has no OrderOpened/PositionOpened rows and TradeModified is written only for
+          # splits, hence 4/5/6 come from the snapshots (VALIDATION.md, 2026-11-03). Orders placed/modified
+          # and cancelled within the period aren't shown in the statement, so they don't count. Created is
+          # never compared between snapshots: its sub-millisecond precision differs from day to day.
+          # One extra DB query (the opening order snapshot), only when the filter is on.
+          # round(, 2) ignores float dust.
           # `%in%`, not c()/union(): logins are integer64 (see the bit64 note above). But bit64's
           # `%in%` itself errors ("missing value where TRUE/FALSE needed", bit64 4.6.0.1) when
           # the table side is empty (a domain with no pending orders, no trades that day, no
@@ -358,14 +376,29 @@ execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storag
           # run: other domains end up with 0 logins vs a month of trades) -- log2(0) inside its
           # hash-size heuristic becomes NA. Both are normal here, hence in_tbl().
           skipped_empty <- 0L
-          if (isTRUE(skip_empty)) {
-            nz <- function(x) is.na(x) | round(x, 2) != 0
+          if (isTRUE(skip_inactive)) {
             in_tbl <- function(x, tbl) if (length(x) == 0 || length(tbl) == 0) rep(FALSE, length(x)) else x %in% tbl
-            active <- in_tbl(logins, trades$Login) |
-                      in_tbl(logins, posSnaps$Login) |
-                      in_tbl(logins, ordSnaps$Login) |
-                      in_tbl(logins, snaps[nz(Balance) | nz(Equity), Login]) |
-                      in_tbl(logins, openSnaps[nz(Balance) | nz(Equity), Login])
+            ne <- function(a, b) xor(is.na(a), is.na(b)) | (!is.na(a) & !is.na(b) & a != b)  # NA-safe "!="
+
+            eq <- merge(snaps[, .(Login, EqClose = Equity)], openSnaps[, .(Login, EqOpen = Equity)],
+                        by = "Login", all.x = TRUE)
+            eq_changed <- eq[is.na(EqClose) | round(EqClose - fcoalesce(EqOpen, 0), 2) != 0, Login]
+
+            ord_placed <- ordSnaps[Created >= dayFrom & Created < dayTo, Login]
+            pos_opened <- posSnaps[Created >= dayFrom & Created < dayTo, Login]
+
+            prevOrdSnaps <- getDayOrderSnapshotsTT(Credstt, openSnapFrom, openSnapTo)
+            oc <- merge(ordSnaps[, .(OrderId, Login, Price, StopPrice, Amount, TakeProfit, StopLoss)],
+                        prevOrdSnaps[, .(OrderId, pPrice = Price, pStop = StopPrice, pAmt = Amount,
+                                         pTp = TakeProfit, pSl = StopLoss)], by = "OrderId")
+            ord_modified <- oc[ne(Price, pPrice) | ne(StopPrice, pStop) | ne(Amount, pAmt) |
+                               ne(TakeProfit, pTp) | ne(StopLoss, pSl), Login]
+
+            active <- in_tbl(logins, trades$Login) |    # 1 + 2
+                      in_tbl(logins, eq_changed) |      # 3
+                      in_tbl(logins, ord_placed) |      # 4
+                      in_tbl(logins, ord_modified) |    # 5
+                      in_tbl(logins, pos_opened)        # 6
             skipped_empty <- sum(!active)
             logins <- logins[active]
           }
@@ -390,10 +423,11 @@ execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storag
           }
 
           print(paste(db, ": statements written =", written, "/ accounts =", n_accounts,
-                      "/ skipped empty =", skipped_empty))
+                      "/ skipped inactive =", skipped_empty))
           if (length(acc_errors) > 0) statusError <- c(statusError, paste0(db, ": ", acc_errors))
 
-          # accounts = all candidates BEFORE the empty filter, so accounts = written + skipped_empty + errors
+          # accounts = all candidates BEFORE the inactive filter, so accounts = written + skipped_empty + errors.
+          # Log column keeps its name `skipped_empty` (no log rotation on the server); it now counts inactive.
           domain_summary <- rbind(domain_summary, data.table(
             run_at = run_at, period_folder = period_folder, DB = db, day = day_label,
             accounts = n_accounts, written = written, skipped_empty = skipped_empty,
@@ -428,7 +462,7 @@ execute_task_tt_statements <- function(config, dayFrom, dayTo, day_label, storag
                            # is on: "ttlive=1200 (skipped 3400), ttliveUK=..."
                            comment = paste("Statements for", day_label, ":",
                                            paste0(domain_summary$DB, "=", domain_summary$written,
-                                                  if (isTRUE(skip_empty)) paste0(" (skipped ", domain_summary$skipped_empty, ")") else "",
+                                                  if (isTRUE(skip_inactive)) paste0(" (skipped ", domain_summary$skipped_empty, ")") else "",
                                                   collapse = ", ")))
     }, error = function(e){ print("HSMconnErr:"); print(e) })
   } else {

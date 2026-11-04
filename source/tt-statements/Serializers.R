@@ -40,8 +40,9 @@ library(data.table)
 .side_str <- function(s) ifelse(is.na(s), "", ifelse(s == 0, "buy", ifelse(s == 1, "sell", "-")))
 
 # one combined order label, same string as Render.R's order_type_label ("sell stop", "buy limit", "sell")
+# Type per TT docs: Market=0/Limit=1/Stop=2/Position=3/StopLimit=4 (see Render.R order_type_label)
 .order_label <- function(side, type) {
-  suf <- c("0" = "", "1" = " limit", "2" = " stop", "3" = " stop limit")[as.character(type)]
+  suf <- c("0" = "", "1" = " limit", "2" = " stop", "4" = " stop limit")[as.character(type)]
   paste0(.side_str(side), ifelse(is.na(suf), "", suf))
 }
 
@@ -69,7 +70,7 @@ library(data.table)
 }
 .side_json <- function(s) ifelse(is.na(s), NA_character_, ifelse(s == 0, "buy", ifelse(s == 1, "sell", "unknown")))
 .order_label_json <- function(side, type) {
-  suf <- c("0" = "", "1" = " limit", "2" = " stop", "3" = " stop limit")[as.character(type)]
+  suf <- c("0" = "", "1" = " limit", "2" = " stop", "4" = " stop limit")[as.character(type)]
   paste0(.side_json(side), ifelse(is.na(suf), "", suf))
 }
 

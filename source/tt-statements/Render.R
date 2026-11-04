@@ -222,18 +222,13 @@ symbol_summary_block <- function(trade_rows, trade_cols, show_swap = TRUE, symbo
 
 side_label <- function(side) ifelse(side == 0, "buy", ifelse(side == 1, "sell", "-"))
 
-# Best-effort pending-order type label (Market=0/Limit=1/Stop=2/StopLimit=3 -- common MT convention)
+# Pending-order type label -- DailyOrderSnapshots.Type per TT docs (VALIDATION.md):
+# Market=0/Limit=1/Stop=2/Position=3/StopLimit=4. Position never appears among pending orders.
+# Same table in Serializers.R (.order_label / .order_label_json) -- keep in sync.
 order_type_label <- function(side, type){
   base <- side_label(side)
-  suffix <- c("0" = "", "1" = " limit", "2" = " stop", "3" = " stop limit")[as.character(type)]
+  suffix <- c("0" = "", "1" = " limit", "2" = " stop", "4" = " stop limit")[as.character(type)]
   paste0(base, ifelse(is.na(suffix), "", suffix))
-}
-
-order_state_label <- function(state){
-  # Placed=0/Filled=1/Cancelled=2/Rejected=3/Expired=4 -- best-effort, matches DailyOrderSnapshots.State
-  labs <- c("0" = "placed", "1" = "filled", "2" = "cancelled", "3" = "rejected", "4" = "expired")
-  out <- labs[as.character(state)]
-  ifelse(is.na(out), "placed", out)
 }
 
 deal_direction_label <- function(trTime, posOpened){
