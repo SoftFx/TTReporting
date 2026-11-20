@@ -1,7 +1,7 @@
 monitoring:
   connection:
     productKey: 111111111-aaaa-4673-8922-2222222
-    address: hsm.soft-fx.lv
+    address: hsm.example.com
     port: 44330
     paths:
       - Big_Deals

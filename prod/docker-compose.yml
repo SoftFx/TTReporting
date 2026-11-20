@@ -10,6 +10,12 @@ services:
       - "80:80"
       - "443:443"
       - "8333:8333"
+      - "3443:3443"   # Cronicle behind SSO (see caddy/Caddyfile)
+      - "172.17.0.1:3480:3480"   # internal only: Cronicle single sign-on lookup
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # Cronicle (network_mode: host) on 172.17.0.1:3012
+    env_file:
+      - ./caddy/caddy.env   # gitignored: CRONICLE_PUBLIC_HOST=<portal-ip>:3443
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./caddy/users.caddyfile:/etc/caddy/users.caddyfile:ro
@@ -25,6 +31,30 @@ services:
     networks:
       - tt-internal
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ────────────────────────────────────────────
+  # SSO: Authentik proxy outpost "tt-reporting outpost".
+  # Caddy asks it on every request (forward_auth) and proxies
+  # /outpost.goauthentik.io/* (login callback, sign out) to it.
+  # ./authentik-outpost/outpost.env (gitignored): AUTHENTIK_HOST, AUTHENTIK_HOST_BROWSER
+  # (https://<authentik-host>) and AUTHENTIK_TOKEN (outpost token,
+  # Authentik admin -> Outposts -> tt-reporting outpost -> View deployment info).
+  # Keep the image tag equal to the Authentik server version.
+  # ────────────────────────────────────────────
+  authentik-outpost:
+    image: ghcr.io/goauthentik/proxy:2026.8.5
+    environment:
+      AUTHENTIK_INSECURE: "false"
+    env_file:
+      - ./authentik-outpost/outpost.env
+    restart: unless-stopped
+    networks:
+      - tt-internal
     logging:
       driver: json-file
       options:

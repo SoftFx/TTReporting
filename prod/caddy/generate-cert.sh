@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 if [ -z "$1" ]; then
     echo "Usage: bash generate-cert.sh <IP1,IP2,...>"
-    echo "Example: bash generate-cert.sh 195.13.245.138,192.168.10.32"
+    echo "Example: bash generate-cert.sh 203.0.113.10,10.0.0.5"
     exit 1
 fi
 
