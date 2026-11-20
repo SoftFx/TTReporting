@@ -39,6 +39,7 @@
             transition: color 0.2s, border-color 0.2s;
         }
         header a:hover { color: #fff; border-color: #fff; }
+        header a + a { margin-left: 8px; }
         main {
             max-width: 960px;
             margin: 2rem auto;
@@ -110,7 +111,10 @@
             <span class="logo">soft FX</span>
             <span class="title">Analytical Applications & Reports</span>
         </div>
-        <a href="/root-ca.crt" download>Install Root CA</a>
+        <div>
+            <a href="/root-ca.crt" download>Install Root CA</a>
+            <a href="/outpost.goauthentik.io/sign_out">Sign out</a>
+        </div>
     </header>
     <main>
         <h2>Products</h2>

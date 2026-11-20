@@ -27,6 +27,9 @@ services:
 
       # All your one-shot job folders with docker-compose files
       - /opt/automation/jobs:/opt/automation/jobs:rw
+      #config
+      - /opt/automation/cronicle/conf:/opt/cronicle/conf:rw
+
 
 
     environment:
