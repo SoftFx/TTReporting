@@ -56,9 +56,12 @@ docker compose up -d caddy aggr-data-app
 
 Available at `https://<server-ip>/`
 
-### 5. Install certificate on client machines
+### 5. Certificates
 
-Open the page → click **Install Root CA** in the header → save `root-ca.crt` → double-click → Install Certificate → **Local Machine** → **Trusted Root Certification Authorities** → Finish.
+The portal and Cronicle use **Let's Encrypt certificates for their DNS names**, obtained by Caddy via DNS-01
+(see [TLS and DNS names](#tls-and-dns-names)); browsers need nothing installed. The self-signed Root CA from
+step 1 is still used for the old IP address (it only redirects) and for S3 on `:8333`; S3 clients that connect
+by IP need `root-ca.crt` (served at `https://<portal-ip>/root-ca.crt`).
 
 ## Running batch jobs
 
@@ -282,7 +285,7 @@ Since 2026-11 the portal uses **Authentik SSO** (`https://<authentik-host>`) ins
 (the old `users.caddyfile` is no longer imported).
 
 - **Authentik side:** application `TT Reporting` (slug `tt-reporting`), Proxy provider in *Forward auth
-  (single application)* mode, external host `https://<portal-ip>`, served by the outpost
+  (single application)* mode, external host `https://<portal-host>`, served by the outpost
   **`tt-reporting outpost`**. Created by `prod/authentik/setup-authentik.py` (idempotent, `--dry-run`
   shows what it would do). The embedded outpost on `<authentik-host>` is not used: in this installation
   it answers 404 for other hosts (the logs server has its own outpost for the same reason).
@@ -299,29 +302,36 @@ Since 2026-11 the portal uses **Authentik SSO** (`https://<authentik-host>`) ins
   `X-Authentik-Groups` header (`@deny_portal`). Group names and members are changed only with the owner's approval.
 - **Server-only values (gitignored, never commit real hosts or IPs):** `authentik-outpost/outpost.env`
   (`AUTHENTIK_HOST`, `AUTHENTIK_HOST_BROWSER` = `https://<authentik-host>`, `AUTHENTIK_TOKEN`) and
-  `caddy/caddy.env` (`CRONICLE_PUBLIC_HOST=<portal-ip>:3443`).
-- **Not affected:** port `8333` (S3, own keys) and `/root-ca.crt` (public).
+  `caddy/caddy.env` (host names, ACME aliases, `CF_API_TOKEN`, `PORTAL_IP`; see the header of `caddy/Caddyfile`).
+- **Not affected:** port `8333` (S3, own keys, self-signed certificate by IP) and `/root-ca.crt` (public).
 - **Sign out:** `/outpost.goauthentik.io/sign_out` (link on the home page).
 
 ### Cronicle behind SSO
 
 Cronicle (`/opt/automation/cronicle`, `network_mode: host`) is no longer open on `http://<ip>:3012`.
 
-- **URL:** `https://<portal-ip>:3443` — Caddy site `:3443`, SSO gate, **`tt-reporting-admins` only**
-  (Authentik application `TT Reporting Cronicle`, same outpost). Created with
-  `setup-authentik.py --name "TT Reporting Cronicle" --slug tt-reporting-cronicle --external-host https://<portal-ip>:3443 --group tt-reporting-admins`.
-- **One login:** Cronicle's `User.external_user_api` = `http://172.17.0.1:3480/sso/cronicle-user` (Caddy site
-  `:3480`, published on the docker0 address only). The Cronicle server sends the browser's cookies there,
-  Caddy checks them with the outpost and returns the user as a Cronicle admin; Cronicle creates the account
-  (`<authentik-username>`, ...) on first login. The server is behind NAT and cannot reach its own
-  public IP, so this lookup is internal.
+- **URL:** `https://<cronicle-host>` — Caddy site, SSO gate, **`tt-reporting-admins` only** (Authentik
+  application `TT Reporting Cronicle`, same outpost). The old `https://<portal-ip>:3443` redirects there.
+- **One login:** Cronicle's `User.external_user_api` = `https://<cronicle-host>/sso/cronicle-user`. The Cronicle
+  server sends the browser's cookies there, Caddy checks them with the outpost and returns the user as a Cronicle
+  admin; Cronicle creates the account on first login. The server is behind NAT and cannot reach its own public
+  IP, so the Cronicle container maps `<cronicle-host>` to `172.17.0.1` (`extra_hosts`, name from
+  `/opt/automation/cronicle/.env`, `CRONICLE_HOST=...`). Logout (`?logout=1`) signs out of SSO.
 - **Cronicle `conf/config.json` (server only):** `WebServer.http_bind_address` = `172.17.0.1` (Caddy reaches it as
-  `host.docker.internal:3012`), `User.external_user_api` as above, `base_app_url` = `https://<portal-ip>:3443`.
-  Backup of the old one: `conf/config.json.bak-claude-20261120`.
-- **Known limit until the DNS name:** Cronicle's *Logout* sends the browser to the internal `:3480` URL, which
-  does not open — close the tab, or sign out on the portal home page.
+  `host.docker.internal:3012`), `User.external_user_api` as above, `base_app_url` = `https://<cronicle-host>`.
 - **Restart note:** after a Cronicle restart it waits ~60 s before becoming master; runs due in that minute are
   skipped unless the event has Catch-Up enabled.
+
+### TLS and DNS names
+
+- `<portal-host>` and `<cronicle-host>` point at the public IP. Certificates: Let's Encrypt via **DNS-01**;
+  `_acme-challenge.<name>` is a CNAME into a stub zone on Cloudflare, Caddy writes the TXT record there
+  (`dns_challenge_override_domain`) with a token limited to that zone. No inbound port 80 is needed.
+- Caddy image: `caddy/Dockerfile` (Caddy 2.11.4 + `caddy-dns/cloudflare` v0.2.4), built on the server:
+  `docker compose build caddy`. Certificates and the ACME account live in `caddy/data` (keep it: without it every
+  recreate re-issues and runs into Let's Encrypt rate limits).
+- The IP site has an explicit address (`https://{$PORTAL_IP}`) and `default_sni` is the IP: a catch-all `:443`
+  site with a certificate file would become the TLS policy for every name and hide the Let's Encrypt certificates.
 
 ### Adding a user
 

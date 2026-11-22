@@ -11,7 +11,7 @@ line -- each group name and its members must be approved by the owner first.
   python prod/authentik/setup-authentik.py --group NAME --member NAME=user1 --member NAME=user2
 
   # second application on the same outpost (Cronicle, admins only):
-  python prod/authentik/setup-authentik.py --name "TT Reporting Cronicle" --slug tt-reporting-cronicle       --external-host https://<portal-ip>:3443 --group tt-reporting-admins
+  python prod/authentik/setup-authentik.py --name "TT Reporting Cronicle" --slug tt-reporting-cronicle       --external-host https://<cronicle-host> --group tt-reporting-admins
 
 What it sets up:
   * Proxy provider "TT Reporting" in Forward auth (single application) mode,

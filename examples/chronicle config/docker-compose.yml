@@ -9,6 +9,13 @@ services:
     # Use host networking so Cronicle listens directly on the host ports
     network_mode: host
 
+    # Cronicle's single sign-on lookup (User.external_user_api) calls
+    # https://<cronicle-host>/sso/cronicle-user. The server is behind NAT and cannot reach
+    # its own public IP, so the name points at Caddy on the docker0 address instead.
+    # CRONICLE_HOST comes from .env next to this file (gitignored).
+    extra_hosts:
+      - "${CRONICLE_HOST:?set CRONICLE_HOST in .env}:172.17.0.1"
+
     volumes:
       # Allow Cronicle to manage other Docker containers
       - /var/run/docker.sock:/var/run/docker.sock:rw

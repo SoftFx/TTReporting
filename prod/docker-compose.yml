@@ -1,24 +1,26 @@
 services:
 
   # ────────────────────────────────────────────
-  # Gateway: Caddy reverse proxy with basicauth
+  # Gateway: Caddy reverse proxy + Authentik SSO + Let's Encrypt (DNS-01)
+  # Image built on the server from caddy/Dockerfile (Caddy + Cloudflare DNS module):
+  #   docker compose build caddy
   # ────────────────────────────────────────────
   caddy:
-    image: caddy:2-alpine
-    pull_policy: always
+    image: tt-reporting-caddy:2.11.4-cloudflare
+    build: ./caddy
     ports:
       - "80:80"
       - "443:443"
       - "8333:8333"
-      - "3443:3443"   # Cronicle behind SSO (see caddy/Caddyfile)
-      - "172.17.0.1:3480:3480"   # internal only: Cronicle single sign-on lookup
+      - "3443:3443"   # old Cronicle address, redirects to its DNS name
     extra_hosts:
       - "host.docker.internal:host-gateway"   # Cronicle (network_mode: host) on 172.17.0.1:3012
     env_file:
-      - ./caddy/caddy.env   # gitignored: CRONICLE_PUBLIC_HOST=<portal-ip>:3443
+      - ./caddy/caddy.env   # gitignored: host names, ACME aliases, CF_API_TOKEN (see caddy/Caddyfile)
     volumes:
+      - ./caddy/data:/data       # ACME account + certificates: keep, or every recreate re-issues
+      - ./caddy/config:/config
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./caddy/users.caddyfile:/etc/caddy/users.caddyfile:ro
       - ./caddy/server.crt:/srv/certs/server.crt:ro
       - ./caddy/server.key:/srv/certs/server.key:ro
       - ./caddy/index.html:/srv/home/index.html:ro

@@ -36,3 +36,5 @@ configDocker
 /source/tt-statements/seaweed-s3-gateway/**/__pycache__/
 /prod/authentik-outpost/
 /prod/caddy/caddy.env
+/prod/caddy/data/
+/prod/caddy/config/
