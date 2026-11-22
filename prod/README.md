@@ -5,9 +5,10 @@
 ```
 prod/
 ├── docker-compose.yml   # All services: gateway + web apps + batch jobs
+├── authentik/
+│   └── setup-authentik.py  # Creates/checks the Authentik (SSO) side, see "Authentication"
 ├── caddy/
 │   ├── Caddyfile        # Reverse proxy config (committed)
-│   ├── users.caddyfile  # User/password hashes (gitignored, create manually)
 │   ├── generate-cert.sh # Run once to generate TLS certificate
 │   ├── server.crt       # Server certificate (generated, gitignored)
 │   ├── server.key       # Server private key (generated, gitignored)
@@ -33,24 +34,11 @@ bash generate-cert.sh <SERVER_IP>
 
 Run once. Generates Root CA + server certificate (valid 10 years) with the given IP(s) in SAN.
 
-### 2. Create users file
+### 2. Set up SSO in Authentik
 
-```bash
-# Generate hash:
-echo 'PASSWORD' | docker run --rm -i caddy:2-alpine caddy hash-password
-```
-
-Create `caddy/users.caddyfile` with content:
-
-```
-(admin_creads) {
-    admin $2a$10$GENERATED_HASH_HERE
-}
-
-(all-users) {
-    admin $2a$10$GENERATED_HASH_HERE
-}
-```
+Access goes through Authentik (`<authentik-host>`), see [Authentication](#authentication-authentik-sso).
+Run `prod/authentik/setup-authentik.py` once (needs `AUTHENTIK_TOKEN` in `prod/.env`), put the outpost
+token into `authentik-outpost/outpost.env` on the server and start `docker compose up -d authentik-outpost`.
 
 ### 3. Create app config directories
 
@@ -68,9 +56,12 @@ docker compose up -d caddy aggr-data-app
 
 Available at `https://<server-ip>/`
 
-### 5. Install certificate on client machines
+### 5. Certificates
 
-Open the page → click **Install Root CA** in the header → save `root-ca.crt` → double-click → Install Certificate → **Local Machine** → **Trusted Root Certification Authorities** → Finish.
+The portal and Cronicle use **Let's Encrypt certificates for their DNS names**, obtained by Caddy via DNS-01
+(see [TLS and DNS names](#tls-and-dns-names)); browsers need nothing installed. The self-signed Root CA from
+step 1 is still used for the old IP address (it only redirects) and for S3 on `:8333`; S3 clients that connect
+by IP need `root-ca.crt` (served at `https://<portal-ip>/root-ca.crt`).
 
 ## Running batch jobs
 
@@ -114,7 +105,7 @@ What you do depends on **what changed**. The decision tree below covers the thre
 | **R/Python code** (`source/**`, `sourcePython/**`, Dockerfile) | ✅ yes | only if `config.yaml` also changed | `deploy_product.bat` |
 | **`config.yaml` only** (`configDocker/config.yaml`) | ❌ no | ✅ yes — `config.yaml` is gitignored, must be copied manually | `restart_product.bat` |
 | **`.env` / `docker-compose.yml`** (env vars, e.g. `HSM_PRODUCT_KEY`) | ❌ no | ✅ yes — update server `.env` / `docker-compose.yml` manually | `deploy_product.bat` (needs recreate, see note below) |
-| **Caddy files only** (`Caddyfile`, `users.caddyfile`, `products.yaml`) | ❌ no | ✅ yes | `reload-caddy.bat` |
+| **Caddy files only** (`Caddyfile`, `products.yaml`, `index.html`) | ❌ no | ✅ yes | `reload-caddy.bat` |
 
 > `config.yaml`, `.env`, and `docker-compose.yml` are **not pushed to the server by `git pull`** — the first two are gitignored, and compose is applied by you, not git. Whenever any of them changes, copy the updated file to the server manually.
 
@@ -162,64 +153,34 @@ This file drives the home page cards. Each product needs a unique `slug` (used i
   # image: static/image/my-product.png   # optional
 ```
 
-### 2. Create a user group in `caddy/users.caddyfile`
+### 2. Access
 
-Define who has access to this product. Add a new snippet group with the product slug + `-users` suffix:
+Nothing to do in Authentik: `tt-reporting-admins` and `tt-reporting-users` see every product.
+(For an admin-only product use a `@deny_admin` matcher instead of `@deny_portal`, see the comment in `caddy/Caddyfile`.)
 
-```
-(my-product-users) {
-    john.doe $2a$10$BCRYPT_HASH_HERE
-    jane.doe $2a$10$BCRYPT_HASH_HERE
-}
-```
+### 3. Add route in `caddy/Caddyfile`
 
-To generate a bcrypt hash for a new user, run on the server:
-
-```bash
-echo 'PASSWORD' | docker exec -i caddy caddy hash-password
-```
-
-Or use `add-user.bat` from a Windows machine:
-
-```bat
-prod\add-user.bat john.doe
-```
-
-### 3. Add the new users to `all-users` snippet
-
-Open `caddy/users.caddyfile` and add every user from the new group to the `(all-users)` snippet. This gives them access to the home page so they can see the product cards:
-
-```
-(all-users) {
-    ...existing users...
-    john.doe $2a$10$BCRYPT_HASH_HERE
-    jane.doe $2a$10$BCRYPT_HASH_HERE
-}
-```
-
-### 4. Add route and auth in `caddy/Caddyfile`
-
-Inside the `:443 { ... }` block, add a `handle` block. Auth and proxy must be in the **same** handle block:
+Inside the `:443 { ... }` block, add a `handle` block. The SSO gate, the group check and the proxy must be in one `route` (a `route` keeps the order as written):
 
 ```
 # ── My Product ───────────────────────────────
 handle /my-product/* {
-    basic_auth {
-        import admin_creads
-        import my-product-users
+    route {
+        import sso
+        respond @deny_portal 403
+        uri strip_prefix /my-product
+        reverse_proxy my-product-container:8080
     }
-    uri strip_prefix /my-product
-    reverse_proxy my-product-container:8080
 }
 ```
 
 How it works:
-- `handle /my-product/*` — matches all requests to `/my-product/...`
-- `basic_auth` — only `admin_creads` (full admins) and `my-product-users` can access
+- `import sso` — asks Authentik; not logged in → redirect to the SSO login; logged in → `X-Authentik-*` headers are set on the request
+- `respond @deny_portal 403` — only members of `tt-reporting-admins` / `tt-reporting-users` pass
 - `uri strip_prefix /my-product` — removes the prefix before forwarding
-- `reverse_proxy my-product-container:8080` — forwards to the container
+- `reverse_proxy my-product-container:8080` — forwards to the container (it can read the user from `X-Authentik-Username`)
 
-### 5. Add service in `docker-compose.yml`
+### 4. Add service in `docker-compose.yml`
 
 Add the container definition. It must be on the `tt-internal` network (Caddy routes traffic through it) and must NOT expose ports to the host (Caddy handles that):
 
@@ -234,7 +195,7 @@ my-product:
     - tt-internal
 ```
 
-### 6. Deploy
+### 5. Deploy
 
 On the server:
 
@@ -263,8 +224,7 @@ Use `prod\reload-caddy.bat` when only Caddy files changed and the product contai
 | File | What to change |
 |---|---|
 | `caddy/products.yaml` | Add product card entry |
-| `caddy/users.caddyfile` | Add `<slug>-users` group + update `all-users` |
-| `caddy/Caddyfile` | Add `handle` block with auth + proxy |
+| `caddy/Caddyfile` | Add `handle` block with `import sso` + `@deny_portal` + proxy |
 | `docker-compose.yml` | Add service container |
 
 ## Storage backend: SeaweedFS (tt-statements)
@@ -319,30 +279,67 @@ lives in its own bucket: `/buckets/statements` holds `ttlive` / `ttliveUK` / `tt
 
 Details and the rollout steps: `source/tt-statements/SEAWEED_PROM_BUCKET.md`.
 
-## Adding a new user
+## Authentication (Authentik SSO)
 
-### Option A: from Windows (add-user.bat)
+Since 2026-11 the portal uses **Authentik SSO** (`https://<authentik-host>`) instead of Caddy `basic_auth`
+(the old `users.caddyfile` is no longer imported).
 
-```bat
-prod\add-user.bat john.doe
-```
+- **Authentik side:** application `TT Reporting` (slug `tt-reporting`), Proxy provider in *Forward auth
+  (single application)* mode, external host `https://<portal-host>`, served by the outpost
+  **`tt-reporting outpost`**. Created by `prod/authentik/setup-authentik.py` (idempotent, `--dry-run`
+  shows what it would do). The embedded outpost on `<authentik-host>` is not used: in this installation
+  it answers 404 for other hosts (the logs server has its own outpost for the same reason).
+- **Outpost container:** `authentik-outpost` in `docker-compose.yml` (`ghcr.io/goauthentik/proxy`, tag =
+  Authentik server version), only on `tt-internal`, no published ports. It keeps one connection to
+  `<authentik-host>`. Its token is in `/opt/automation/jobs/authentik-outpost/outpost.env`
+  (`AUTHENTIK_TOKEN=...`, mode 640, gitignored). When Authentik is upgraded, bump the image tag.
+- **Caddy side:** the `(sso)` snippet calls `authentik-outpost:9000/outpost.goauthentik.io/auth/caddy`
+  (`forward_auth`); `/outpost.goauthentik.io/*` (login callback, sign out) is proxied to the outpost.
+  Client-sent `X-Authentik-*` headers are dropped before the check. If the outpost is down, every
+  page answers 502.
+- **Access:** two Authentik groups, both bound to the application (nobody else can log in):
+  `tt-reporting-admins` and `tt-reporting-users`. Both currently see every product; Caddy re-checks the
+  `X-Authentik-Groups` header (`@deny_portal`). Group names and members are changed only with the owner's approval.
+- **Server-only values (gitignored, never commit real hosts or IPs):** `authentik-outpost/outpost.env`
+  (`AUTHENTIK_HOST`, `AUTHENTIK_HOST_BROWSER` = `https://<authentik-host>`, `AUTHENTIK_TOKEN`) and
+  `caddy/caddy.env` (host names, ACME aliases, `CF_API_TOKEN`, `PORTAL_IP`; see the header of `caddy/Caddyfile`).
+- **Not affected:** port `8333` (S3, own keys, self-signed certificate by IP) and `/root-ca.crt` (public).
+- **Sign out:** `/outpost.goauthentik.io/sign_out` (link on the home page).
 
-This generates a random 12-character password and prints the bcrypt hash. Copy the output line into `caddy/users.caddyfile`.
+### Cronicle behind SSO
 
-### Option B: from the server
+Cronicle (`/opt/automation/cronicle`, `network_mode: host`) is no longer open on `http://<ip>:3012`.
+
+- **URL:** `https://<cronicle-host>` — Caddy site, SSO gate, **`tt-reporting-admins` only** (Authentik
+  application `TT Reporting Cronicle`, same outpost). The old `https://<portal-ip>:3443` redirects there.
+- **One login:** Cronicle's `User.external_user_api` = `https://<cronicle-host>/sso/cronicle-user`. The Cronicle
+  server sends the browser's cookies there, Caddy checks them with the outpost and returns the user as a Cronicle
+  admin; Cronicle creates the account on first login. The server is behind NAT and cannot reach its own public
+  IP, so the Cronicle container maps `<cronicle-host>` to `172.17.0.1` (`extra_hosts`, name from
+  `/opt/automation/cronicle/.env`, `CRONICLE_HOST=...`). Logout (`?logout=1`) signs out of SSO.
+- **Cronicle `conf/config.json` (server only):** `WebServer.http_bind_address` = `172.17.0.1` (Caddy reaches it as
+  `host.docker.internal:3012`), `User.external_user_api` as above, `base_app_url` = `https://<cronicle-host>`.
+- **Restart note:** after a Cronicle restart it waits ~60 s before becoming master; runs due in that minute are
+  skipped unless the event has Catch-Up enabled.
+
+### TLS and DNS names
+
+- `<portal-host>` and `<cronicle-host>` point at the public IP. Certificates: Let's Encrypt via **DNS-01**;
+  `_acme-challenge.<name>` is a CNAME into a stub zone on Cloudflare, Caddy writes the TXT record there
+  (`dns_challenge_override_domain`) with a token limited to that zone. No inbound port 80 is needed.
+- Caddy image: `caddy/Dockerfile` (Caddy 2.11.4 + `caddy-dns/cloudflare` v0.2.4), built on the server:
+  `docker compose build caddy`. Certificates and the ACME account live in `caddy/data` (keep it: without it every
+  recreate re-issues and runs into Let's Encrypt rate limits).
+- The IP site has an explicit address (`https://{$PORTAL_IP}`) and `default_sni` is the IP: a catch-all `:443`
+  site with a certificate file would become the TLS policy for every name and hide the Let's Encrypt certificates.
+
+### Adding a user
+
+Users are not created on the server any more. The user needs an Authentik account; then add them to the
+`tt-reporting-users` (or `tt-reporting-admins`) — in the Authentik admin UI, or, after the owner approves it:
 
 ```bash
-# SSH to server
-cd /path/to/prod
-
-# 1. Generate bcrypt hash
-echo 'PASSWORD' | docker exec -i caddy caddy hash-password
-
-# 2. Add to caddy/users.caddyfile — paste into the right group(s)
-nano caddy/users.caddyfile
-
-# 3. Also add to (all-users) so they can see the home page
-
-# 4. Reload Caddy
-docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+python prod/authentik/setup-authentik.py --group tt-reporting-users --member tt-reporting-users=john.doe
 ```
+
+The script never creates groups or adds people unless they are passed explicitly.

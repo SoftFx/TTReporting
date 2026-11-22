@@ -1,101 +1,106 @@
 {
-    auto_https off
+    # Named sites get Let's Encrypt certificates via DNS-01 (see tls_dns); the :80 site
+    # below does the HTTP->HTTPS redirect itself.
+    auto_https disable_redirects
+    # Clients that open https://<portal-ip> send no SNI; treat them as asking for the IP so
+    # they get the self-signed certificate of the IP site, while the DNS names get Let's Encrypt.
+    default_sni {$PORTAL_IP}
 }
 
-# Users are defined in users.caddyfile (gitignored)
-import users.caddyfile
+# Host-specific values come from caddy/caddy.env (gitignored, server only):
+#   PORTAL_HOST, CRONICLE_HOST            DNS names of the portal and of Cronicle
+#   PORTAL_ACME_ALIAS, CRONICLE_ACME_ALIAS  where _acme-challenge.<name> is CNAMEd to
+#                                          (stub zone on Cloudflare)
+#   CF_API_TOKEN                          Cloudflare token for that stub zone (DNS edit)
+#   PORTAL_IP                             public IP (old address, self-signed certificate)
+#
+# Authentication: Authentik SSO via forward auth, dedicated outpost container
+# "authentik-outpost" (docker-compose.yml) -- see prod/authentik/setup-authentik.py.
+# Authorization: Authentik group (X-Authentik-Groups, pipe-separated).
 
-:80 {
-    redir https://{host}{uri} permanent
+# ── TLS: Let's Encrypt via DNS-01 in the delegated stub zone ──
+(tls_dns) {
+    tls {
+        dns cloudflare {env.CF_API_TOKEN}
+        dns_challenge_override_domain {args[0]}
+        resolvers 1.1.1.1 8.8.8.8
+    }
 }
 
-# ── Statements (SeaweedFS S3 gateway) — key-based download access ──
-# Own port, not a path under :443 -- S3 SigV4 signs the full request path,
-# so nesting this under e.g. /s3/* on :443 would make Caddy's uri strip_prefix
-# desync the path the client signed from the path SeaweedFS verifies, and
-# every request would fail with SignatureDoesNotMatch regardless of correct
-# keys (confirmed by testing). No basic_auth here on purpose: auth is the S3
-# access/secret key itself, verified by SeaweedFS's own S3 gateway
-# (seaweedfs/s3.json). Caddy just terminates TLS and proxies as-is.
-:8333 {
-    tls /srv/certs/server.crt /srv/certs/server.key
-    reverse_proxy seaweedfs:8333
+# ── SSO gate: ask the outpost, copy the identity headers into the request ──
+(sso) {
+    # Identity headers come only from Authentik: drop anything the client sent.
+    request_header -X-Authentik-Username
+    request_header -X-Authentik-Groups
+    request_header -X-Authentik-Email
+    request_header -X-Authentik-Name
+    request_header -X-Authentik-Uid
+    forward_auth {$AUTHENTIK_OUTPOST:authentik-outpost:9000} {
+        uri /outpost.goauthentik.io/auth/caddy
+        copy_headers X-Authentik-Username X-Authentik-Groups X-Authentik-Email X-Authentik-Name X-Authentik-Uid
+    }
 }
 
-:443 {
-    tls /srv/certs/server.crt /srv/certs/server.key
-
+# ── Portal: home page, Shiny apps, statements ──
+(portal) {
     # ── Security headers ──────────────────────────
     header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        Strict-Transport-Security "max-age=31536000"
         X-Frame-Options "SAMEORIGIN"
         X-Content-Type-Options "nosniff"
         Referrer-Policy "strict-origin-when-cross-origin"
         Content-Security-Policy "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline' 'self'; connect-src 'self' wss: ws:; font-src 'self' data:; img-src 'self' data: blob:;"
     }
 
-    # ── Rate limiting (requires caddy-ratelimit plugin) ──
-    # Uncomment after building a custom Caddy image with the plugin:
-    # rate_limit {
-    #     zone auth_zone {
-    #         key {remote_host}
-    #         events 20
-    #         window 60s
-    #     }
-    # }
+    # ── Access groups (Authentik) ─────────────────
+    # tt-reporting-admins and tt-reporting-users both see every product.
+    # Authentik already refuses login to users outside the groups bound to the
+    # application; this check is the second line. For a future admin-only section
+    # add:  @deny_admin not header_regexp X-Authentik-Groups (^|[|])tt-reporting-admins([|]|$)
+    @deny_portal   not header_regexp X-Authentik-Groups (^|[|])(tt-reporting-admins|tt-reporting-users)([|]|$)
 
     root * /srv/home
 
-    # ── Home page — all authenticated users ──────
-    @homepage path / /index.html
-    handle @homepage {
-        basic_auth {
-            import all-users
-        }
-        file_server {
-            index index.html
+    # ── Authentik outpost endpoints (login callback, sign out) ──
+    handle /outpost.goauthentik.io/* {
+        reverse_proxy {$AUTHENTIK_OUTPOST:authentik-outpost:9000}
+    }
+
+    # ── Home page, vendored JS, products.yaml — any TT Reporting user ──
+    @home path / /index.html /products.yaml /static/*
+    handle @home {
+        route {
+            import sso
+            respond @deny_portal 403
+            file_server {
+                index index.html
+            }
         }
     }
 
-    # ── Static assets (vendored JS) ─────────────
-    handle /static/* {
-        basic_auth {
-            import all-users
-        }
-        file_server
-    }
-
-    # ── Download root CA certificate (public) ────
+    # ── Download root CA certificate (public; still needed for S3 on :8333 by IP) ──
     handle /root-ca.crt {
-        file_server
-    }
-
-    # ── products.yaml (same auth as home) ────────
-    handle /products.yaml {
-        basic_auth {
-            import all-users
-        }
         file_server
     }
 
     # ── Aggregator Data ─────────────────────────
     handle /aggr-data/* {
-        basic_auth {
-            import admin_creads
-            import aggr-data-users
+        route {
+            import sso
+            respond @deny_portal 403
+            uri strip_prefix /aggr-data
+            reverse_proxy aggr-data-app:3838
         }
-        uri strip_prefix /aggr-data
-        reverse_proxy aggr-data-app:3838
     }
 
     # ── User Analytics ─────────────────────────
     handle /user-data/* {
-        basic_auth {
-            import admin_creads
-            import user-data-users
+        route {
+            import sso
+            respond @deny_portal 403
+            uri strip_prefix /user-data
+            reverse_proxy user-data-app:3838
         }
-        uri strip_prefix /user-data
-        reverse_proxy user-data-app:3838
     }
 
     # ── Statements (SeaweedFS) — read-only, GET/HEAD only ──
@@ -110,14 +115,10 @@ import users.caddyfile
     # /statements/ (the home-page card) opens /buckets/ -- the folder that shows both buckets.
     # Older deep bookmarks /statements/<domain>/... still land in the first bucket.
     handle /statements/* {
-        basic_auth {
-            import admin_creads
-            import statements-users
-        }
-        handle /statements/ {
-            redir * /buckets/ 302
-        }
-        handle {
+        route {
+            import sso
+            respond @deny_portal 403
+            redir /statements/ /buckets/ 302
             redir * /buckets{uri} 302
         }
     }
@@ -126,17 +127,14 @@ import users.caddyfile
     # created later shows up by name in the /buckets/ listing but is not served until it is
     # added here on purpose.
     @statement_buckets path /buckets/ /buckets/statements/* /buckets/statements-prom/*
+    @notget not method GET HEAD
     handle @statement_buckets {
-        @notget {
-            not method GET HEAD
+        route {
+            respond @notget 405
+            import sso
+            respond @deny_portal 403
+            reverse_proxy seaweedfs:8888
         }
-        respond @notget 405
-
-        basic_auth {
-            import admin_creads
-            import statements-users
-        }
-        reverse_proxy seaweedfs:8888
     }
 
     # ── SeaweedFS filer's own static assets (CSS/logo for its folder-browser UI) ──
@@ -155,4 +153,97 @@ import users.caddyfile
         output stdout
         format json
     }
+}
+
+# ── Cronicle (job scheduler) — tt-reporting-admins only, one login ──
+# Cronicle runs with network_mode: host and listens only on the docker0 address
+# (WebServer.http_bind_address 172.17.0.1, port 3012), so it is reachable from here
+# as host.docker.internal:3012 and not from outside. Authentik application
+# "TT Reporting Cronicle" (same outpost).
+(cronicle) {
+    header {
+        Strict-Transport-Security "max-age=31536000"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    @deny_admin not header_regexp X-Authentik-Groups (^|[|])tt-reporting-admins([|]|$)
+
+    handle /outpost.goauthentik.io/* {
+        reverse_proxy {$AUTHENTIK_OUTPOST:authentik-outpost:9000}
+    }
+
+    # Single sign-on into Cronicle itself (no second login): Cronicle's
+    # User.external_user_api = https://<cronicle-host>/sso/cronicle-user. On page load the
+    # Cronicle UI calls /api/user/external_login; the Cronicle server then GETs this URL with
+    # the browser's cookies (its container maps <cronicle-host> to 172.17.0.1, because the
+    # server is behind NAT and cannot reach its own public IP). We check the cookies with the
+    # outpost and answer who the user is; Cronicle creates its own session (always Cronicle
+    # admin: only tt-reporting-admins pass). Logout: Cronicle sends the browser to
+    # /sso/cronicle-user?logout=1, which signs out of SSO.
+    handle /sso/cronicle-user {
+        route {
+            @logout query logout=1
+            redir @logout /outpost.goauthentik.io/sign_out 302
+            import sso
+            respond @deny_admin 403
+            header Content-Type application/json
+            respond `{"code":0,"username":"{http.request.header.X-Authentik-Username}","user":{"email":"{http.request.header.X-Authentik-Email}","privileges":{"admin":1}}}` 200
+        }
+    }
+
+    handle {
+        route {
+            import sso
+            respond @deny_admin 403
+            reverse_proxy {$CRONICLE_UPSTREAM:host.docker.internal:3012}
+        }
+    }
+}
+
+:80 {
+    redir https://{host}{uri} permanent
+}
+
+# ── Statements (SeaweedFS S3 gateway) — key-based download access ──
+# Own port, not a path under :443 -- S3 SigV4 signs the full request path,
+# so nesting this under e.g. /s3/* on :443 would make Caddy's uri strip_prefix
+# desync the path the client signed from the path SeaweedFS verifies, and
+# every request would fail with SignatureDoesNotMatch regardless of correct
+# keys (confirmed by testing). No SSO here on purpose: auth is the S3
+# access/secret key itself, verified by SeaweedFS's own S3 gateway
+# (seaweedfs/s3.json). Caddy just terminates TLS and proxies as-is.
+:8333 {
+    tls /srv/certs/server.crt /srv/certs/server.key
+    reverse_proxy seaweedfs:8333
+}
+
+# ── Named sites (Let's Encrypt) ──
+{$PORTAL_HOST} {
+    import tls_dns {$PORTAL_ACME_ALIAS}
+    import portal
+}
+
+{$CRONICLE_HOST} {
+    import tls_dns {$CRONICLE_ACME_ALIAS}
+    import cronicle
+}
+
+# ── Old IP addresses: redirect to the DNS names (self-signed certificate) ──
+# An explicit address, not ":443": a catch-all site with a certificate file would become the
+# TLS policy for every name on :443 and hide the Let's Encrypt certificates.
+https://{$PORTAL_IP} {
+    tls /srv/certs/server.crt /srv/certs/server.key
+    handle /root-ca.crt {
+        root * /srv/home
+        file_server
+    }
+    handle {
+        redir https://{$PORTAL_HOST}{uri} 302
+    }
+}
+
+:3443 {
+    tls /srv/certs/server.crt /srv/certs/server.key
+    redir https://{$CRONICLE_HOST}{uri} 302
 }
