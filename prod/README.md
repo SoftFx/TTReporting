@@ -7,8 +7,13 @@ prod/
 ├── docker-compose.yml   # All services: gateway + web apps + batch jobs
 ├── authentik/
 │   └── setup-authentik.py  # Creates/checks the Authentik (SSO) side, see "Authentication"
+├── authentik-outpost/
+│   └── outpost.env      # Outpost token (server only, gitignored)
 ├── caddy/
 │   ├── Caddyfile        # Reverse proxy config (committed)
+│   ├── Dockerfile       # Caddy + Cloudflare DNS module, built on the server
+│   ├── caddy.env        # Host names, CF_API_TOKEN, PORTAL_IP (server only, gitignored)
+│   ├── data/ config/    # Let's Encrypt certificates + ACME account (server only, keep)
 │   ├── generate-cert.sh # Run once to generate TLS certificate
 │   ├── server.crt       # Server certificate (generated, gitignored)
 │   ├── server.key       # Server private key (generated, gitignored)
@@ -54,7 +59,7 @@ cd prod
 docker compose up -d caddy aggr-data-app
 ```
 
-Available at `https://<server-ip>/`
+Available at `https://<portal-host>/` (the IP address redirects there).
 
 ### 5. Certificates
 
@@ -87,8 +92,8 @@ HSM_PRODUCT_KEY=81851f0c-...
 | Variable | Used by |
 |---|---|
 | `MT4_PASSWORD`, `MT5_PASSWORD` | `big-trades`, `count-trades`, `big-deposits`, `negative-equity` (MariaDB) |
-| `PG_PASSWORD` | all 5 batch jobs (PostgreSQL) |
-| `HSM_PRODUCT_KEY` | all 5 batch jobs — soft-fx Health Status Monitor product key (`productKey` in `config.yaml`) |
+| `PG_PASSWORD` | all 6 batch jobs (PostgreSQL) |
+| `HSM_PRODUCT_KEY` | all 6 batch jobs — soft-fx Health Status Monitor product key (`productKey` in `config.yaml`) |
 
 Each job's `configDocker/config.yaml` references these as `${VAR}` placeholders. The config file itself is gitignored (real hosts/users), so when it changes you must **copy the updated `config.yaml` to the server manually** — it does not arrive via `git pull`. See the root [`README.md`](../README.md#secrets--environment-variables-batch-r-projects) for the full secrets/env pattern.
 
@@ -106,6 +111,8 @@ What you do depends on **what changed**. The decision tree below covers the thre
 | **`config.yaml` only** (`configDocker/config.yaml`) | ❌ no | ✅ yes — `config.yaml` is gitignored, must be copied manually | `restart_product.bat` |
 | **`.env` / `docker-compose.yml`** (env vars, e.g. `HSM_PRODUCT_KEY`) | ❌ no | ✅ yes — update server `.env` / `docker-compose.yml` manually | `deploy_product.bat` (needs recreate, see note below) |
 | **Caddy files only** (`Caddyfile`, `products.yaml`, `index.html`) | ❌ no | ✅ yes | `reload-caddy.bat` |
+| **Caddy image** (`caddy/Dockerfile`) | ✅ yes, on the server: `docker compose build caddy` | ✅ yes | `docker compose up -d caddy` |
+| **Users / access** | ❌ no | ❌ no | Authentik, see [Adding a user](#adding-a-user) |
 
 > `config.yaml`, `.env`, and `docker-compose.yml` are **not pushed to the server by `git pull`** — the first two are gitignored, and compose is applied by you, not git. Whenever any of them changes, copy the updated file to the server manually.
 
@@ -115,7 +122,7 @@ All of them SSH into the server using `SERVER` / `CADDY_CONTAINER` / `REMOTE_PRO
 
 | Script | Invocation | What it does |
 |---|---|---|
-| `deploy_product.bat` | double-click → type service name | `docker compose pull` + recreate container + validate/reload Caddy. **Full deploy** — use when the image or env changed. |
+| `deploy_product.bat` | double-click → type service name | `docker compose pull` + recreate container + validate/reload Caddy. **Full deploy** — use when the image or env changed. **Not for `caddy`** — its image is built on the server, not pulled. |
 | `restart_product.bat` | double-click → type service name | `docker compose restart` only — re-reads the mounted `configDocker/`, **no** pull, **no** recreate, **no** Caddy reload. Use when **only** `config.yaml` changed and is already on the server. |
 | `deploy-product.bat` | CLI: `deploy-product.bat <service>` | Same as `deploy_product.bat` but takes the service name as an argument (no double-click prompt). |
 | `reload-caddy.bat` | double-click | Validate + reload Caddy only. Use when **only** Caddy files changed and the container is already running. |
@@ -160,7 +167,7 @@ Nothing to do in Authentik: `tt-reporting-admins` and `tt-reporting-users` see e
 
 ### 3. Add route in `caddy/Caddyfile`
 
-Inside the `:443 { ... }` block, add a `handle` block. The SSO gate, the group check and the proxy must be in one `route` (a `route` keeps the order as written):
+Inside the `(portal) { ... }` snippet (it is imported by the `{$PORTAL_HOST}` site), add a `handle` block. The SSO gate, the group check and the proxy must be in one `route` (a `route` keeps the order as written):
 
 ```
 # ── My Product ───────────────────────────────
@@ -207,7 +214,7 @@ docker compose pull my-product
 
 # Start the new service and reload Caddy
 docker compose up -d my-product
-docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
 ```
 
 Or from Windows:
@@ -243,21 +250,19 @@ Changes made to the shared prod files for this:
   `SEAWEED_FILER_URL: http://seaweedfs:8888` (Docker-internal DNS name — **not a secret**,
   hardcoded directly here, not routed through `.env`) and `depends_on: seaweedfs: condition:
   service_healthy`.
-- **`caddy/Caddyfile`** — new `handle /statements/*` route: `basic_auth` (`admin_creads` +
-  `statements-users`), `reverse_proxy seaweedfs:8888`, restricted to **GET/HEAD only** (a
-  `@notget` matcher responds `405` to anything else) — writes must stay unreachable from
-  outside; only the batch job, over the internal Docker network, can PUT. A second,
-  **unauthenticated** route `handle /seaweedfsstatic/*` proxies the filer's own CSS/logo
-  assets (its folder-browser UI loads them from an absolute path outside `/statements/*`) —
-  cosmetic only, doesn't affect the statement files themselves.
-- **`caddy/users.caddyfile.example`** — new `(statements-users)` group, same placeholder
-  pattern as the other per-product groups. On the **real** `caddy/users.caddyfile` (gitignored,
-  server-only), keep this group **empty** if all current users are already admins — Caddy
-  rejects `basic_auth` with a username duplicated across imported snippets
-  (`username is not unique`), so don't also list an `admin_creads` user here.
+- **`caddy/Caddyfile`** — two routes, both behind the SSO gate (`import sso` + `@deny_portal`):
+  `handle /statements/*` (the home-page card) only redirects to `/buckets/...`;
+  `handle @statement_buckets` (`/buckets/`, `/buckets/statements/*`, `/buckets/statements-prom/*`)
+  does `reverse_proxy seaweedfs:8888`, restricted to **GET/HEAD only** (a `@notget` matcher
+  responds `405` to anything else) — writes must stay unreachable from outside; only the batch
+  job, over the internal Docker network, can PUT. A third, **unauthenticated** route
+  `handle /seaweedfsstatic/*` proxies the filer's own CSS/logo assets (its folder-browser UI loads
+  them from an absolute path outside `/buckets/`) — cosmetic only, doesn't affect the statement
+  files themselves.
 
 Full deployment story (server steps, verification, bugs hit) is in
-`source/tt-statements/seaweed-test-docker/NOTES.md`.
+`source/tt-statements/SEAWEED_DEPLOYMENT.md` (written before the SSO switch, so it still
+describes `basic_auth`).
 
 **Two buckets since 2026-10-12.** `ttlivePROM` is a separate product with its own S3 key, so it
 lives in its own bucket: `/buckets/statements` holds `ttlive` / `ttliveUK` / `ttliveEU`,
@@ -283,6 +288,34 @@ Details and the rollout steps: `source/tt-statements/SEAWEED_PROM_BUCKET.md`.
 
 Since 2026-11 the portal uses **Authentik SSO** (`https://<authentik-host>`) instead of Caddy `basic_auth`
 (the old `users.caddyfile` is no longer imported).
+
+### Caddy: what to do
+
+| Task | How |
+|---|---|
+| Changed `Caddyfile` / `index.html` / `products.yaml` | copy to server (`sudo cp`, not `mv`) → `reload-caddy.bat` |
+| Changed `caddy/Dockerfile` | on server: `docker compose build caddy && docker compose up -d caddy` |
+| Give someone access | Authentik group `tt-reporting-users`, see [Adding a user](#adding-a-user) |
+| Every page answers 502 | check the `authentik-outpost` container |
+| S3 downloads (`:8333`) | not behind SSO; keys in `seaweedfs/s3.json` |
+
+### Server files & secrets
+
+| File (server, `/opt/automation/jobs/`) | Variables / content | Secret? |
+|---|---|---|
+| `caddy/caddy.env` | `PORTAL_HOST`, `CRONICLE_HOST`, `PORTAL_ACME_ALIAS`, `CRONICLE_ACME_ALIAS` | no |
+| | `PORTAL_IP` | no (but never commit) |
+| | `CF_API_TOKEN` — Cloudflare token, DNS edit of the stub zone only | **yes** |
+| `authentik-outpost/outpost.env` | `AUTHENTIK_HOST`, `AUTHENTIK_HOST_BROWSER` | no |
+| | `AUTHENTIK_TOKEN` — outpost token | **yes** |
+| `caddy/data/` | Let's Encrypt certificates + ACME account key | sensitive, **keep** |
+| `/opt/automation/cronicle/.env` | `CRONICLE_HOST` | no |
+| `prod/.env` (your PC, not server) | `AUTHENTIK_URL`, `TT_REPORTING_URL`; `AUTHENTIK_TOKEN` — Authentik admin API token for `setup-authentik.py` | **yes** (token) |
+
+Unchanged: `.env` (DB passwords, `HSM_PRODUCT_KEY`), `seaweedfs/s3.json` (S3 keys), `caddy/server.crt`/`server.key`.
+No longer used: `caddy/users.caddyfile`.
+
+### How it works
 
 - **Authentik side:** application `TT Reporting` (slug `tt-reporting`), Proxy provider in *Forward auth
   (single application)* mode, external host `https://<portal-host>`, served by the outpost
@@ -343,3 +376,12 @@ python prod/authentik/setup-authentik.py --group tt-reporting-users --member tt-
 ```
 
 The script never creates groups or adds people unless they are passed explicitly.
+
+### Obsolete since the SSO switch (2026-11)
+
+| File | Why |
+|---|---|
+| `caddy/users.caddyfile` (server) | no longer imported by the Caddyfile; contained bcrypt hashes — archive or remove |
+| `caddy/users.caddyfile.example` | template for the old basic_auth groups |
+| `add-user.bat` | generated bcrypt hashes for `users.caddyfile`; users are now in Authentik |
+| `.gitignore` entry `/prod/caddy/users.caddyfile` | file no longer used |

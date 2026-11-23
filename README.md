@@ -9,17 +9,19 @@ A collection of scheduled reporting scripts and a web dashboard for TT (Trading 
 ```
 TTReporting/
 ├── source/                  # R source code (one sub-folder per project)
-│   ├── common/              # Shared R helpers (PostgresHost.R, RMonitoringClient.R)
+│   ├── common/              # Shared R helpers (PostgresHost.R, RMonitoringClient.R, helpFunctions.R)
 │   ├── big-trades/
 │   ├── count-trades/
 │   ├── diff-prices/
 │   ├── big-deposits/
 │   ├── negative-equity/
-│   └── aggr-data_App/       # Shiny web dashboard
+│   ├── tt-statements/       # Account statements (daily / monthly) -> SeaweedFS
+│   ├── aggr-data_App/       # Shiny web dashboard
+│   └── user-data-App/       # Shiny web dashboard (User Analytics)
 │
 ├── sourcePython/            # Python source code
 │   ├── common/              # Shared Python helpers
-│   └── swap-updater/        # Python + .NET project
+│   └── swap-updater/        # Python + .NET project — DISABLED, not in use
 │
 ├── build/                   # Dockerfiles (one file per project, no extension)
 │   ├── big-trades
@@ -27,18 +29,20 @@ TTReporting/
 │   ├── diff-prices
 │   ├── big-deposits
 │   ├── negative-equity
-│   ├── swap-updater
-│   └── aggr-data_app
+│   ├── tt-statements
+│   ├── swap-updater         # DISABLED, not in use
+│   ├── aggr-data-app
+│   └── user-data-app
 │
 ├── examples/                # Ready-to-use run scripts and docker-compose files
-│   ├── docker-compose.yml   # Runs ALL batch projects from Docker Hub images
-│   ├── big-trades/
-│   ├── count-trades/
-│   ├── diff-prices/
-│   ├── big-deposits/
-│   ├── negative-equity/
-│   └── swap-updater/
+│   ├── docker-compose.yml   # Runs ALL projects from Docker Hub images
+│   ├── .env.example         # Template for secrets
+│   ├── big-trades/  count-trades/  diff-prices/  big-deposits/  negative-equity/
+│   ├── aggr-data/  user-data/
+│   ├── swap-updater/        # DISABLED, not in use
+│   └── chronicle config/    # Cronicle (scheduler) compose
 │
+├── prod/                    # Server deployment: docker-compose, Caddy (SSO gateway), deploy scripts — see prod/README.md
 ├── build_docker_*.bat       # Local build helper scripts
 └── .github/workflows/
     └── release-dockerhub.yml  # CI/CD: builds and pushes images to Docker Hub
@@ -54,21 +58,25 @@ TTReporting/
 
 ### Batch scripts (R / Python)
 
-Projects: `big-trades`, `count-trades`, `diff-prices`, `big-deposits`, `negative-equity`, `swap-updater`
+Projects: `big-trades`, `count-trades`, `diff-prices`, `big-deposits`, `negative-equity`, `tt-statements`
+
+> `swap-updater` is **disabled and no longer relevant**: commented out in `prod/docker-compose.yml`, not run in
+> production. Its code, Dockerfile and example are kept only for history.
 
 - Run once, do their work, then exit (`restart: "no"` in docker-compose).
 - Intended to be triggered on a schedule (cron, Task Scheduler, etc.).
 - Each container reads config from `configDocker/` and writes results/state to `dataDocker/`.
 
-**R projects** — entry point is `Rscript /app/main.R`
-**swap-updater** — Python + .NET, entry point is `python3 main.py`
+**R projects** — entry point is `Rscript /app/main.R` (`tt-statements`: `main_daily.R` / `main_month.R`, one image)
+**swap-updater** (disabled) — Python + .NET, entry point is `python3 main.py`
 
-### Web dashboard (Shiny)
+### Web dashboards (Shiny)
 
-Project: `aggr-data_App`
+Projects: `aggr-data_App` (Aggregator Data), `user-data-App` (User Analytics)
 
-- Runs as a persistent web service on port **3838**.
-- Provides an interactive UI for querying aggregator LP execution data from PostgreSQL.
+- Run as persistent web services on port **3838**, behind Caddy + Authentik SSO (see `prod/README.md`).
+- `aggr-data_App`: interactive UI for querying aggregator LP execution data from PostgreSQL.
+- `user-data-App`: trading account analytics (TT, MT4, MT5) — traded volume, swap markup, commission.
 
 ---
 
@@ -122,6 +130,7 @@ Secrets (DB passwords, the HSM monitoring product key) are **never hardcoded** i
 |---|---|
 | `big-trades`, `count-trades`, `big-deposits`, `negative-equity` | `MT4_PASSWORD`, `MT5_PASSWORD`, `PG_PASSWORD`, `HSM_PRODUCT_KEY` |
 | `diff-prices` (PostgreSQL only, no MariaDB) | `PG_PASSWORD`, `HSM_PRODUCT_KEY` |
+| `tt-statements` (PostgreSQL only) | `PG_PASSWORD`, `HSM_PRODUCT_KEY` |
 
 Where each value lives:
 
@@ -133,7 +142,7 @@ Where each value lives:
 
 > Note: `prod/.env` is a **different** file — it stores only SSH parameters for the deploy `.bat` scripts (`SERVER`, `CADDY_CONTAINER`, `REMOTE_PROD_DIR`), **not** DB passwords or `HSM_PRODUCT_KEY`. Don't look for secrets there.
 
-**`HSM_PRODUCT_KEY`** is the product key for the soft-fx Health Status Monitor (`monitoring.connection.productKey` in `config.yaml`). It is the **same value across all 5 batch jobs**, so a single variable name is used everywhere.
+**`HSM_PRODUCT_KEY`** is the product key for the soft-fx Health Status Monitor (`monitoring.connection.productKey` in `config.yaml`). It is the **same value across all 6 batch jobs**, so a single variable name is used everywhere.
 
 Because `configDocker/config.yaml` is gitignored (real hosts/users), deploying a config change means **copying the updated `config.yaml` to the server manually** — it does not arrive via `git pull`. See [`prod/README.md`](prod/README.md) for the deploy flow.
 
