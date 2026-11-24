@@ -18,8 +18,21 @@ options(digits.secs = 10)
 options(scipen=999)
 Sys.setenv("TZ" = "UTC")
 
-RatesServerName <- "ttlive"
 cfg <- load_config('configDocker/dbCon_config.yaml')
+# Servers for USD conversion rates, in priority order (list to_usd_rates_servers in the config).
+# Only the listed servers are used (no default).
+# Empty / missing list or unknown server name = config error: reports are not built, the error is shown in the UI.
+RatesServerNames <- as.character(unlist(cfg$ReportingServer$to_usd_rates_servers))
+RatesServersCreds <- cfg$ReportingServer$servers[RatesServerNames]
+unknownRatesServers <- RatesServerNames[vapply(RatesServersCreds, is.null, logical(1))]
+names(RatesServersCreds) <- RatesServerNames
+RatesConfigError <- if (length(RatesServerNames) == 0) {
+  "ERROR: no servers for conversion to USD (to_usd_rates_servers is empty or missing in the config)"
+} else if (length(unknownRatesServers) > 0) {
+  paste("ERROR: unknown servers in to_usd_rates_servers (not found in servers):", paste(unknownRatesServers, collapse = ", "))
+} else NULL
+if (!is.null(RatesConfigError)) message(RatesConfigError)
+RatesServersText <- paste(RatesServerNames, collapse = ", ")
 OrderTypesMap <- fread("./configDocker/orderTypes.csv")
 CommandNamesMap <- fread("./configDocker/commands.csv")
 
@@ -131,14 +144,15 @@ server <- function(input, output, session) {
     selectedAggr <- input$aggr_name_input #ttmaster
     From <- input$dateRange_lpexec[1] # To-days(6)
     To <- input$dateRange_lpexec[2] #today() #
-    
+
     shiny::validate(
+      shiny::need(is.null(RatesConfigError), RatesConfigError),
       shiny::need(From <= To, "Start date must be before end date"),
       shiny::need(as.numeric(difftime(To, From, units = "days")) <= 90, "Date range must not exceed 90 days")
     )
     
     tryCatch({
-      rate2usd <- getAllRates2USDTT(cfg$ReportingServer$servers[[RatesServerName]])
+      rate2usd <- getAllRates2USDTT(RatesServersCreds)
     }, error = function(e) {
       print(e)
       stop(paste("GetRatesToUSDerror:", substr(e$message, 1, 150), "..."))
@@ -254,7 +268,8 @@ server <- function(input, output, session) {
     #errors
     fails_desc <- lpexecErr[, .("FailedCount" = .N), by = ErrorDescription][order(-FailedCount)]
     
-    INFO <- paste("Aggr: ", selectedAggr, 'from', From, 'to',  To, "(loaded", nrow(lpexec)+nrow(lpexecErr), "rows from db)")
+    INFO <- paste("Aggr: ", selectedAggr, 'from', From, 'to',  To, "(loaded", nrow(lpexec)+nrow(lpexecErr), "rows from db).",
+                  "USD rates from:", RatesServersText)
     
     
     return(list(INFO=INFO,
@@ -281,12 +296,13 @@ server <- function(input, output, session) {
     To <- input$dateRange_userexec[2] #today() #
 
     shiny::validate(
+      shiny::need(is.null(RatesConfigError), RatesConfigError),
       shiny::need(From <= To, "Start date must be before end date"),
       shiny::need(as.numeric(difftime(To, From, units = "days")) <= 90, "Date range must not exceed 90 days")
     )
     
     tryCatch({
-      rate2usd <- getAllRates2USDTT(cfg$ReportingServer$servers[[RatesServerName]])
+      rate2usd <- getAllRates2USDTT(RatesServersCreds)
       #symbprop <- getAllSymbolsTT(cfg$ReportingServer$servers[["ttlive"]])
     }, error = function(e) {
       print(e)
@@ -316,9 +332,11 @@ server <- function(input, output, session) {
                                request_id=character(), type=character(), order_id=integer(),
                                duration =integer(), error_desc=character(), aggrName=character())
     }
-    
-    
-    #data validation 
+    # requests rejected before parsing (no login/symbol, volume 0) - not trading activity
+    userexecErr <- userexecErr[!(login == 0 & (is.na(symbol) | symbol == "[N/A]"))]
+
+
+    #data validation
     if (nrow(userexec[filled_volume==0]) > 0) {
       userexecErr_temp <- userexec[filled_volume==0][, error_desc := ""]
       userexec <- userexec[filled_volume>0]
@@ -387,7 +405,8 @@ server <- function(input, output, session) {
     fails_desc <- userexecErr[, .("FailedCount" = .N), by = ErrorDescription][order(-FailedCount)]
     fails_desc[, `FailedCount%` := round(FailedCount/sum(FailedCount, na.rm = T)*100,2)]
     
-    INFO <- paste("Aggr: ", selectedAggr, 'from', From, 'to',  To, "(loaded", nrow(userexec)+nrow(userexecErr), "rows from db)")
+    INFO <- paste("Aggr: ", selectedAggr, 'from', From, 'to',  To, "(loaded", nrow(userexec)+nrow(userexecErr), "rows from db).",
+                  "USD rates from:", RatesServersText)
     
     
     return(list(INFO=INFO,
@@ -411,7 +430,7 @@ server <- function(input, output, session) {
         h4(strong(LPresult$INFO)),
         if (length(LPresult$missing_conv) > 0) {
           div(style = "color: #cc6600; font-weight: 600; margin-bottom: 6px;",
-              paste0("WARNING! Symbols not converted to USD (no rate in CurrencyConversion): ",
+              paste0("WARNING! No conversion to USD for symbols (no rate on servers ", RatesServersText, "): ",
                      paste(LPresult$missing_conv, collapse = ", "))
           )
         },
@@ -682,7 +701,7 @@ server <- function(input, output, session) {
         h4(strong(USERresult$INFO)),
         if (length(USERresult$missing_conv) > 0) {
           div(style = "color: #cc6600; font-weight: 600; margin-bottom: 6px;",
-              paste0("WARNING! Symbols not converted to USD (no rate in CurrencyConversion): ",
+              paste0("WARNING! No conversion to USD for symbols (no rate on servers ", RatesServersText, "): ",
                      paste(USERresult$missing_conv, collapse = ", "))
           )
         },

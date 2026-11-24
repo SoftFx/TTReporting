@@ -164,21 +164,71 @@ getAllSymbolsPricesTT <- function(Credstt){
   return(res)
 }
 
-#get Last RATE2USD from TT db 
-getAllRates2USDTT <- function(Credstt){
+#get Last RATE2USD from one TT server (schema)
+# Queries MAX("Timestamp") first, then rows at that time (partitioned table: two queries are faster).
+# Only rows with ToCurrencyName == "USD": in some schemas (tts_ttlive_eu, tts_ttlive_ukeu)
+#   CurrencyConversion is to the domain report currency, NOT USD.
+# Returns NULL (with warning) if the table is empty.
+getRates2USDOneServer <- function(Credstt){
   con <- dbConnect(RPostgres::Postgres(), dbname = Credstt$postgre_DB, user = Credstt$postgre_USER, password = Credstt$postgre_PASSWORD, host = Credstt$postgre_HOST)
   on.exit(dbDisconnect(con))
-  setPathToSchema(Credstt$postgre_SCHEMA, con)
+  tbl <- paste0(DBI::dbQuoteIdentifier(con, Credstt$postgre_SCHEMA), '."CurrencyConversion"')
 
-
-    querry1 <-paste('select max("Timestamp") from "CurrencyConversion"')
-    maxtime <- GetDataFromDB(con, querry1) #return datatable
-    querry2 <-paste('select * from "CurrencyConversion" where "Timestamp" =',  quoteString(con, maxtime[[1]]))
-    res <- GetDataFromDB(con, querry2) # two separated querries faaaster!!!!! 
-  #setDefaultSchema(con)
-
+  maxtime <- dbGetQuery(con, paste('select max("Timestamp") as max_ts from', tbl))$max_ts
+  if (length(maxtime) == 0 || is.na(maxtime[1])) {
+    warning(paste0("getRates2USDOneServer: no CurrencyConversion data in ", Credstt$postgre_SCHEMA))
+    return(NULL)
+  }
+  res <- dbGetQuery(con, paste('select * from', tbl, 'where "Timestamp" = $1 and "ToCurrencyName" = $2'),
+                    params = list(maxtime[1], "USD"))
   res <- as.data.table(res)
   res[, DB := Credstt$postgre_SCHEMA]
+  return(res)
+}
+
+#get Last RATE2USD from several TT servers, merged by priority
+# serversCreds: NAMED list of server creds in PRIORITY order
+#   (in the app: cfg$ReportingServer$servers[cfg$ReportingServer$to_usd_rates_servers]).
+#   A single creds list (old call style) is also accepted.
+# The first server is the main source (error there = stop); the next ones only ADD currencies
+#   missing in the previous ones (error there = warning, server skipped).
+# Result: one row per FromCurrencyName; columns DB = schema, Server = config name the rate came from.
+getAllRates2USDTT <- function(serversCreds){
+  # no servers = no conversion at all = error
+  if (length(serversCreds) == 0) stop("no servers for conversion to USD")
+  if (!is.null(serversCreds$postgre_SCHEMA)) serversCreds <- list(serversCreds)  # single server
+  if (is.null(names(serversCreds))) names(serversCreds) <- sapply(serversCreds, `[[`, "postgre_SCHEMA")
+  srvNames <- names(serversCreds)
+  if (length(srvNames) == 0 || any(sapply(serversCreds, is.null))) {
+    stop(paste("getAllRates2USDTT: unknown rates server(s):", paste(srvNames[sapply(serversCreds, is.null)], collapse = ", ")))
+  }
+
+  resList <- list()
+  for (i in seq_along(serversCreds)) {
+    srv <- srvNames[i]
+    one <- if (i == 1) {
+      getRates2USDOneServer(serversCreds[[i]])
+    } else {
+      tryCatch(getRates2USDOneServer(serversCreds[[i]]), error = function(e) {
+        warning(paste0("getAllRates2USDTT: skip server ", srv, ": ", substr(e$message, 1, 150)))
+        NULL
+      })
+    }
+    if (!is.null(one)) resList[[srv]] <- one[, Server := srv]
+  }
+
+  res <- rbindlist(resList, use.names = TRUE, fill = TRUE)
+  if (nrow(res) == 0) stop(paste("no USD rates found on servers:", paste(srvNames, collapse = ", ")))
+  # keep the rate from the highest-priority server for each currency
+  res[, prio := match(Server, srvNames)]
+  setorder(res, prio)
+  res <- unique(res, by = "FromCurrencyName")[, prio := NULL]
+
+  added <- res[Server != srvNames[1]]
+  if (nrow(added) > 0) {
+    message("getAllRates2USDTT: ", nrow(res), " rates; added from other servers: ",
+            paste(sapply(split(added$FromCurrencyName, added$Server), length), names(split(added$FromCurrencyName, added$Server)), collapse = ", "))
+  }
   return(res)
 }
 
